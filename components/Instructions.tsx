@@ -91,7 +91,8 @@ const Instructions: React.FC = () => {
 
                  <InstructionStep num="6" icon={LifeBuoy} title="Getting Help">
                     <p>
-                       If you encounter any issues or have questions about the platform, please don't hesitate to reach out to our support team.                     </p>
+                       If you encounter any issues or have questions about the platform, please don't hesitate to reach out to our support team.
+                    </p>
                     <div className="mt-4">
                         <a href="mailto:support@coding-online.net" className="inline-flex items-center gap-2 bg-cyan-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-cyan-700 transition">
                             <Mail size={16} /> Contact Support
