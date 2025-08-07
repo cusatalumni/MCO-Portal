@@ -7,6 +7,7 @@ import Spinner from './Spinner';
 import { BookCopy, History, FlaskConical, Eye, FileText, BarChart, BadgePercent, Trophy, ArrowRight, Home, RefreshCw, Star, Zap, CheckCircle, Lock, Edit, Save } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import toast from 'react-hot-toast';
+import SuggestedBooksSidebar from './SuggestedBooksSidebar';
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
@@ -214,7 +215,7 @@ const Dashboard: React.FC = () => {
                                 <div className="text-center py-6 text-slate-500">
                                     <p>You haven't purchased any certification exams yet.</p>
                                     <a href={browseExamsUrl} target="_blank" rel="noopener noreferrer" className="mt-2 text-sm font-semibold text-cyan-600 hover:text-cyan-800 flex items-center gap-1 mx-auto">
-                                        Browse All Available Exams <ArrowRight size={14} />
+                                        Browse Exams <ArrowRight size={14} />
                                     </a>
                                 </div>
                             )}
@@ -299,6 +300,7 @@ const Dashboard: React.FC = () => {
 
                 {/* Sidebar */}
                 <div className="lg:col-span-1 space-y-8">
+                    <SuggestedBooksSidebar />
                      {/* Free Practice Status Card */}
                     <div className="bg-white p-6 rounded-xl shadow-md">
                         <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center"><Star className="mr-2 text-yellow-500"/> Free Practice Status</h3>
