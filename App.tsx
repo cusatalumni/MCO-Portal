@@ -1,10 +1,7 @@
-
 import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-
 import { AuthProvider, useAuth } from './context/AuthContext';
-
 import Login from '@/components/Login';
 import Dashboard from '@/components/Dashboard';
 import Test from '@/components/Test';
