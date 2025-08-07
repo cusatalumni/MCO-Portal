@@ -1,5 +1,5 @@
 
-import type { Question, UserAnswer, TestResult, CertificateData, Organization, Exam, ExamProductCategory, User } from '../types';
+import type { Question, UserAnswer, TestResult, CertificateData, Organization, Exam, ExamProductCategory, User, RecommendedBook } from '../types';
 import { logoBase64 } from '../assets/logo';
 
 // Hardcode a small set of questions to avoid external fetch during build/init
@@ -11,6 +11,37 @@ const MOCK_QUESTIONS: Question[] = [
     { id: 5, question: "A 'new patient' is one who has not received any professional services from the physician within the last ___ years.", options: ["One", "Two", "Three", "Five"], correctAnswer: 3 },
     { id: 6, question: "The suffix '-ectomy' means:", options: ["Incision", "Surgical removal", "Visual examination", "Repair"], correctAnswer: 2 },
     { id: 7, question: "Which of the following is NOT a part of the small intestine?", options: ["Duodenum", "Jejunum", "Ileum", "Cecum"], correctAnswer: 4 }
+];
+
+const MOCK_BOOKS: RecommendedBook[] = [
+    {
+        id: 'book-cpc-guide',
+        title: 'Official CPC Certification Study Guide',
+        description: 'The most comprehensive guide to prepare for your certification. Includes practice questions and detailed explanations.',
+        imageUrl: 'https://placehold.co/300x400/003366/FFFFFF/png?text=CPC+Guide',
+        affiliateLinks: { com: 'https://www.amazon.com/dp/164018398X?tag=mykada-20', in: 'https://www.amazon.in/dp/164018398X?tag=httpcodingonl-21', ae: 'https://amzn.to/46QduHx' }
+    },
+    {
+        id: 'book-icd10-cm',
+        title: 'ICD-10-CM Expert for Physicians',
+        description: 'Master the ICD-10-CM code set with this expert guide, complete with guidelines and examples.',
+        imageUrl: 'https://placehold.co/300x400/660066/FFFFFF/png?text=ICD-10',
+        affiliateLinks: { com: 'https://www.amazon.com/dp/164018398X?tag=mykada-20', in: 'https://www.amazon.in/dp/164018398X?tag=httpcodingonl-21', ae: 'https://amzn.to/46QduHx' }
+    },
+    {
+        id: 'book-medical-billing',
+        title: 'Understanding Medical Billing and Coding',
+        description: 'A step-by-step guide to the medical billing process, from claim submission to reimbursement.',
+        imageUrl: 'https://placehold.co/300x400/663300/FFFFFF/png?text=Billing',
+        affiliateLinks: { com: 'https://www.amazon.com/dp/164018398X?tag=mykada-20', in: 'https://www.amazon.in/dp/164018398X?tag=httpcodingonl-21', ae: 'https://amzn.to/46QduHx' }
+    },
+    {
+        id: 'book-anatomy',
+        title: 'Medical Terminology & Anatomy for Coding',
+        description: 'Build a strong foundation in medical terminology and anatomy, essential for accurate coding.',
+        imageUrl: 'https://placehold.co/300x400/006633/FFFFFF/png?text=Anatomy',
+        affiliateLinks: { com: 'https://www.amazon.com/dp/164018398X?tag=mykada-20', in: 'https://www.amazon.in/dp/164018398X?tag=httpcodingonl-21', ae: 'https://amzn.to/46QduHx' }
+    }
 ];
 
 
@@ -78,19 +109,11 @@ let mockDb: {
             name: 'Medical Coding Online',
             website: 'www.coding-online.net',
             logo: logoBase64,
-            exams: ALL_EXAMS.map(exam => ({
+            exams: ALL_EXAMS.map((exam, index) => ({
                 ...exam,
-                recommendedBook: exam.isPractice ? undefined : {
-                    id: 'book-cpc-guide',
-                    title: 'Official CPC Certification Study Guide',
-                    description: 'The most comprehensive guide to prepare for your certification. Includes practice questions and detailed explanations to master the material.',
-                    imageUrl: 'https://placehold.co/300x400/003366/FFFFFF/png?text=Study+Guide',
-                    affiliateLinks: {
-                        com: 'https://www.amazon.com/dp/164018398X?tag=mykada-20',
-                        in: 'https://www.amazon.in/dp/164018398X?tag=httpcodingonl-21',
-                        ae: 'https://amzn.to/46QduHx'
-                    }
-                }
+                recommendedBook: exam.isPractice 
+                    ? undefined 
+                    : MOCK_BOOKS[index % MOCK_BOOKS.length]
             })),
             examProductCategories: EXAM_PRODUCT_CATEGORIES,
             certificateTemplates: [
@@ -164,7 +187,10 @@ export const googleSheetsService = {
         if (!result) return null;
 
         const exam = googleSheetsService.getExamConfig(orgId, result.examId);
-        if (!exam || result.score < exam.passScore) return null;
+        // Allow admins to view certificates even for failed exams.
+        if (!exam || (result.score < exam.passScore && !user.isAdmin)) {
+            return null;
+        }
 
         const template = org.certificateTemplates.find(t => t.id === exam.certificateTemplateId);
         if (!template) return null;
