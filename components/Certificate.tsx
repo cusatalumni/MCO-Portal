@@ -121,7 +121,7 @@ const Certificate: React.FC = () => {
             </div>
             
             <div ref={certificateRef} className="w-full aspect-[1.414/1] bg-white p-4 font-serif-display shadow-lg border-8 border-teal-900 relative overflow-hidden">
-                 {testId === 'sample' && <Watermark text="Sample" />}
+                 {testId === 'sample' && <Watermark text="Draft" />}
                  {testId !== 'sample' && <Watermark text={organization.name} />}
                 <div className="w-full h-full border-2 border-teal-700 flex flex-col p-6">
                     
