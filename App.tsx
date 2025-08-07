@@ -5,17 +5,17 @@ import { Toaster } from 'react-hot-toast';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
 
-import Login from './components/Login';
-import Dashboard from './components/Dashboard';
-import Test from './components/Test';
-import Results from './components/Results';
-import Certificate from './components/Certificate';
-import Header from './components/Header';
-import Footer from './components/Footer';
-import LandingPage from './components/LandingPage';
-import Instructions from './components/Instructions';
-import Integration from './components/Integration';
-import Admin from './components/Admin';
+import Login from '@/components/Login';
+import Dashboard from '@/components/Dashboard';
+import Test from '@/components/Test';
+import Results from '@/components/Results';
+import Certificate from '@/components/Certificate';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
+import LandingPage from '@/components/LandingPage';
+import Instructions from '@/components/Instructions';
+import Integration from '@/components/Integration';
+import Admin from '@/components/Admin';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
