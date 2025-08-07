@@ -13,11 +13,7 @@ const AI_EXAM_TOPICS = [
     { id: 'topic-outpatient-coding', name: 'Outpatient Coding Challenge' },
     { id: 'topic-risk-adjustment', name: 'Risk Adjustment (HCC)' },
     { id: 'topic-medical-terminology', name: 'Medical Terminology' },
-    { id: 'topic-medical-billing', name: 'Medical Billing' }, 
-
-
-
-// Add new topic for mapping
+    { id: 'topic-medical-billing', name: 'Medical Billing' }, // Add new topic for mapping
 ];
 
 const EXAM_PRODUCT_CATEGORIES: ExamProductCategory[] = [
@@ -117,6 +113,7 @@ let mockDb: {
             exams: ALL_EXAMS.map(exam => ({
                 ...exam,
                 recommendedBook: exam.isPractice ? undefined : {
+                    id: 'book-cpc-guide',
                     title: 'Official CPC Certification Study Guide',
                     description: 'The most comprehensive guide to prepare for your certification. Includes practice questions and detailed explanations to master the material.',
                     imageUrl: 'https://placehold.co/300x400/003366/FFFFFF/png?text=Study+Guide',
@@ -228,6 +225,52 @@ export const googleSheetsService = {
         const org = mockDb.organizations.find(o => o.id === orgId);
         return org?.exams.find(e => e.id === examId);
     },
+
+    getTestResultsForUser: async (user: User): Promise<TestResult[]> => {
+        return _getResultsFromStorage(user.id);
+    },
+
+    getTestResult: async (user: User, testId: string): Promise<TestResult | undefined> => {
+        const allUserResults = _getResultsFromStorage(user.id);
+        return allUserResults.find(r => r.testId === testId);
+    },
+
+    getCertificateData: async (user: User, testId: string, orgId: string): Promise<CertificateData | null> => {
+        const org = mockDb.organizations.find(o => o.id === orgId);
+        if (!org) return null;
+
+        if (testId === 'sample') {
+            const sampleTemplate = org.certificateTemplates[0];
+            return {
+                certificateNumber: `SAMPLE-${Date.now()}`,
+                candidateName: user.name || 'Sample Candidate',
+                finalScore: 95.5,
+                date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+                totalQuestions: 100,
+                organization: org,
+                template: sampleTemplate,
+            };
+        }
+
+        const result = await googleSheetsService.getTestResult(user, testId);
+        if (!result) return null;
+
+        const exam = googleSheetsService.getExamConfig(orgId, result.examId);
+        if (!exam || result.score < exam.passScore) return null;
+
+        const template = org.certificateTemplates.find(t => t.id === exam.certificateTemplateId);
+        if (!template) return null;
+
+        return {
+            certificateNumber: `${result.userId.slice(0, 4)}-${result.testId.slice(5, 11)}`,
+            candidateName: user.name,
+            finalScore: result.score,
+            date: new Date(result.timestamp).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+            totalQuestions: result.totalQuestions,
+            organization: org,
+            template: template
+        };
+    },
     
     getQuestions: async (examConfig: Exam): Promise<Question[]> => {
         const topicIds = EXAM_TO_TOPIC_MAPPING[examConfig.id];
@@ -316,63 +359,6 @@ export const googleSheetsService = {
                 // This is a non-critical error, so we don't block the user.
             }
         }
-
-
-        return Promise.resolve(newResult);
-    },
-    
-    getTestResult: async(user: User, testId: string): Promise<TestResult | null> => {
-        const allUserResults = _getResultsFromStorage(user.id);
-        const result = allUserResults.find(r => r.testId === testId && r.userId === user.id);
-        return Promise.resolve(result || null);
-    },
-    
-    getTestResultsForUser: async(user: User): Promise<TestResult[]> => {
-        const results = _getResultsFromStorage(user.id);
-        results.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-        return Promise.resolve(results);
-    },
-
-    getCertificateData: async (user: User, testId: string, orgId: string): Promise<CertificateData | null> => {
-        if (testId === 'sample') return googleSheetsService.getSampleCertificateData(user);
-
-        const result = await googleSheetsService.getTestResult(user, testId);
-        const organization = mockDb.organizations.find(o => o.id === orgId);
-        const isAdmin = !!user.isAdmin;
-        
-        if (!result || !organization) return null;
-        
-        const exam = organization.exams.find(e => e.id === result.examId);
-        const template = organization.certificateTemplates.find(t => t.id === exam?.certificateTemplateId);
-
-        if (result && exam && template) {
-             const canView = (exam.price > 0 && result.score >= exam.passScore) || isAdmin;
-             if (canView) {
-                return {
-                    certificateNumber: `${result.timestamp}`,
-                    candidateName: user.name,
-                    finalScore: result.score,
-                    date: new Date(result.timestamp).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-                    totalQuestions: result.totalQuestions,
-                    organization,
-                    template
-                };
-             }
-        }
-        return null;
-    },
-
-    getSampleCertificateData: (user: User): CertificateData => {
-        const organization = mockDb.organizations[0];
-        const template = organization.certificateTemplates[0];
-        return {
-            certificateNumber: '12345-SAMPLE',
-            candidateName: user.name,
-            finalScore: 95,
-            date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-            totalQuestions: 10,
-            organization,
-            template
-        };
-    },
+        return newResult;
+    }
 };

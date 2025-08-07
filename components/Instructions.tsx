@@ -1,15 +1,24 @@
-
 import React from 'react';
-import { BookOpen, UserCheck, FileText, CheckCircle, Repeat, Award } from 'lucide-react';
+import { BookOpen, UserCheck, FileText, CheckCircle, Repeat, Award, LifeBuoy, Mail } from 'lucide-react';
 
-const InstructionItem = ({ icon: Icon, title, children }: { icon: React.ElementType, title: string, children: React.ReactNode }) => (
-    <div className="bg-white p-6 rounded-lg shadow-md border-l-4 border-cyan-500">
-        <div className="flex items-center mb-3">
-            <Icon className="text-cyan-600 mr-4" size={28} />
-            <h3 className="text-xl font-bold text-slate-800">{title}</h3>
+const InstructionStep = ({ num, icon: Icon, title, children }: { num: string, icon: React.ElementType, title: string, children: React.ReactNode }) => (
+    <div className="flex">
+        <div className="flex flex-col items-center mr-6">
+            <div className="flex-shrink-0">
+                <div className="flex items-center justify-center w-12 h-12 border-2 border-cyan-500 text-cyan-500 font-bold text-xl rounded-full">
+                    {num}
+                </div>
+            </div>
+            <div className="w-px h-full bg-slate-300"></div>
         </div>
-        <div className="text-slate-600 space-y-2">
-            {children}
+        <div className="pb-10 w-full">
+            <div className="flex items-center mb-3">
+                 <Icon className="text-slate-700 mr-3" size={24} />
+                 <h3 className="text-2xl font-bold text-slate-800">{title}</h3>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow-md border border-slate-200 text-slate-600 space-y-3">
+                {children}
+            </div>
         </div>
     </div>
 );
@@ -17,61 +26,87 @@ const InstructionItem = ({ icon: Icon, title, children }: { icon: React.ElementT
 const Instructions: React.FC = () => {
     return (
         <div className="max-w-4xl mx-auto">
-            <h1 className="text-4xl font-extrabold text-center text-slate-900 mb-4">User Instructions</h1>
-            <p className="text-lg text-center text-slate-500 max-w-2xl mx-auto mb-12">
-                Welcome to the Annapoorna Examination App! Here’s how to get the most out of our platform.
-            </p>
+            <div className="text-center mb-12">
+                <h1 className="text-4xl font-extrabold text-slate-900 mb-4">User Guide</h1>
+                <p className="text-lg text-slate-500 max-w-2xl mx-auto">
+                    Welcome to the Medical Coding Online Examination platform! Here’s how to get started on your path to certification.
+                </p>
+            </div>
 
-            <div className="space-y-8">
-                <InstructionItem icon={UserCheck} title="Logging In & Syncing Exams">
-                    <p>
-                        To begin, you must log in using your account from our main website, <a href="https://www.coding-online.net" target="_blank" rel="noopener noreferrer" className="text-cyan-600 font-semibold hover:underline">coding-online.net</a>.
-                    </p>
-                    <p>
-                        If you've recently purchased a new certification exam, click the <strong>"Sync My Exams"</strong> button on your dashboard. This will securely update your account and add the new exams to your list.
-                    </p>
-                </InstructionItem>
+            <div className="relative">
+                {/* The very first element, to anchor the timeline line */}
+                <div className="flex">
+                    <div className="flex flex-col items-center mr-6">
+                         <div className="w-px h-6 bg-slate-300"></div>
+                    </div>
+                </div>
 
-                <InstructionItem icon={BookOpen} title="Practice Tests vs. Certification Exams">
+                <InstructionStep num="1" icon={UserCheck} title="Login & Sync Exams">
                     <p>
-                        We offer two types of exams to help you prepare:
+                        To begin, you must log in using your account from our main website, <a href="https://www.coding-online.net" target="_blank" rel="noopener noreferrer" className="text-cyan-600 font-semibold hover:underline">coding-online.net</a>. This ensures all your progress and purchases are linked.
                     </p>
-                    <ul className="list-disc list-inside space-y-1 pl-2">
-                        <li><strong>Practice Tests:</strong> These are free, 10-question quizzes designed to give you a feel for the exam topics.</li>
-                        <li><strong>Certification Exams:</strong> These are the full, 100-question paid exams. Passing these is required to earn your certificate.</li>
+                    <p>
+                        If you've recently purchased a new exam, click the <strong>"Sync My Exams"</strong> button on your dashboard. This will securely update your account and add new exams to your list.
+                    </p>
+                </InstructionStep>
+
+                <InstructionStep num="2" icon={BookOpen} title="Exam Types">
+                    <p>
+                        We offer two types of exams to build your skills:
+                    </p>
+                    <ul className="list-disc list-inside space-y-2 pl-2">
+                        <li><strong>Practice Tests:</strong> Free, 10-question quizzes to give you a feel for different topics. Ideal for quick knowledge checks.</li>
+                        <li><strong>Certification Exams:</strong> Full-length, 100-question paid exams that simulate the real thing. Passing these is required to earn your certificate.</li>
                     </ul>
-                </InstructionItem>
+                </InstructionStep>
 
-                <InstructionItem icon={Repeat} title="Attempt Limits">
+                <InstructionStep num="3" icon={Repeat} title="Attempt Limits">
                      <p>
-                        To ensure a fair and valuable experience, there are limits on exam attempts:
+                        To encourage thoughtful practice, there are limits on exam attempts:
                     </p>
-                    <ul className="list-disc list-inside space-y-1 pl-2">
-                        <li><strong>Free Practice Tests:</strong> You have a total of <strong>10 attempts</strong> across all available practice tests. Use them wisely to explore different topics!
-                        </li>
-                        <li><strong>Certification Exams:</strong> Each purchased certification exam comes with <strong>3 attempts</strong>. You must pass within these three tries.
-                        </li>
+                     <ul className="list-disc list-inside space-y-2 pl-2">
+                        <li><strong>Practice Tests:</strong> You get <strong>10 attempts</strong> in total across all practice tests.</li>
+                        <li><strong>Certification Exams:</strong> Each purchased certification exam includes <strong>3 attempts</strong>.</li>
                     </ul>
-                </InstructionItem>
+                </InstructionStep>
 
-                 <InstructionItem icon={CheckCircle} title="Taking a Test">
+                 <InstructionStep num="4" icon={CheckCircle} title="Taking a Test">
                     <p>
-                       During the test, you can navigate with "Next" and "Previous" buttons. If you try to skip a question, a warning will appear.
+                       The test interface is timed. Navigate with "Next" and "Previous" buttons. Unanswered questions will be marked as incorrect upon submission.
                     </p>
                     <p>
-                        If you submit an exam with unanswered questions, you will be warned. If you proceed, they will be marked as incorrect. This ensures you don't submit an incomplete test by accident.
+                       If you try to submit with unanswered questions, a warning will appear. This is to prevent accidental submissions.
                     </p>
-                </InstructionItem>
+                </InstructionStep>
 
-                <InstructionItem icon={Award} title="Results & Certificates">
+                <InstructionStep num="5" icon={Award} title="Results & Certificates">
                     <p>
-                        After submitting an exam, you'll be taken to the results page.
+                        After submitting, you’ll see your results immediately.
                     </p>
-                    <ul className="list-disc list-inside space-y-1 pl-2">
-                        <li><strong>Practice Tests:</strong> You can review every question to see your answer and the correct one.</li>
-                        <li><strong>Certification Exams:</strong> If you pass, a button will appear to download your official, verifiable certificate. To protect exam integrity, a detailed answer review is not provided for paid exams.</li>
+                     <ul className="list-disc list-inside space-y-2 pl-2">
+                        <li><strong>Practice Tests:</strong> You can review every question to see your answer versus the correct one, helping you learn from mistakes.</li>
+                        <li><strong>Certification Exams:</strong> If you pass, you can download your official certificate. To protect exam integrity, a detailed answer review is not provided for paid exams.</li>
                     </ul>
-                </InstructionItem>
+                </InstructionStep>
+
+                 <InstructionStep num="6" icon={LifeBuoy} title="Getting Help">
+                    <p>
+                       If you encounter any issues or have questions about the platform, please don't hesitate to reach out to our support team.
+                    </p>
+                    <div className="mt-4">
+                        <a href="mailto:support@coding-online.net" className="inline-flex items-center gap-2 bg-cyan-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-cyan-700 transition">
+                            <Mail size={16} /> Contact Support
+                        </a>
+                    </div>
+                </InstructionStep>
+
+                {/* The very last element, to end the timeline line */}
+                 <div className="flex">
+                    <div className="flex flex-col items-center mr-6">
+                        <div className="w-px h-6 bg-slate-100 transform -translate-y-2"></div>
+                    </div>
+                </div>
+
             </div>
         </div>
     );
