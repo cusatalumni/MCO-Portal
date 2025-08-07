@@ -73,6 +73,7 @@ export interface CertificateTemplate {
 }
 
 export interface RecommendedBook {
+    id: string;
     title: string;
     description: string;
     imageUrl: string;
