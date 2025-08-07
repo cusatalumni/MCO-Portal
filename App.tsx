@@ -1,21 +1,22 @@
 
+
 import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 
-import { AuthProvider, useAuth } from '@/context/AuthContext.tsx';
+import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 
-import Login from '@/components/Login.tsx';
-import Dashboard from '@/components/Dashboard.tsx';
-import Test from '@/components/Test.tsx';
-import Results from '@/components/Results.tsx';
-import Certificate from '@/components/Certificate.tsx';
-import Header from '@/components/Header.tsx';
-import Footer from '@/components/Footer.tsx';
-import LandingPage from '@/components/LandingPage.tsx';
-import Instructions from '@/components/Instructions.tsx';
-import Integration from '@/components/Integration.tsx';
-import Admin from '@/components/Admin.tsx';
+import Login from './components/Login.tsx';
+import Dashboard from './components/Dashboard.tsx';
+import Test from './components/Test.tsx';
+import Results from './components/Results.tsx';
+import Certificate from './components/Certificate.tsx';
+import Header from './components/Header.tsx';
+import Footer from './components/Footer.tsx';
+import LandingPage from './components/LandingPage.tsx';
+import Instructions from './components/Instructions.tsx';
+import Integration from './components/Integration.tsx';
+import Admin from './components/Admin.tsx';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
