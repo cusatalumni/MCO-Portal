@@ -12,8 +12,6 @@ const MOCK_QUESTIONS: Question[] = [
     { id: 6, question: "The suffix '-ectomy' means:", options: ["Incision", "Surgical removal", "Visual examination", "Repair"], correctAnswer: 2 },
     { id: 7, question: "Which of the following is NOT a part of the small intestine?", options: ["Duodenum", "Jejunum", "Ileum", "Cecum"], correctAnswer: 4 }
 ];
-
-
 const AI_EXAM_TOPICS = [
     { id: 'topic-icd-10-cm', name: 'ICD-10-CM Fundamentals' },
     { id: 'topic-cpt-procedural', name: 'CPT Procedural Coding' },
@@ -296,7 +294,6 @@ export const googleSheetsService = {
             timestamp: Date.now(),
             review,
         };
-
         const allUserResults = _getResultsFromStorage(user.id);
         allUserResults.push(newResult);
         _saveResultsToStorage(user.id, allUserResults);
