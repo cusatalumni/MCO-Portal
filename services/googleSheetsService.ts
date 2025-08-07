@@ -12,18 +12,7 @@ const MOCK_QUESTIONS: Question[] = [
     { id: 6, question: "The suffix '-ectomy' means:", options: ["Incision", "Surgical removal", "Visual examination", "Repair"], correctAnswer: 2 },
     { id: 7, question: "Which of the following is NOT a part of the small intestine?", options: ["Duodenum", "Jejunum", "Ileum", "Cecum"], correctAnswer: 4 }
 ];
-const AI_EXAM_TOPICS = [
-    { id: 'topic-icd-10-cm', name: 'ICD-10-CM Fundamentals' },
-    { id: 'topic-cpt-procedural', name: 'CPT Procedural Coding' },
-    { id: 'topic-hcpcs-level-2', name: 'HCPCS Level II' },
-    { id: 'topic-anatomy-physiology', name: 'Anatomy & Physiology' },
-    { id: 'topic-compliance-auditing', name: 'Compliance and Auditing' },
-    { id: 'topic-inpatient-coding', name: 'Inpatient Coding Challenge' },
-    { id: 'topic-outpatient-coding', name: 'Outpatient Coding Challenge' },
-    { id: 'topic-risk-adjustment', name: 'Risk Adjustment (HCC)' },
-    { id: 'topic-medical-terminology', name: 'Medical Terminology' },
-    { id: 'topic-medical-billing', name: 'Medical Billing' }, // Add new topic for mapping
-];
+
 
 const EXAM_PRODUCT_CATEGORIES: ExamProductCategory[] = [
     { id: 'prod-cpc', name: 'CPC', description: 'A test series designed to prepare you for the AAPC CPC (Certified Professional Coder) certification.', practiceExamId: 'exam-cpc-practice', certificationExamId: 'exam-cpc-cert' },
@@ -79,34 +68,6 @@ const ALL_EXAMS: Exam[] = [
     { id: 'exam-mta-cert', name: 'Medical Terminology & Anatomy Certification', productSlug: 'medical-terminology-anatomy-certification', description: 'A foundational test series covering core medical terminology and anatomy. Essential for all aspiring medical coders. Includes 100 questions.', price: 80, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: false, durationMinutes: 150 },
 ];
 
-// Map broader exams to the granular AI topics
-const EXAM_TO_TOPIC_MAPPING: { [examId: string]: string[] } = {
-    'exam-cpc-practice': ['topic-icd-10-cm', 'topic-cpt-procedural', 'topic-hcpcs-level-2'],
-    'exam-cpc-cert': ['topic-icd-10-cm', 'topic-cpt-procedural', 'topic-hcpcs-level-2'],
-    'exam-cca-practice': ['topic-anatomy-physiology', 'topic-medical-terminology', 'topic-compliance-auditing'],
-    'exam-cca-cert': ['topic-anatomy-physiology', 'topic-medical-terminology', 'topic-compliance-auditing', 'topic-outpatient-coding'],
-    'exam-ccs-practice': ['topic-inpatient-coding', 'topic-outpatient-coding', 'topic-compliance-auditing'],
-    'exam-ccs-cert': ['topic-inpatient-coding', 'topic-outpatient-coding', 'topic-compliance-auditing'],
-    'exam-billing-practice': ['topic-medical-billing', 'topic-hcpcs-level-2'],
-    'exam-billing-cert': ['topic-medical-billing', 'topic-hcpcs-level-2'],
-    'exam-risk-practice': ['topic-risk-adjustment'],
-    'exam-risk-cert': ['topic-risk-adjustment'],
-    'exam-icd-practice': ['topic-icd-10-cm'],
-    'exam-icd-cert': ['topic-icd-10-cm'],
-    'exam-cpb-practice': ['topic-medical-billing'],
-    'exam-cpb-cert': ['topic-medical-billing'],
-    'exam-crc-practice': ['topic-risk-adjustment'],
-    'exam-crc-cert': ['topic-risk-adjustment'],
-    'exam-cpma-practice': ['topic-compliance-auditing'],
-    'exam-cpma-cert': ['topic-compliance-auditing'],
-    'exam-coc-practice': ['topic-outpatient-coding'],
-    'exam-coc-cert': ['topic-outpatient-coding'],
-    'exam-cic-practice': ['topic-inpatient-coding'],
-    'exam-cic-cert': ['topic-inpatient-coding'],
-    'exam-mta-practice': ['topic-medical-terminology', 'topic-anatomy-physiology'],
-    'exam-mta-cert': ['topic-medical-terminology', 'topic-anatomy-physiology'],
-};
-
 
 let mockDb: {
     organizations: Organization[];
@@ -147,8 +108,6 @@ let mockDb: {
     ]
 };
 
-const categorizedQuestionsCache = new Map<string, Question[]>();
-
 const _getResultsFromStorage = (userId: string): TestResult[] => {
     try {
         const storedResults = localStorage.getItem(`results_${userId}`);
@@ -168,18 +127,6 @@ const _saveResultsToStorage = (userId: string, results: TestResult[]): void => {
 };
 
 export const googleSheetsService = {
-    initializeAndCategorizeExams: async (): Promise<void> => {
-        if (categorizedQuestionsCache.size > 0) return; // Already initialized
-        
-        // Use hardcoded questions instead of fetching from Google Sheets
-        // This makes initialization robust and avoids network issues during deployment.
-        AI_EXAM_TOPICS.forEach(cat => {
-             categorizedQuestionsCache.set(cat.id, MOCK_QUESTIONS);
-        });
-        // Simulate a brief async load
-        await new Promise(resolve => setTimeout(resolve, 50));
-    },
-    
     getOrganizations: (): Organization[] => mockDb.organizations,
     
     getExamConfig: (orgId: string, examId: string): Exam | undefined => {
@@ -234,26 +181,14 @@ export const googleSheetsService = {
     },
     
     getQuestions: async (examConfig: Exam): Promise<Question[]> => {
-        const topicIds = EXAM_TO_TOPIC_MAPPING[examConfig.id];
-        if (!topicIds) {
-            throw new Error(`No topic mapping found for exam: ${examConfig.name}`);
-        }
-        
-        let combinedQuestions: Question[] = [];
-        topicIds.forEach(topicId => {
-            const questionsForTopic = categorizedQuestionsCache.get(topicId);
-            if(questionsForTopic) {
-                combinedQuestions.push(...questionsForTopic);
-            }
-        });
-        
-        const uniqueQuestions = Array.from(new Map(combinedQuestions.map(q => [q.id, q])).values());
-
-        if (uniqueQuestions.length === 0) {
-             throw new Error(`No questions found for the topics related to: ${examConfig.name}`);
+        // This is a simplified service that uses mock data for all exams.
+        // In a real application, this might fetch from examConfig.questionSourceUrl.
+        if (MOCK_QUESTIONS.length === 0) {
+             throw new Error(`No questions found for: ${examConfig.name}`);
         }
 
-        const shuffled = [...uniqueQuestions].sort(() => 0.5 - Math.random());
+        // Shuffle the array and take the required number of questions.
+        const shuffled = [...MOCK_QUESTIONS].sort(() => 0.5 - Math.random());
         return shuffled.slice(0, Math.min(examConfig.numberOfQuestions, shuffled.length));
     },
 
@@ -294,6 +229,7 @@ export const googleSheetsService = {
             timestamp: Date.now(),
             review,
         };
+
         const allUserResults = _getResultsFromStorage(user.id);
         allUserResults.push(newResult);
         _saveResultsToStorage(user.id, allUserResults);

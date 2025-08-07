@@ -1,7 +1,7 @@
 
-import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect, useMemo } from 'react';
 import { googleSheetsService } from '../services/googleSheetsService';
-import type { Organization } from '../types';
+import type { Organization, RecommendedBook } from '../types';
 import toast from 'react-hot-toast';
 
 interface AppContextType {
@@ -11,6 +11,7 @@ interface AppContextType {
   isInitializing: boolean;
   setActiveOrgById: (orgId: string) => void;
   updateActiveOrg: (updatedOrg: Organization) => void;
+  suggestedBooks: RecommendedBook[];
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -23,14 +24,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   useEffect(() => {
     const initializeApp = async () => {
-      try {
-        await googleSheetsService.initializeAndCategorizeExams();
-        toast.success("Exams loaded successfully!", { duration: 2000 });
-      } catch (error) {
-        console.error("Failed to initialize exams:", error);
-        toast.error("Failed to load exams.");
-      }
-
+      // The complex exam initialization has been removed to simplify the app's startup.
       const allOrgs = googleSheetsService.getOrganizations();
       setOrganizations(allOrgs);
       if (allOrgs.length > 0) {
@@ -42,6 +36,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     initializeApp();
   }, []);
+
+  const suggestedBooks = useMemo(() => {
+    if (!activeOrg) return [];
+
+    const books = activeOrg.exams
+        .map(exam => exam.recommendedBook)
+        .filter((book): book is RecommendedBook => book !== undefined);
+
+    // Filter for unique books by title to avoid duplicates in the sidebar
+    const uniqueBooks = Array.from(new Map(books.map(book => [book.title, book])).values());
+    
+    return uniqueBooks;
+  }, [activeOrg]);
 
   const setActiveOrgById = (orgId: string) => {
     const org = organizations.find(o => o.id === orgId);
@@ -58,7 +65,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   return (
-    <AppContext.Provider value={{ organizations, activeOrg, isLoading, isInitializing, setActiveOrgById, updateActiveOrg }}>
+    <AppContext.Provider value={{ organizations, activeOrg, isLoading, isInitializing, setActiveOrgById, updateActiveOrg, suggestedBooks }}>
       {children}
     </AppContext.Provider>
   );

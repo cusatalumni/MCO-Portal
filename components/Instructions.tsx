@@ -1,112 +1,33 @@
-import React from 'react';
-import { BookOpen, UserCheck, FileText, CheckCircle, Repeat, Award, LifeBuoy, Mail } from 'lucide-react';
 
-const InstructionStep = ({ num, icon: Icon, title, children }: { num: string, icon: React.ElementType, title: string, children: React.ReactNode }) => (
-    <div className="flex">
-        <div className="flex flex-col items-center mr-6">
-            <div className="flex-shrink-0">
-                <div className="flex items-center justify-center w-12 h-12 border-2 border-cyan-500 text-cyan-500 font-bold text-xl rounded-full">
-                    {num}
-                </div>
-            </div>
-            <div className="w-px h-full bg-slate-300"></div>
-        </div>
-        <div className="pb-10 w-full">
-            <div className="flex items-center mb-3">
-                 <Icon className="text-slate-700 mr-3" size={24} />
-                 <h3 className="text-2xl font-bold text-slate-800">{title}</h3>
-            </div>
-            <div className="bg-white p-6 rounded-lg shadow-md border border-slate-200 text-slate-600 space-y-3">
-                {children}
-            </div>
-        </div>
-    </div>
-);
+import React from 'react';
 
 const Instructions: React.FC = () => {
     return (
-        <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-12">
-                <h1 className="text-4xl font-extrabold text-slate-900 mb-4">User Guide</h1>
-                <p className="text-lg text-slate-500 max-w-2xl mx-auto">
-                    Welcome to the Medical Coding Online Examination platform! Here’s how to get started on your path to certification.
+        <div className="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-lg">
+            <h1 className="text-3xl font-bold text-slate-800 mb-4">Platform Instructions</h1>
+            <div className="prose max-w-none text-slate-600">
+                <p>Welcome to the examination portal. This platform is designed to provide a seamless testing experience integrated with our main WordPress site.</p>
+                
+                <h2 className="text-2xl font-semibold text-slate-700 mt-6 mb-2">Login and Access</h2>
+                <p>
+                    All users must log in through our main site, <a href="https://www.coding-online.net" target="_blank" rel="noopener noreferrer" className="text-cyan-600">coding-online.net</a>. Your account there will grant you access to this portal. 
+                    If you have purchased any certification exams, they will be automatically synced to your dashboard upon logging in.
                 </p>
-            </div>
 
-            <div className="relative">
-                {/* The very first element, to anchor the timeline line */}
-                <div className="flex">
-                    <div className="flex flex-col items-center mr-6">
-                         <div className="w-px h-6 bg-slate-300"></div>
-                    </div>
-                </div>
+                <h2 className="text-2xl font-semibold text-slate-700 mt-6 mb-2">Taking Exams</h2>
+                <p>
+                    From your dashboard, you can access both free practice tests and your purchased certification exams. Please ensure your full name is correct on the dashboard, as this will be used on your certificate.
+                </p>
+                
+                <h2 className="text-2xl font-semibold text-slate-700 mt-6 mb-2">Results and Certificates</h2>
+                <p>
+                    Upon completing an exam, your results will be displayed immediately. For practice tests, you will be able to review your answers. For paid certification exams, passing scores will unlock a downloadable certificate of completion.
+                </p>
 
-                <InstructionStep num="1" icon={UserCheck} title="Login & Sync Exams">
-                    <p>
-                        To begin, you must log in using your account from our main website, <a href="https://www.coding-online.net" target="_blank" rel="noopener noreferrer" className="text-cyan-600 font-semibold hover:underline">coding-online.net</a>. This ensures all your progress and purchases are linked.
-                    </p>
-                    <p>
-                        If you've recently purchased a new exam, click the <strong>"Sync My Exams"</strong> button on your dashboard. This will securely update your account and add new exams to your list.
-                    </p>
-                </InstructionStep>
-
-                <InstructionStep num="2" icon={BookOpen} title="Exam Types">
-                    <p>
-                        We offer two types of exams to build your skills:
-                    </p>
-                    <ul className="list-disc list-inside space-y-2 pl-2">
-                        <li><strong>Practice Tests:</strong> Free, 10-question quizzes to give you a feel for different topics. Ideal for quick knowledge checks.</li>
-                        <li><strong>Certification Exams:</strong> Full-length, 100-question paid exams that simulate the real thing. Passing these is required to earn your certificate.</li>
-                    </ul>
-                </InstructionStep>
-
-                <InstructionStep num="3" icon={Repeat} title="Attempt Limits">
-                     <p>
-                        To encourage thoughtful practice, there are limits on exam attempts:
-                    </p>
-                     <ul className="list-disc list-inside space-y-2 pl-2">
-                        <li><strong>Practice Tests:</strong> You get <strong>10 attempts</strong> in total across all practice tests.</li>
-                        <li><strong>Certification Exams:</strong> Each purchased certification exam includes <strong>3 attempts</strong>.</li>
-                    </ul>
-                </InstructionStep>
-
-                 <InstructionStep num="4" icon={CheckCircle} title="Taking a Test">
-                    <p>
-                       The test interface is timed. Navigate with "Next" and "Previous" buttons. Unanswered questions will be marked as incorrect upon submission.
-                    </p>
-                    <p>
-                       If you try to submit with unanswered questions, a warning will appear. This is to prevent accidental submissions.
-                    </p>
-                </InstructionStep>
-
-                <InstructionStep num="5" icon={Award} title="Results & Certificates">
-                    <p>
-                        After submitting, you’ll see your results immediately.
-                    </p>
-                     <ul className="list-disc list-inside space-y-2 pl-2">
-                        <li><strong>Practice Tests:</strong> You can review every question to see your answer versus the correct one, helping you learn from mistakes.</li>
-                        <li><strong>Certification Exams:</strong> If you pass, you can download your official certificate. To protect exam integrity, a detailed answer review is not provided for paid exams.</li>
-                    </ul>
-                </InstructionStep>
-
-                 <InstructionStep num="6" icon={LifeBuoy} title="Getting Help">
-                    <p>
-                       If you encounter any issues or have questions about the platform, please don't hesitate to reach out to our support team.
-                    </p>
-                    <div className="mt-4">
-                        <a href="mailto:support@coding-online.net" className="inline-flex items-center gap-2 bg-cyan-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-cyan-700 transition">
-                            <Mail size={16} /> Contact Support
-                        </a>
-                    </div>
-                </InstructionStep>
-
-                {/* The very last element, to end the timeline line */}
-                 <div className="flex">
-                    <div className="flex flex-col items-center mr-6">
-                        <div className="w-px h-6 bg-slate-100 transform -translate-y-2"></div>
-                    </div>
-                </div>
-
+                <h2 className="text-2xl font-semibold text-slate-700 mt-6 mb-2">WordPress Integration for Admins</h2>
+                <p>
+                    For instructions on how to set up the SSO and results-sync functionality with your WordPress site, please see the <a href="#/integration" className="text-cyan-600">Integration Guide</a>.
+                </p>
             </div>
         </div>
     );
