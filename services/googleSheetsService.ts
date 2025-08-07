@@ -1,5 +1,6 @@
 
-import type { Question, UserAnswer, TestResult, CertificateData, Organization, Exam, ExamProductCategory, User, RecommendedBook } from '../types';
+
+import type { Question, UserAnswer, TestResult, CertificateData, Organization, Exam, ExamProductCategory, User, RecommendedBook, CertificateTemplate } from '../types';
 import { logoBase64 } from '../assets/logo';
 
 // Hardcode a small set of questions to avoid external fetch during build/init
@@ -45,6 +46,45 @@ const MOCK_BOOKS: RecommendedBook[] = [
 ];
 
 
+const CERTIFICATE_TEMPLATES: CertificateTemplate[] = [
+    {
+        id: 'cert-mco-1',
+        title: 'Medical Coding Proficiency',
+        body: 'For successfully demonstrating proficiency in medical coding, including mastery of ICD-10-CM, CPT, HCPCS Level II, and coding guidelines through the completion of a comprehensive Examination with a score of {finalScore}%. This achievement reflects dedication to excellence in medical coding and preparedness for professional certification.',
+        signature1Name: 'Dr. Amelia Reed',
+        signature1Title: 'Program Director',
+        signature2Name: 'B. Manoj',
+        signature2Title: 'Chief Instructor'
+    },
+    {
+        id: 'cert-cpc',
+        title: 'Certified Professional Coder (CPC)',
+        body: 'For successfully passing the rigorous Certified Professional Coder (CPC) certification examination with a score of {finalScore}%. This certificate signifies a high level of expertise in physician-based medical coding and a commitment to maintaining industry standards.',
+        signature1Name: 'Dr. Amelia Reed',
+        signature1Title: 'Program Director',
+        signature2Name: 'B. Manoj',
+        signature2Title: 'Chief Instructor'
+    },
+    {
+        id: 'cert-cca',
+        title: 'Certified Coding Associate (CCA)',
+        body: 'For successfully passing the Certified Coding Associate (CCA) examination with a score of {finalScore}%. This achievement recognizes the holder’s competency in medical coding and their dedication to quality healthcare data.',
+        signature1Name: 'Dr. Amelia Reed',
+        signature1Title: 'Program Director',
+        signature2Name: 'B. Manoj',
+        signature2Title: 'Chief Instructor'
+    },
+     {
+        id: 'cert-billing',
+        title: 'Medical Billing Specialist',
+        body: 'For successfully completing the Medical Billing Specialist certification program and examination with a score of {finalScore}%. This demonstrates mastery of the healthcare revenue cycle, including claims submission, payment processing, and compliance.',
+        signature1Name: 'Dr. Amelia Reed',
+        signature1Title: 'Program Director',
+        signature2Name: 'B. Manoj',
+        signature2Title: 'Chief Instructor'
+    }
+];
+
 const EXAM_PRODUCT_CATEGORIES: ExamProductCategory[] = [
     { id: 'prod-cpc', name: 'CPC', description: 'A test series designed to prepare you for the AAPC CPC (Certified Professional Coder) certification.', practiceExamId: 'exam-cpc-practice', certificationExamId: 'exam-cpc-cert' },
     { id: 'prod-cca', name: 'CCA', description: 'A test series aligned with AHIMA’s CCA (Certified Coding Associate) exam blueprint.', practiceExamId: 'exam-cca-practice', certificationExamId: 'exam-cca-cert' },
@@ -63,16 +103,16 @@ const EXAM_PRODUCT_CATEGORIES: ExamProductCategory[] = [
 const ALL_EXAMS: Exam[] = [
     // CPC
     { id: 'exam-cpc-practice', name: 'CPC Practice Test', description: '', price: 0, questionSourceUrl: '', numberOfQuestions: 10, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: true, durationMinutes: 15 },
-    { id: 'exam-cpc-cert', name: 'CPC Certification Exam', productSlug: 'cpc-certification-exam', description: 'A comprehensive test series designed to prepare you for the AAPC CPC (Certified Professional Coder) certification. Includes 100 questions covering all major domains.', price: 150, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: false, durationMinutes: 150 },
+    { id: 'exam-cpc-cert', name: 'CPC Certification Exam', productSlug: 'cpc-certification-exam', description: 'A comprehensive test series designed to prepare you for the AAPC CPC (Certified Professional Coder) certification. Includes 100 questions covering all major domains.', price: 150, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-cpc', isPractice: false, durationMinutes: 150 },
     // CCA
     { id: 'exam-cca-practice', name: 'CCA Practice Test', description: '', price: 0, questionSourceUrl: '', numberOfQuestions: 10, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: true, durationMinutes: 15 },
-    { id: 'exam-cca-cert', name: 'CCA Certification Exam', productSlug: 'cca-certification-exam', description: 'A test series aligned with AHIMA’s CCA (Certified Coding Associate) exam blueprint. Includes 100 questions to test your readiness.', price: 120, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: false, durationMinutes: 150 },
+    { id: 'exam-cca-cert', name: 'CCA Certification Exam', productSlug: 'cca-certification-exam', description: 'A test series aligned with AHIMA’s CCA (Certified Coding Associate) exam blueprint. Includes 100 questions to test your readiness.', price: 120, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-cca', isPractice: false, durationMinutes: 150 },
     // CCS
     { id: 'exam-ccs-practice', name: 'CCS Practice Test', description: '', price: 0, questionSourceUrl: '', numberOfQuestions: 10, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: true, durationMinutes: 15 },
     { id: 'exam-ccs-cert', name: 'CCS Certification Exam', productSlug: 'ccs-certification-exam', description: 'A comprehensive test series for the AHIMA CCS (Certified Coding Specialist) credential, focusing on inpatient coding scenarios with 100 questions.', price: 180, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: false, durationMinutes: 150 },
     // Billing
     { id: 'exam-billing-practice', name: 'Medical Billing Practice', description: '', price: 0, questionSourceUrl: '', numberOfQuestions: 10, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: true, durationMinutes: 15 },
-    { id: 'exam-billing-cert', name: 'Medical Billing', productSlug: 'medical-billing-certification', description: 'A test series covering core concepts in medical billing and reimbursement.', price: 90, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: false, durationMinutes: 150 },
+    { id: 'exam-billing-cert', name: 'Medical Billing', productSlug: 'medical-billing-certification', description: 'A test series covering core concepts in medical billing and reimbursement.', price: 90, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-billing', isPractice: false, durationMinutes: 150 },
     // Risk
     { id: 'exam-risk-practice', name: 'Risk Adjustment Practice', description: '', price: 0, questionSourceUrl: '', numberOfQuestions: 10, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: true, durationMinutes: 15 },
     { id: 'exam-risk-cert', name: 'Risk Adjustment Coding', productSlug: 'risk-adjustment-coding-certification', description: 'A test series on risk adjustment models and hierarchical condition categories (HCC).', price: 110, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: false, durationMinutes: 150 },
@@ -81,7 +121,7 @@ const ALL_EXAMS: Exam[] = [
     { id: 'exam-icd-cert', name: 'ICD-10-CM Certification Exam', productSlug: 'icd-10-cm-certification-exam', description: 'A test series focusing on ICD-10-CM diagnosis coding proficiency. Includes 100 questions to master the code set.', price: 130, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: false, durationMinutes: 150 },
     // CPB
     { id: 'exam-cpb-practice', name: 'CPB Practice Test', description: '', price: 0, questionSourceUrl: '', numberOfQuestions: 10, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: true, durationMinutes: 15 },
-    { id: 'exam-cpb-cert', name: 'CPB Certification Exam', productSlug: 'cpb-certification-exam', description: 'A test series for the AAPC CPB (Certified Professional Biller) certification, covering all aspects of the revenue cycle with 100 questions.', price: 100, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: false, durationMinutes: 150 },
+    { id: 'exam-cpb-cert', name: 'CPB Certification Exam', productSlug: 'cpb-certification-exam', description: 'A test series for the AAPC CPB (Certified Professional Biller) certification, covering all aspects of the revenue cycle with 100 questions.', price: 100, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-billing', isPractice: false, durationMinutes: 150 },
     // CRC
     { id: 'exam-crc-practice', name: 'CRC Practice Test', description: '', price: 0, questionSourceUrl: '', numberOfQuestions: 10, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: true, durationMinutes: 15 },
     { id: 'exam-crc-cert', name: 'CRC Certification Exam', productSlug: 'crc-certification-exam', description: 'A test series on risk adjustment models and hierarchical condition categories (HCC) for the CRC certification. Includes 100 specialized questions.', price: 110, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: false, durationMinutes: 150 },
@@ -116,17 +156,7 @@ let mockDb: {
                     : MOCK_BOOKS[index % MOCK_BOOKS.length]
             })),
             examProductCategories: EXAM_PRODUCT_CATEGORIES,
-            certificateTemplates: [
-                {
-                    id: 'cert-mco-1',
-                    title: 'Medical Coding Proficiency',
-                    body: 'For successfully demonstrating proficiency in medical coding, including mastery of ICD-10-CM, CPT, HCPCS Level II, and coding guidelines through the completion of a comprehensive Examination with a score of {finalScore}%. This achievement reflects dedication to excellence in medical coding and preparedness for professional certification.',
-                    signature1Name: 'Dr. Amelia Reed',
-                    signature1Title: 'Program Director',
-                    signature2Name: 'B. Manoj',
-                    signature2Title: 'Chief Instructor'
-                }
-            ]
+            certificateTemplates: CERTIFICATE_TEMPLATES
         }
     ]
 };
