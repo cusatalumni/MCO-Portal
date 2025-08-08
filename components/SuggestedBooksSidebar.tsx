@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAppContext } from '../context/AppContext';
 import { BookOpen, ShoppingCart } from 'lucide-react';
@@ -32,7 +31,7 @@ const SuggestedBooksSidebar: React.FC = () => {
 
     if (isInitializing) {
         return (
-            <div className="bg-white p-6 rounded-xl shadow-md sticky top-24">
+            <div className="bg-white p-6 rounded-xl shadow-md">
                  <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center">
                     <BookOpen className="mr-3 text-cyan-500" /> Study Hall
                 </h3>
@@ -57,7 +56,7 @@ const SuggestedBooksSidebar: React.FC = () => {
     }
 
     return (
-        <div className="bg-white p-6 rounded-xl shadow-md sticky top-24">
+        <div className="bg-white p-6 rounded-xl shadow-md">
             <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center">
                 <BookOpen className="mr-3 text-cyan-500" /> Study Hall
             </h3>

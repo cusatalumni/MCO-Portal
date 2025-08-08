@@ -1,6 +1,5 @@
 
 
-
 import type { Question, UserAnswer, TestResult, CertificateData, Organization, Exam, ExamProductCategory, User, RecommendedBook, CertificateTemplate } from '../types';
 import { logoBase64 } from '../assets/logo';
 
@@ -16,53 +15,226 @@ const MOCK_QUESTIONS: Question[] = [
 ];
 
 const MOCK_BOOKS: RecommendedBook[] = [
-    {
-        id: 'book-cpc-guide',
-        title: 'Official CPC® Certification Study Guide (AAPC)',
-        description: 'AAPC’s official study guide for the CPC exam — covers anatomy, medical terminology, ICD-10-CM, CPT®, HCPCS, modifiers and includes practice questions and exam tips.',
-        imageUrl: 'https://placehold.co/300x400/003366/FFFFFF/png?text=CPC+Guide',
-        // Closest reliable Amazon ASIN/links — AAPC publishes editions; 2024 paperback ISBN/ASIN: 1635278910. Marketplace listing exists for 2025 edition (B0DZHYW2YL).
-        affiliateLinks: {
-            com: 'https://www.amazon.com/dp/1635278910?tag=mykada-20',   // verified ISBN-10 / Amazon listing. :contentReference[oaicite:2]{index=2}
-            in:  'https://www.amazon.in/dp/1635278910?tag=httpcodingonl-21',
-            ae:  'https://www.amazon.ae/dp/1635278910?tag=medical0f1-21'
-        }
-    },
-    {
-        id: 'book-icd10-cm',
-        title: "Buck's ICD-10-CM for Physicians 2026",
-        description: 'A physician-oriented ICD-10-CM code manual designed by coders for coders — full-color, physician-office focus, guidelines and examples for accurate diagnosis coding.',
-        imageUrl: 'https://placehold.co/300x400/660066/FFFFFF/png?text=ICD-10',
-        affiliateLinks: {
-            com: 'https://www.amazon.com/dp/0443380783?tag=mykada-20',  // ASIN 0443380783 verified. :contentReference[oaicite:3]{index=3}
-            in:  'https://www.amazon.in/dp/0443380783?tag=httpcodingonl-21',
-            ae:  'https://www.amazon.ae/dp/0443380783?tag=medical0f1-21'
-        }
-    },
-    {
-        id: 'book-medical-billing',
-        title: 'Medical Billing & Coding: A Practical Guide (Closest match)',
-        description: 'Practical, step-by-step guide covering the billing lifecycle, claims submission, payer rules, denials management, and reimbursement fundamentals — chosen as the closest widely-available match to the original title provided.',
-        imageUrl: 'https://placehold.co/300x400/663300/FFFFFF/png?text=Billing',
-        // Closest match: many books exist. Using a widely listed, verifiable title/ASIN here as the nearest alternative.
-        affiliateLinks: {
-            com: 'https://www.amazon.com/dp/1950393013?tag=mykada-20', // NOTE: original ASIN 1950393005 not verifiable; this is closest-match ASIN (example).
-            in:  'https://www.amazon.in/dp/1950393013?tag=httpcodingonl-21',
-            ae:  'https://www.amazon.ae/dp/1950393013?tag=medical0f1-21'
-        }
-    },
-    {
-        id: 'book-anatomy',
-        title: 'Medical Terminology & Anatomy for Coding (Closest match)',
-        description: 'Foundational medical terminology and anatomy reference tailored for coders — organ systems, common procedures and coding-relevant anatomy notes.',
-        imageUrl: 'https://placehold.co/300x400/006633/FFFFFF/png?text=Anatomy',
-        // Closest-match ASIN used because original 1455770020 did not resolve reliably in searches
-        affiliateLinks: {
-            com: 'https://www.amazon.com/dp/1455770038?tag=mykada-20', // placeholder closest-match ASIN — replace with your preferred edition for final accuracy
-            in:  'https://www.amazon.in/dp/1455770038?tag=httpcodingonl-21',
-            ae:  'https://www.amazon.ae/dp/1455770038?tag=medical0f1-21'
-        }
+  {
+    id: 'book-cpc-guide',
+    title: 'Official CPC® Certification Study Guide (AAPC)',
+    description: 'AAPC’s official CPC exam study guide — anatomy, medical terminology, ICD-10-CM, CPT, HCPCS, practice questions and exam tips.',
+    imageUrl: 'https://placehold.co/300x400/003366/FFFFFF/png?text=CPC+Guide',
+    affiliateLinks: {
+      com: 'https://www.amazon.com/dp/1635278910?tag=mykada-20',
+      in:  'https://www.amazon.in/dp/1635278910?tag=httpcodingonl-21',
+      ae:  'https://www.amazon.ae/dp/1285427998?tag=medical0f1-21'
     }
+  },
+  {
+    id: 'book-icd10-cm',
+    title: "Buck's ICD-10-CM for Physicians 2026",
+    description: 'Physician-focused ICD-10-CM code manual (full-color, guidelines and examples).',
+    imageUrl: 'https://placehold.co/300x400/660066/FFFFFF/png?text=ICD-10',
+    affiliateLinks: {
+      com: 'https://www.amazon.com/dp/0443380783?tag=mykada-20',
+      in:  'https://www.amazon.com/dp/0443380783?tag=httpcodingonl-21',
+      ae:  'https://www.amazon.com/dp/0443380783?tag=medical0f1-21'
+    }
+  },
+  {
+    id: 'book-cpt-professional-2026',
+    title: 'CPT® 2026 Professional Edition (AMA)',
+    description: 'Official AMA CPT® 2026 Professional Edition — procedure & services coding authority.',
+    imageUrl: 'https://placehold.co/300x400/333366/FFFFFF/png?text=CPT+2026',
+    affiliateLinks: {
+      com: 'https://www.amazon.com/dp/1640163220?tag=mykada-20',
+      in:  'https://www.amazon.com/dp/1640163220?tag=httpcodingonl-21',
+      ae:  'https://www.amazon.com/dp/1640163220?tag=medical0f1-21'
+    }
+  },
+  {
+    id: 'book-icd10-official',
+    title: 'ICD-10-CM 2026: The Complete Official Codebook (AMA)',
+    description: 'AMA’s Complete Official Codebook for ICD-10-CM — full diagnostic code set and guidelines.',
+    imageUrl: 'https://placehold.co/300x400/660033/FFFFFF/png?text=ICD-10+Official',
+    affiliateLinks: {
+      com: 'https://www.amazon.com/dp/1640163263?tag=mykada-20',
+      in:  'https://www.amazon.com/dp/1640163263?tag=httpcodingonl-21',
+      ae:  'https://www.amazon.com/dp/1640163263?tag=medical0f1-21'
+    }
+  },
+  {
+    id: 'book-hcpcs-2026',
+    title: 'HCPCS Level II Professional 2026',
+    description: 'HCPCS Level II codebook for DME, supplies, drugs and services.',
+    imageUrl: 'https://placehold.co/300x400/004466/FFFFFF/png?text=HCPCS+2026',
+    affiliateLinks: {
+      com: 'https://www.amazon.com/dp/1640163301?tag=mykada-20',
+      in:  'https://www.amazon.com/dp/1640163301?tag=httpcodingonl-21',
+      ae:  'https://www.amazon.com/dp/1640163301?tag=medical0f1-21'
+    }
+  },
+  {
+    id: 'book-icd10-expert-optum',
+    title: 'ICD-10-CM Expert for Physicians 2026 (Optum)',
+    description: 'Optum/DecisionHealth physician-focused “Expert” ICD-10-CM codebook.',
+    imageUrl: 'https://placehold.co/300x400/663366/FFFFFF/png?text=ICD-10+Expert',
+    affiliateLinks: {
+      com: 'https://www.amazon.com/dp/B0F22PMY9D?tag=mykada-20',
+      in:  'https://www.amazon.com/dp/B0F22PMY9D?tag=httpcodingonl-21',
+      ae:  'https://www.amazon.com/dp/B0F22PMY9D?tag=medical0f1-21'
+    }
+  },
+  {
+    id: 'book-coders-desk-diagnoses-2026',
+    title: "Coders' Desk Reference for Diagnoses 2026 (Optum)",
+    description: 'Clinical desk reference for ICD-10-CM diagnoses — descriptions and coding hints.',
+    imageUrl: 'https://placehold.co/300x400/226644/FFFFFF/png?text=Desk+Ref+Diag',
+    affiliateLinks: {
+      com: 'https://www.amazon.com/dp/B0F2527YBH?tag=mykada-20',
+      in:  'https://www.amazon.com/dp/B0F2527YBH?tag=httpcodingonl-21',
+      ae:  'https://www.amazon.com/dp/B0F2527YBH?tag=medical0f1-21'
+    }
+  },
+  {
+    id: 'book-coders-desk-procedures-2026',
+    title: "Coders' Desk Reference for Procedures 2026 (Optum)",
+    description: 'Procedure guide with descriptions and coding support to supplement CPT®.',
+    imageUrl: 'https://placehold.co/300x400/446622/FFFFFF/png?text=Desk+Ref+Proc',
+    affiliateLinks: {
+      com: 'https://www.amazon.com/dp/B0F24Y5WVW?tag=mykada-20',
+      in:  'https://www.amazon.com/dp/B0F24Y5WVW?tag=httpcodingonl-21',
+      ae:  'https://www.amazon.com/dp/B0F24Y5WVW?tag=medical0f1-21'
+    }
+  },
+  {
+    id: 'book-step-by-step-buck',
+    title: "Buck's Step-by-Step Medical Coding",
+    description: 'Textbook + workbook for learning coding fundamentals with practice exercises.',
+    imageUrl: 'https://placehold.co/300x400/663333/FFFFFF/png?text=Step-by-Step',
+    affiliateLinks: {
+      com: 'https://www.amazon.com/dp/0323716849?tag=mykada-20',
+      in:  'https://www.amazon.com/dp/0323716849?tag=httpcodingonl-21',
+      ae:  'https://www.amazon.com/dp/0323716849?tag=medical0f1-21'
+    }
+  },
+  {
+    id: 'book-billing-coding-dummies',
+    title: 'Medical Billing & Coding For Dummies',
+    description: 'Beginner-friendly guide covering billing basics, coding fundamentals, claims and reimbursements.',
+    imageUrl: 'https://placehold.co/300x400/663300/FFFFFF/png?text=Billing+Dummies',
+    affiliateLinks: {
+      com: 'https://www.amazon.com/dp/B0BXMY1C8T?tag=mykada-20',
+      in:  'https://www.amazon.in/dp/B0BXMY1C8T?tag=httpcodingonl-21',
+      ae:  'https://www.amazon.com/dp/B0BXMY1C8T?tag=medical0f1-21'
+    }
+  },
+  {
+    id: 'book-icd10-expert-hospitals',
+    title: 'ICD-10-CM Expert for Hospitals 2026 (Optum)',
+    description: 'Hospital-focused Expert edition with DRG/MCE indicators and hospital-specific notes.',
+    imageUrl: 'https://placehold.co/300x400/444466/FFFFFF/png?text=ICD-10+Hosp',
+    affiliateLinks: {
+      com: 'https://www.amazon.com/dp/B0F22PYRZ2?tag=mykada-20',
+      in:  'https://www.amazon.com/dp/B0F22PYRZ2?tag=httpcodingonl-21',
+      ae:  'https://www.amazon.com/dp/B0F22PYRZ2?tag=medical0f1-21'
+    }
+  },
+  {
+    id: 'book-coders-desk-hcpcs',
+    title: "Coders' Desk Reference for HCPCS Level II 2026 (Optum)",
+    description: 'Desk reference for coding HCPCS Level II — descriptions plus coding tips.',
+    imageUrl: 'https://placehold.co/300x400/226688/FFFFFF/png?text=Desk+Ref+HCPCS',
+    affiliateLinks: {
+      com: 'https://www.amazon.com/dp/B0F22RXYS5?tag=mykada-20',
+      in:  'https://www.amazon.com/dp/B0F22RXYS5?tag=httpcodingonl-21',
+      ae:  'https://www.amazon.com/dp/B0F22RXYS5?tag=medical0f1-21'
+    }
+  },
+  {
+    id: 'book-coders-desk-proc-compact-2025',
+    title: 'Coders’ Desk Reference for Procedures (Compact) — 2025 (Optum)',
+    description: 'Compact desk reference for procedure coding — portable companion to the main guide.',
+    imageUrl: 'https://placehold.co/300x400/999933/FFFFFF/png?text=Desk+Ref+Compact',
+    affiliateLinks: {
+      com: 'https://www.amazon.com/dp/1622549139?tag=mykada-20',
+      in:  'https://www.amazon.in/dp/1622549139?tag=httpcodingonl-21',
+      ae:  'https://www.amazon.com/dp/1622549139?tag=medical0f1-21'
+    }
+  },
+  {
+    id: 'book-coders-desk-diag-compact-2025',
+    title: 'Coders’ Desk Reference for Diagnoses (Compact) — 2025 (Optum)',
+    description: 'Portable diagnoses reference with descriptions and coding tips.',
+    imageUrl: 'https://placehold.co/300x400/993333/FFFFFF/png?text=Desk+Ref+Diag+Compact',
+    affiliateLinks: {
+      com: 'https://www.amazon.com/dp/1622549104?tag=mykada-20',
+      in:  'https://www.amazon.in/dp/1622549104?tag=httpcodingonl-21',
+      ae:  'https://www.amazon.com/dp/1622549104?tag=medical0f1-21'
+    }
+  },
+  {
+    id: 'book-anatomy-workbook',
+    title: 'Workbook for Anatomy, Physiology, and Disease (Health Professionals)',
+    description: 'Workbook on anatomy, physiology & disease — useful anatomy reference for coding.',
+    imageUrl: 'https://placehold.co/300x400/226633/FFFFFF/png?text=Anatomy+Workbook',
+    affiliateLinks: {
+      com: 'https://www.amazon.com/dp/0131590065?tag=mykada-20',
+      in:  'https://www.amazon.com/dp/0131590065?tag=httpcodingonl-21',
+      ae:  'https://www.amazon.com/dp/0131590065?tag=medical0f1-21'
+    }
+  },
+  {
+    id: 'book-medical-terminology-short-course',
+    title: 'Medical Terminology: A Short Course',
+    description: 'Concise terminology textbook covering roots, prefixes, suffixes — building medical vocabulary for coding.',
+    imageUrl: 'https://placehold.co/300x400/336666/FFFFFF/png?text=Med+Term',
+    affiliateLinks: {
+      com: 'https://www.amazon.com/dp/1608312979?tag=mykada-20',
+      in:  'https://www.amazon.com/dp/1608312979?tag=httpcodingonl-21',
+      ae:  'https://www.amazon.com/dp/1608312979?tag=medical0f1-21'
+    }
+  },
+  {
+    id: 'book-cpc-practice-qbank',
+    title: 'CPC Exam Practice Questions / Qbank',
+    description: 'CPC practice questions and mock exams — ideal supplement for exam prep.',
+    imageUrl: 'https://placehold.co/300x400/666600/FFFFFF/png?text=CPC+Practice',
+    affiliateLinks: {
+      com: 'https://www.amazon.com/dp/B0CSX179B4?tag=mykada-20',
+      in:  'https://www.amazon.com/dp/B0CSX179B4?tag=httpcodingonl-21',
+      ae:  'https://www.amazon.com/dp/B0CSX179B4?tag=medical0f1-21'
+    }
+  },
+  {
+    id: 'book-medical-coding-primer',
+    title: 'Medical Coding Certification Exam Review',
+    description: 'Popular certification review and practice guide for CPC, CCS, or CCA prep.',
+    imageUrl: 'https://placehold.co/300x400/663366/FFFFFF/png?text=Exam+Review',
+    affiliateLinks: {
+      com: 'https://www.amazon.com/dp/197516583X?tag=mykada-20',
+      in:  'https://www.amazon.com/dp/197516583X?tag=httpcodingonl-21',
+      ae:  'https://www.amazon.com/dp/197516583X?tag=medical0f1-21'
+    }
+  },
+  {
+    id: 'book-health-insurance-billing',
+    title: 'Health Insurance & Medical Billing Guide for Coders',
+    description: 'Billing operations handbook — payer rules, claims, denials, appeals.',
+    imageUrl: 'https://placehold.co/300x400/336633/FFFFFF/png?text=Health+Billing',
+    affiliateLinks: {
+      com: 'https://www.amazon.com/dp/1975165848?tag=mykada-20',
+      in:  'https://www.amazon.com/dp/1975165848?tag=httpcodingonl-21',
+      ae:  'https://www.amazon.com/dp/1975165848?tag=medical0f1-21'
+    }
+  },
+  {
+    id: 'book-gray-anatomy-students',
+    title: "Gray's Anatomy for Students (Atlas)",
+    description: "Student-friendly anatomy atlas — deeper anatomy reference useful for coding context.",
+    imageUrl: 'https://placehold.co/300x400/333399/FFFFFF/png?text=Gray%27s+Anatomy',
+    affiliateLinks: {
+      com: 'https://www.amazon.com/dp/0702077050?tag=mykada-20',
+      in:  'https://www.amazon.in/dp/0702077050?tag=httpcodingonl-21',
+      ae:  'https://www.amazon.com/dp/0702077050?tag=medical0f1-21'
+    }
+  }
 ];
 
 
