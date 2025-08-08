@@ -3,7 +3,7 @@ import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 
-import { AuthProvider, useAuth } from './context/AuthContext.tsx';
+import { useAuth } from './context/AuthContext.tsx';
 
 import Login from './components/Login.tsx';
 import Dashboard from './components/Dashboard.tsx';
@@ -68,12 +68,10 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-        <HashRouter>
-            <AppContent />
-            <Toaster position="top-right" reverseOrder={false} />
-        </HashRouter>
-    </AuthProvider>
+    <HashRouter>
+        <AppContent />
+        <Toaster position="top-right" reverseOrder={false} />
+    </HashRouter>
   );
 };
 
