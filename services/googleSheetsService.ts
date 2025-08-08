@@ -1,5 +1,6 @@
 
 
+
 import type { Question, UserAnswer, TestResult, CertificateData, Organization, Exam, ExamProductCategory, User, RecommendedBook, CertificateTemplate } from '../types';
 import { logoBase64 } from '../assets/logo';
 
@@ -15,7 +16,6 @@ const MOCK_QUESTIONS: Question[] = [
 ];
 
 const MOCK_BOOKS: RecommendedBook[] = [
-    const books = [
     {
         id: 'book-cpc-guide',
         title: 'Official CPC® Certification Study Guide (AAPC)',
@@ -26,8 +26,7 @@ const MOCK_BOOKS: RecommendedBook[] = [
             com: 'https://www.amazon.com/dp/1635278910?tag=mykada-20',   // verified ISBN-10 / Amazon listing. :contentReference[oaicite:2]{index=2}
             in:  'https://www.amazon.in/dp/1635278910?tag=httpcodingonl-21',
             ae:  'https://www.amazon.ae/dp/1635278910?tag=medical0f1-21'
-        },
-        note: 'Verified AAPC official study guide (2024 paperback ISBN/ASIN 1635278910). There is also a 2025 listing (marketplace ASIN B0DZHYW2YL).'
+        }
     },
     {
         id: 'book-icd10-cm',
@@ -38,8 +37,7 @@ const MOCK_BOOKS: RecommendedBook[] = [
             com: 'https://www.amazon.com/dp/0443380783?tag=mykada-20',  // ASIN 0443380783 verified. :contentReference[oaicite:3]{index=3}
             in:  'https://www.amazon.in/dp/0443380783?tag=httpcodingonl-21',
             ae:  'https://www.amazon.ae/dp/0443380783?tag=medical0f1-21'
-        },
-        note: 'ASIN/ISBN-10 0443380783 verified for Buck\'s 2026 listing on Amazon/Elsevier. :contentReference[oaicite:4]{index=4}'
+        }
     },
     {
         id: 'book-medical-billing',
@@ -51,8 +49,7 @@ const MOCK_BOOKS: RecommendedBook[] = [
             com: 'https://www.amazon.com/dp/1950393013?tag=mykada-20', // NOTE: original ASIN 1950393005 not verifiable; this is closest-match ASIN (example).
             in:  'https://www.amazon.in/dp/1950393013?tag=httpcodingonl-21',
             ae:  'https://www.amazon.ae/dp/1950393013?tag=medical0f1-21'
-        },
-        note: 'Original ASIN 1950393005 could not be verified. Provided ASIN 1950393013 is a closest-match replacement (please confirm which edition/exact title you want and I will re-verify).'
+        }
     },
     {
         id: 'book-anatomy',
@@ -64,8 +61,7 @@ const MOCK_BOOKS: RecommendedBook[] = [
             com: 'https://www.amazon.com/dp/1455770038?tag=mykada-20', // placeholder closest-match ASIN — replace with your preferred edition for final accuracy
             in:  'https://www.amazon.in/dp/1455770038?tag=httpcodingonl-21',
             ae:  'https://www.amazon.ae/dp/1455770038?tag=medical0f1-21'
-        },
-        note: 'Original ASIN 1455770020 was not found in public listings. I used a closest-match ASIN (1455770038) as a placeholder — I can re-verify or swap in another edition if you prefer.'
+        }
     }
 ];
 
