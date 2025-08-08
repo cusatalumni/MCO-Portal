@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAppContext } from '../context/AppContext';
 import Spinner from './Spinner';
@@ -66,7 +67,7 @@ const BookStore: React.FC = () => {
                     Enhance your learning with our curated list of essential books for medical coding professionals. Each book has been selected to help you succeed in your exams and career.
                 </p>
                 <p className="text-xs text-slate-400 mt-4">
-                    As an Amazon Associate, we earn from qualifying purchases.
+                    As an Amazon Associate, we earn from qualifying purchases. This does not add any extra cost for you.
                 </p>
             </div>
 

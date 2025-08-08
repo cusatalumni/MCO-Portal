@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { googleSheetsService } from '../services/googleSheetsService';
 import type { TestResult, Exam, RecommendedBook } from '../types';
@@ -10,8 +10,8 @@ import Spinner from './Spinner';
 import { Check, X, FileDown, BookUp, ShieldCheck } from 'lucide-react';
 
 const Results: React.FC = () => {
-    const { testId } = useParams<{ testId: string }>();
-    const navigate = useNavigate();
+    const { testId } = ReactRouterDOM.useParams<{ testId: string }>();
+    const navigate = ReactRouterDOM.useNavigate();
     const { user } = useAuth();
     const { activeOrg } = useAppContext();
     
@@ -163,7 +163,7 @@ const Results: React.FC = () => {
                                         <span>Buy on {domainName}</span>
                                     </a>
                                     <p className="text-xs text-slate-500 mt-2 max-w-md">
-                                        As an Amazon Associate, we earn from qualifying purchases. This is a geo-targeted affiliate link.
+                                        As an Amazon Associate, we earn from qualifying purchases. This does not add any extra cost to you.
                                     </p>
                                 </div>
                             </div>

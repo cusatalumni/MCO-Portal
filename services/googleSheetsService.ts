@@ -1,7 +1,42 @@
 
 
+import { GoogleGenAI, Type } from "@google/genai";
 import type { Question, UserAnswer, TestResult, CertificateData, Organization, Exam, ExamProductCategory, User, RecommendedBook, CertificateTemplate } from '../types';
 import { logoBase64 } from '../assets/logo';
+
+// --- Gemini AI Initialization ---
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const questionSchema = {
+  type: Type.OBJECT,
+  properties: {
+    questions: {
+      type: Type.ARRAY,
+      description: 'A list of generated questions.',
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          question: {
+            type: Type.STRING,
+            description: 'The question text.',
+          },
+          options: {
+            type: Type.ARRAY,
+            description: 'An array of 4 possible answers.',
+            items: {
+              type: Type.STRING
+            }
+          },
+          correctAnswer: {
+            type: Type.INTEGER,
+            description: 'The 1-based index (1-4) of the correct answer in the options array.',
+          },
+        },
+        required: ['question', 'options', 'correctAnswer']
+      }
+    }
+  }
+};
+
 
 // Hardcode a small set of questions to avoid external fetch during build/init
 const MOCK_QUESTIONS: Question[] = [
@@ -393,7 +428,10 @@ const ALL_EXAMS: Exam[] = [
     // MTA
     { id: 'exam-mta-practice', name: 'Medical Terminology & Anatomy Practice', description: '', price: 0, questionSourceUrl: '', numberOfQuestions: 10, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: true, durationMinutes: 15 },
     { id: 'exam-mta-cert', name: 'Medical Terminology & Anatomy Certification', productSlug: 'medical-terminology-anatomy-certification', description: 'A foundational test series covering core medical terminology and anatomy. Essential for all aspiring medical coders. Includes 100 questions.', price: 80, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-mta', isPractice: false, durationMinutes: 150 },
-];
+].map(exam => ({
+    ...exam,
+    numberOfQuestions: exam.isPractice ? 10 : 100,
+}));
 
 
 let mockDb: {
@@ -493,15 +531,57 @@ export const googleSheetsService = {
     },
     
     getQuestions: async (examConfig: Exam): Promise<Question[]> => {
-        // This is a simplified service that uses mock data for all exams.
-        // In a real application, this might fetch from examConfig.questionSourceUrl.
-        if (MOCK_QUESTIONS.length === 0) {
-             throw new Error(`No questions found for: ${examConfig.name}`);
+        const fallbackQuestions = () => {
+            const shuffled = [...MOCK_QUESTIONS].sort(() => 0.5 - Math.random());
+            return shuffled.slice(0, Math.min(examConfig.numberOfQuestions, shuffled.length));
+        };
+
+        const numFromMock = Math.min(5, MOCK_QUESTIONS.length);
+        const baseQuestions = [...MOCK_QUESTIONS].sort(() => 0.5 - Math.random()).slice(0, numFromMock);
+        const questionsToGenerate = examConfig.numberOfQuestions - numFromMock;
+
+        if (questionsToGenerate <= 0) {
+            return baseQuestions.slice(0, examConfig.numberOfQuestions);
         }
 
-        // Shuffle the array and take the required number of questions.
-        const shuffled = [...MOCK_QUESTIONS].sort(() => 0.5 - Math.random());
-        return shuffled.slice(0, Math.min(examConfig.numberOfQuestions, shuffled.length));
+        try {
+            const prompt = `Generate ${questionsToGenerate} unique multiple-choice questions for a medical coding exam on the topic of '${examConfig.name}'. For each question, provide: a "question" text, an array of 4 string "options", and the "correctAnswer" as an integer from 1 to 4 indicating the correct option. Ensure the JSON is valid.`;
+            
+            const response = await ai.models.generateContent({
+                model: "gemini-2.5-flash",
+                contents: prompt,
+                config: {
+                    responseMimeType: "application/json",
+                    responseSchema: questionSchema,
+                },
+            });
+            
+            const aiResponse = JSON.parse(response.text);
+            const newQuestions = aiResponse.questions || [];
+
+            if (!Array.isArray(newQuestions) || newQuestions.length === 0) {
+                console.error("AI response is not in the expected format or is empty.");
+                return fallbackQuestions();
+            }
+            
+            let nextId = Math.max(0, ...MOCK_QUESTIONS.map(q => q.id)) + 1;
+            const processedAiQuestions: Question[] = newQuestions.map((q: any) => ({
+                id: nextId++,
+                question: q.question,
+                options: q.options,
+                correctAnswer: q.correctAnswer,
+            })).filter(q => q.question && q.options && q.options.length === 4 && q.correctAnswer >= 1 && q.correctAnswer <= 4);
+
+            // Add newly generated questions to the mock database for future use
+            MOCK_QUESTIONS.push(...processedAiQuestions);
+
+            const combined = [...baseQuestions, ...processedAiQuestions];
+            return combined.sort(() => 0.5 - Math.random()).slice(0, examConfig.numberOfQuestions);
+
+        } catch (error) {
+            console.error("Error generating questions with AI, using fallback:", error);
+            return fallbackQuestions();
+        }
     },
 
     submitTest: async (user: User, orgId: string, examId: string, answers: UserAnswer[], questions: Question[], token: string | null): Promise<TestResult> => {

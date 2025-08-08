@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAppContext } from '../context/AppContext';
 import { BookOpen, ShoppingCart } from 'lucide-react';
@@ -84,7 +85,7 @@ const SuggestedBooksSidebar: React.FC = () => {
                 })}
             </div>
              <p className="text-xs text-slate-400 mt-4 text-center">
-                As an Amazon Associate, we earn from qualifying purchases.
+                As an Amazon Associate, we earn from qualifying purchases. This does not add any extra cost to you.
             </p>
         </div>
     );

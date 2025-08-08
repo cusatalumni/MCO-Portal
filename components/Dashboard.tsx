@@ -1,32 +1,28 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.tsx';
 import { googleSheetsService } from '../services/googleSheetsService';
 import type { TestResult } from '../types';
 import Spinner from './Spinner';
-import { BookCopy, History, FlaskConical, Eye, FileText, BarChart, BadgePercent, Trophy, ArrowRight, Home, RefreshCw, Star, Zap, CheckCircle, Lock, Edit, Save, X } from 'lucide-react';
+import { BookCopy, History, FlaskConical, Eye, FileText, BarChart, BadgePercent, Trophy, ArrowRight, Home, RefreshCw, Star, Zap, CheckCircle, Lock } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import toast from 'react-hot-toast';
 import SuggestedBooksSidebar from './SuggestedBooksSidebar';
 
 const Dashboard: React.FC = () => {
-    const navigate = useNavigate();
-    const { user, paidExamIds, isSubscribed, updateUserName, token } = useAuth();
+    const navigate = ReactRouterDOM.useNavigate();
+    const { user, paidExamIds, isSubscribed } = useAuth();
     const { activeOrg } = useAppContext();
     const [results, setResults] = useState<TestResult[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [stats, setStats] = useState({ avgScore: 0, bestScore: 0, examsTaken: 0 });
     const [practiceStats, setPracticeStats] = useState({ attemptsTaken: 0, attemptsAllowed: 0 });
-    const [isEditingName, setIsEditingName] = useState(false);
-    const [isSavingName, setIsSavingName] = useState(false);
-    const [name, setName] = useState(user?.name || '');
-
+   
     const loginUrl = 'https://www.coding-online.net/exam-login/';
     const appDashboardPath = '/dashboard';
     const syncUrl = `${loginUrl}?redirect_to=${encodeURIComponent(appDashboardPath)}`;
     const browseExamsUrl = 'https://www.coding-online.net/exam-programs';
-    const updateNameEndpoint = 'https://www.coding-online.net/wp-json/exam-app/v1/update-name';
-
 
     useEffect(() => {
         if (!user || !activeOrg) return;
@@ -62,47 +58,6 @@ const Dashboard: React.FC = () => {
         };
         fetchResults();
     }, [user, activeOrg]);
-
-    const handleNameSave = async () => {
-        if (!name.trim()) {
-            toast.error("Name cannot be empty.");
-            return;
-        }
-        if (!token) {
-            toast.error("Authentication error. Please re-login.");
-            return;
-        }
-
-        setIsSavingName(true);
-        const toastId = toast.loading('Syncing name with your profile...');
-
-        try {
-            const response = await fetch(updateNameEndpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ fullName: name.trim() })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Failed to update name.');
-            }
-
-            updateUserName(name.trim());
-            setIsEditingName(false);
-            toast.success("Full name updated successfully.", { id: toastId });
-
-        } catch (error: any) {
-            console.error("Error updating name:", error);
-            toast.error(error.message || "An error occurred.", { id: toastId });
-        } finally {
-            setIsSavingName(false);
-        }
-    };
-
 
     const processedPurchasedExams = useMemo(() => {
         if (!activeOrg) return [];
@@ -142,39 +97,11 @@ const Dashboard: React.FC = () => {
 
     return (
         <div>
-            <div className="flex justify-between items-start mb-6 flex-wrap gap-4">
-                 <h1 className="text-3xl font-bold text-slate-800">Dashboard</h1>
-                <div className="flex items-center gap-4 bg-slate-100 p-2 rounded-lg">
-                    {isEditingName ? (
-                        <div className="flex items-center gap-2">
-                            <input 
-                                type="text" 
-                                value={name} 
-                                onChange={(e) => setName(e.target.value)}
-                                className="border border-slate-300 rounded-md px-2 py-1 text-sm"
-                                placeholder="Enter your full name"
-                                disabled={isSavingName}
-                            />
-                            <button onClick={handleNameSave} className="p-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:bg-slate-400" aria-label="Save name" disabled={isSavingName}>
-                                {isSavingName ? <Spinner /> : <Save size={16} />}
-                            </button>
-                            <button onClick={() => { setIsEditingName(false); setName(user?.name || ''); }} className="p-2 bg-slate-400 text-white rounded-md hover:bg-slate-500" aria-label="Cancel edit" disabled={isSavingName}><X size={16} /></button>
-                        </div>
-                    ) : (
-                         <div className="flex items-center gap-2">
-                            <span className="text-slate-600 text-sm sm:text-base">Welcome back, <strong>{user?.name}!</strong></span>
-                            <button onClick={() => setIsEditingName(true)} className="p-1 text-slate-500 hover:text-slate-800" title="Edit your name for the certificate" aria-label="Edit name"><Edit size={16} /></button>
-                        </div>
-                    )}
-                </div>
+            <div className="mb-6">
+                 <h1 className="text-3xl font-bold text-slate-800">Welcome back, {user?.name}!</h1>
+                 <p className="text-lg text-slate-500 mt-1">Here's an overview of your exam progress and history.</p>
             </div>
-            {!user?.name.includes(' ') && (
-                <div className="mb-8 p-3 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg text-sm text-center">
-                    Please ensure your full name is set correctly for your certificate. Click the edit icon above if needed.
-                </div>
-            )}
-
-
+            
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Main Content */}
                 <div className="lg:col-span-2 space-y-8">
