@@ -1,6 +1,5 @@
-
 import React, { useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { LogIn, UserPlus } from 'lucide-react';
@@ -32,7 +31,7 @@ const LandingPage: React.FC = () => {
         <div className="text-center py-20">
             <h1 className="text-5xl font-extrabold text-slate-900 mb-4">Welcome to the Examination Portal</h1>
             <p className="text-xl text-slate-600 max-w-2xl mx-auto mb-8">
-                This application is integrated with our main WordPress site. Please log in or register to access your exams.
+                Your central hub for medical coding examinations. Please log in or register to access your dashboard and start your tests.
             </p>
             <div className="flex justify-center items-center gap-4">
                 <a
@@ -50,9 +49,6 @@ const LandingPage: React.FC = () => {
                     Login
                 </a>
             </div>
-             <p className="mt-8 text-slate-500">
-                Need help with setup? Check out the <Link to="/integration" className="text-cyan-600 hover:underline">WordPress Integration</Link> instructions.
-            </p>
         </div>
     );
 };

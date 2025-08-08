@@ -1,13 +1,14 @@
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
-import { LogOut, UserCircle, UserPlus, LogIn, User, Shield } from 'lucide-react';
+import { LogOut, UserCircle, UserPlus, LogIn, User, Shield, BookMarked, LayoutDashboard } from 'lucide-react';
 
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
   const { activeOrg } = useAppContext();
+  const location = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -54,12 +55,34 @@ const Header: React.FC = () => {
         )}
        
         <div className="flex items-center space-x-4">
+           <Link 
+                to="/bookstore"
+                className="flex items-center space-x-2 text-slate-600 hover:text-cyan-600 transition duration-200"
+                title="Recommended Books"
+            >
+                <BookMarked size={20} />
+                <span className="hidden sm:inline font-semibold">Book Store</span>
+            </Link>
           {user ? (
             <>
-              <div className="flex items-center space-x-2 text-slate-600">
-                <UserCircle size={20} />
-                <span className="hidden sm:inline">Welcome, {user.name}{user.isAdmin && ' (Admin)'}</span>
-              </div>
+              {location.pathname !== '/dashboard' && (
+                <Link
+                  to="/dashboard"
+                  className="flex items-center space-x-2 text-slate-600 hover:text-cyan-600 transition duration-200"
+                  title="Go to Dashboard"
+                >
+                  <LayoutDashboard size={20} />
+                  <span className="hidden sm:inline font-semibold">Dashboard</span>
+                </Link>
+              )}
+               <Link
+                  to="/profile"
+                  className="flex items-center space-x-2 text-slate-600 hover:text-cyan-600 transition duration-200"
+                  title="My Profile"
+                >
+                  <UserCircle size={20} />
+                  <span className="hidden sm:inline font-semibold">Profile</span>
+                </Link>
                {user.isAdmin && (
                   <Link
                     to="/admin"
