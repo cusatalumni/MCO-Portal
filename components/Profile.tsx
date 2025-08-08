@@ -1,12 +1,12 @@
 
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext.tsx';
-import { useAppContext } from '../context/AppContext.tsx';
+import { useAuth } from '../context/AuthContext';
+import { useAppContext } from '../context/AppContext';
 import { User, Mail, Edit, Save, X, RefreshCw, CreditCard, CheckCircle, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
-import Spinner from './Spinner.tsx';
-import type { TestResult } from '../types.ts';
+import Spinner from './Spinner';
+import type { TestResult } from '../types';
 
 const Profile: React.FC = () => {
     const { user, token, updateUserName, paidExamIds } = useAuth();
