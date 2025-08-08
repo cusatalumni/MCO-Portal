@@ -1,6 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useAppContext } from '../context/AppContext.tsx';
 import { User, Mail, Edit, Save, X, RefreshCw, CreditCard, CheckCircle, FileText } from 'lucide-react';
@@ -124,9 +124,9 @@ const Profile: React.FC = () => {
                                 <div key={exam.id} className="bg-slate-50 p-4 rounded-lg border border-slate-200 flex justify-between items-center">
                                     <p className="font-semibold text-slate-700">{exam.name}</p>
                                     {exam.hasPassed ? (
-                                        <Link to={`/certificate/${exam.latestResultId}`} className="flex items-center gap-1 text-sm font-semibold text-green-600 bg-green-100 px-3 py-1 rounded-full hover:bg-green-200">
+                                        <ReactRouterDOM.Link to={`/certificate/${exam.latestResultId}`} className="flex items-center gap-1 text-sm font-semibold text-green-600 bg-green-100 px-3 py-1 rounded-full hover:bg-green-200">
                                             <FileText size={14} /> View Certificate
-                                        </Link>
+                                        </ReactRouterDOM.Link>
                                     ) : (
                                         <span className="flex items-center gap-1 text-sm font-semibold text-blue-600 bg-blue-100 px-3 py-1 rounded-full">
                                             <CheckCircle size={14} /> Ready To Take

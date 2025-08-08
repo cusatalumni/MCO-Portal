@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { googleSheetsService } from '../services/googleSheetsService';
 import type { Question, UserAnswer, Exam } from '../types';
@@ -16,8 +16,8 @@ const formatTime = (seconds: number) => {
 };
 
 const Test: React.FC = () => {
-  const { examId } = useParams<{ examId: string }>();
-  const navigate = useNavigate();
+  const { examId } = ReactRouterDOM.useParams<{ examId: string }>();
+  const navigate = ReactRouterDOM.useNavigate();
   const { user, useFreeAttempt, isSubscribed, token } = useAuth();
   const { activeOrg, isInitializing } = useAppContext();
 

@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import * as ReactRouterDOM from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
 import { LogOut, UserCircle, UserPlus, LogIn, User, Shield, BookMarked, LayoutDashboard } from 'lucide-react';
@@ -8,7 +8,7 @@ import { LogOut, UserCircle, UserPlus, LogIn, User, Shield, BookMarked, LayoutDa
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
   const { activeOrg } = useAppContext();
-  const location = useLocation();
+  const location = ReactRouterDOM.useLocation();
 
   const handleLogout = () => {
     logout();
@@ -29,7 +29,7 @@ const Header: React.FC = () => {
     <header className="bg-white shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         {activeOrg ? (
-            <Link to={headerLink} className="flex items-center space-x-3">
+            <ReactRouterDOM.Link to={headerLink} className="flex items-center space-x-3">
                  <img
                     src={activeOrg.logo}
                     alt={`${activeOrg.name} Logo`}
@@ -43,7 +43,7 @@ const Header: React.FC = () => {
                         {activeOrg.website}
                     </span>
                 </div>
-            </Link>
+            </ReactRouterDOM.Link>
         ) : (
              <div className="flex items-center space-x-3">
                  <div className="h-14 w-14 bg-slate-200 rounded-full animate-pulse"></div>
@@ -55,43 +55,43 @@ const Header: React.FC = () => {
         )}
        
         <div className="flex items-center space-x-4">
-           <Link 
+           <ReactRouterDOM.Link 
                 to="/bookstore"
                 className="flex items-center space-x-2 text-slate-600 hover:text-cyan-600 transition duration-200"
                 title="Recommended Books"
             >
                 <BookMarked size={20} />
                 <span className="hidden sm:inline font-semibold">Book Store</span>
-            </Link>
+            </ReactRouterDOM.Link>
           {user ? (
             <>
               {location.pathname !== '/dashboard' && (
-                <Link
+                <ReactRouterDOM.Link
                   to="/dashboard"
                   className="flex items-center space-x-2 text-slate-600 hover:text-cyan-600 transition duration-200"
                   title="Go to Dashboard"
                 >
                   <LayoutDashboard size={20} />
                   <span className="hidden sm:inline font-semibold">Dashboard</span>
-                </Link>
+                </ReactRouterDOM.Link>
               )}
-               <Link
+               <ReactRouterDOM.Link
                   to="/profile"
                   className="flex items-center space-x-2 text-slate-600 hover:text-cyan-600 transition duration-200"
                   title="My Profile"
                 >
                   <UserCircle size={20} />
                   <span className="hidden sm:inline font-semibold">Profile</span>
-                </Link>
+                </ReactRouterDOM.Link>
                {user.isAdmin && (
-                  <Link
+                  <ReactRouterDOM.Link
                     to="/admin"
                     className="flex items-center space-x-2 bg-slate-700 hover:bg-slate-800 text-white font-semibold py-2 px-4 rounded-lg transition duration-200"
                     title="Go to the Admin Panel"
                   >
                     <Shield size={16} />
                     <span className="hidden sm:inline">Admin</span>
-                  </Link>
+                  </ReactRouterDOM.Link>
                )}
                <a
                 href={myAccountUrl}
