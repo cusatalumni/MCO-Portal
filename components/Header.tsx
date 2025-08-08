@@ -1,9 +1,10 @@
 
+
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
-import { LogOut, UserCircle, UserPlus, LogIn, User, Shield } from 'lucide-react';
+import { LogOut, UserCircle, UserPlus, LogIn, User, Shield, BookMarked } from 'lucide-react';
 
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
@@ -54,6 +55,14 @@ const Header: React.FC = () => {
         )}
        
         <div className="flex items-center space-x-4">
+           <Link 
+                to="/bookstore"
+                className="flex items-center space-x-2 text-slate-600 hover:text-cyan-600 transition duration-200"
+                title="Recommended Books"
+            >
+                <BookMarked size={20} />
+                <span className="hidden sm:inline font-semibold">Book Store</span>
+            </Link>
           {user ? (
             <>
               <div className="flex items-center space-x-2 text-slate-600">

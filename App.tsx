@@ -17,6 +17,7 @@ import LandingPage from './components/LandingPage.tsx';
 import Instructions from './components/Instructions.tsx';
 import Integration from './components/Integration.tsx';
 import Admin from './components/Admin.tsx';
+import BookStore from './components/BookStore.tsx';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -45,6 +46,7 @@ const AppContent: React.FC = () => {
                         <Route path="/auth" element={<Login />} />
                         <Route path="/instructions" element={<Instructions />} />
                         <Route path="/integration" element={<Integration />} />
+                        <Route path="/bookstore" element={<BookStore />} />
                         
                         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                         <Route path="/test/:examId" element={<ProtectedRoute><Test /></ProtectedRoute>} />
