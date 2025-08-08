@@ -1,29 +1,32 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext.tsx';
 import { googleSheetsService } from '../services/googleSheetsService';
 import type { TestResult } from '../types';
 import Spinner from './Spinner';
-import { BookCopy, History, FlaskConical, Eye, FileText, BarChart, BadgePercent, Trophy, ArrowRight, Home, RefreshCw, Star, Zap, CheckCircle, Lock, Edit, Save } from 'lucide-react';
+import { BookCopy, History, FlaskConical, Eye, FileText, BarChart, BadgePercent, Trophy, ArrowRight, Home, RefreshCw, Star, Zap, CheckCircle, Lock, Edit, Save, X } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import toast from 'react-hot-toast';
 import SuggestedBooksSidebar from './SuggestedBooksSidebar';
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
-    const { user, paidExamIds, isSubscribed, updateUserName } = useAuth();
+    const { user, paidExamIds, isSubscribed, updateUserName, token } = useAuth();
     const { activeOrg } = useAppContext();
     const [results, setResults] = useState<TestResult[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [stats, setStats] = useState({ avgScore: 0, bestScore: 0, examsTaken: 0 });
     const [practiceStats, setPracticeStats] = useState({ attemptsTaken: 0, attemptsAllowed: 0 });
     const [isEditingName, setIsEditingName] = useState(false);
+    const [isSavingName, setIsSavingName] = useState(false);
     const [name, setName] = useState(user?.name || '');
 
     const loginUrl = 'https://www.coding-online.net/exam-login/';
     const appDashboardPath = '/dashboard';
     const syncUrl = `${loginUrl}?redirect_to=${encodeURIComponent(appDashboardPath)}`;
     const browseExamsUrl = 'https://www.coding-online.net/exam-programs';
+    const updateNameEndpoint = 'https://www.coding-online.net/wp-json/exam-app/v1/update-name';
+
 
     useEffect(() => {
         if (!user || !activeOrg) return;
@@ -60,15 +63,46 @@ const Dashboard: React.FC = () => {
         fetchResults();
     }, [user, activeOrg]);
 
-    const handleNameSave = () => {
-        if (name.trim()) {
+    const handleNameSave = async () => {
+        if (!name.trim()) {
+            toast.error("Name cannot be empty.");
+            return;
+        }
+        if (!token) {
+            toast.error("Authentication error. Please re-login.");
+            return;
+        }
+
+        setIsSavingName(true);
+        const toastId = toast.loading('Syncing name with your profile...');
+
+        try {
+            const response = await fetch(updateNameEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ fullName: name.trim() })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to update name.');
+            }
+
             updateUserName(name.trim());
             setIsEditingName(false);
-            toast.success("Full name updated for your certificate.");
-        } else {
-            toast.error("Name cannot be empty.");
+            toast.success("Full name updated successfully.", { id: toastId });
+
+        } catch (error: any) {
+            console.error("Error updating name:", error);
+            toast.error(error.message || "An error occurred.", { id: toastId });
+        } finally {
+            setIsSavingName(false);
         }
     };
+
 
     const processedPurchasedExams = useMemo(() => {
         if (!activeOrg) return [];
@@ -119,9 +153,12 @@ const Dashboard: React.FC = () => {
                                 onChange={(e) => setName(e.target.value)}
                                 className="border border-slate-300 rounded-md px-2 py-1 text-sm"
                                 placeholder="Enter your full name"
+                                disabled={isSavingName}
                             />
-                            <button onClick={handleNameSave} className="p-2 bg-green-500 text-white rounded-md hover:bg-green-600" aria-label="Save name"><Save size={16} /></button>
-                            <button onClick={() => { setIsEditingName(false); setName(user?.name || ''); }} className="p-2 bg-slate-400 text-white rounded-md hover:bg-slate-500" aria-label="Cancel edit">X</button>
+                            <button onClick={handleNameSave} className="p-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:bg-slate-400" aria-label="Save name" disabled={isSavingName}>
+                                {isSavingName ? <Spinner /> : <Save size={16} />}
+                            </button>
+                            <button onClick={() => { setIsEditingName(false); setName(user?.name || ''); }} className="p-2 bg-slate-400 text-white rounded-md hover:bg-slate-500" aria-label="Cancel edit" disabled={isSavingName}><X size={16} /></button>
                         </div>
                     ) : (
                          <div className="flex items-center gap-2">

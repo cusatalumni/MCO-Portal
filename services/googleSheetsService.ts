@@ -74,10 +74,73 @@ const CERTIFICATE_TEMPLATES: CertificateTemplate[] = [
         signature2Name: 'B. Manoj',
         signature2Title: 'Chief Instructor'
     },
-     {
+    {
         id: 'cert-billing',
         title: 'Medical Billing Specialist',
         body: 'For successfully completing the Medical Billing Specialist certification program and examination with a score of {finalScore}%. This demonstrates mastery of the healthcare revenue cycle, including claims submission, payment processing, and compliance.',
+        signature1Name: 'Dr. Amelia Reed',
+        signature1Title: 'Program Director',
+        signature2Name: 'B. Manoj',
+        signature2Title: 'Chief Instructor'
+    },
+    {
+        id: 'cert-ccs',
+        title: 'Certified Coding Specialist (CCS)',
+        body: 'For successfully passing the Certified Coding Specialist (CCS) examination with a score of {finalScore}%. This achievement certifies expertise in classifying medical data from patient records, generally in an inpatient hospital setting.',
+        signature1Name: 'Dr. Amelia Reed',
+        signature1Title: 'Program Director',
+        signature2Name: 'B. Manoj',
+        signature2Title: 'Chief Instructor'
+    },
+    {
+        id: 'cert-crc',
+        title: 'Certified Risk Adjustment Coder (CRC)',
+        body: 'For achieving a passing score of {finalScore}% on the Certified Risk Adjustment Coder (CRC) examination. This certifies proficiency in risk adjustment models and hierarchical condition category (HCC) coding.',
+        signature1Name: 'Dr. Amelia Reed',
+        signature1Title: 'Program Director',
+        signature2Name: 'B. Manoj',
+        signature2Title: 'Chief Instructor'
+    },
+    {
+        id: 'cert-icd',
+        title: 'ICD-10-CM Proficiency',
+        body: 'For demonstrating advanced proficiency in the International Classification of Diseases, 10th Revision, Clinical Modification (ICD-10-CM) by passing the certification exam with a score of {finalScore}%.',
+        signature1Name: 'Dr. Amelia Reed',
+        signature1Title: 'Program Director',
+        signature2Name: 'B. Manoj',
+        signature2Title: 'Chief Instructor'
+    },
+    {
+        id: 'cert-cpma',
+        title: 'Certified Professional Medical Auditor (CPMA)',
+        body: 'For successfully passing the Certified Professional Medical Auditor (CPMA) examination with a score of {finalScore}%. This certificate recognizes expertise in medical documentation, fraud, abuse, and risk analysis.',
+        signature1Name: 'Dr. Amelia Reed',
+        signature1Title: 'Program Director',
+        signature2Name: 'B. Manoj',
+        signature2Title: 'Chief Instructor'
+    },
+    {
+        id: 'cert-coc',
+        title: 'Certified Outpatient Coder (COC)',
+        body: 'For successfully passing the Certified Outpatient Coder (COC) examination with a score of {finalScore}%. This certifies proficiency in coding for outpatient hospital and ambulatory surgery center settings.',
+        signature1Name: 'Dr. Amelia Reed',
+        signature1Title: 'Program Director',
+        signature2Name: 'B. Manoj',
+        signature2Title: 'Chief Instructor'
+    },
+    {
+        id: 'cert-cic',
+        title: 'Certified Inpatient Coder (CIC)',
+        body: 'For demonstrating mastery of inpatient hospital facility coding by passing the Certified Inpatient Coder (CIC) examination with a score of {finalScore}%.',
+        signature1Name: 'Dr. Amelia Reed',
+        signature1Title: 'Program Director',
+        signature2Name: 'B. Manoj',
+        signature2Title: 'Chief Instructor'
+    },
+    {
+        id: 'cert-mta',
+        title: 'Medical Terminology & Anatomy Proficiency',
+        body: 'For successfully completing the foundational Medical Terminology and Anatomy certification exam with a score of {finalScore}%, demonstrating essential knowledge for a career in medical coding.',
         signature1Name: 'Dr. Amelia Reed',
         signature1Title: 'Program Director',
         signature2Name: 'B. Manoj',
@@ -109,34 +172,34 @@ const ALL_EXAMS: Exam[] = [
     { id: 'exam-cca-cert', name: 'CCA Certification Exam', productSlug: 'cca-certification-exam', description: 'A test series aligned with AHIMA’s CCA (Certified Coding Associate) exam blueprint. Includes 100 questions to test your readiness.', price: 120, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-cca', isPractice: false, durationMinutes: 150 },
     // CCS
     { id: 'exam-ccs-practice', name: 'CCS Practice Test', description: '', price: 0, questionSourceUrl: '', numberOfQuestions: 10, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: true, durationMinutes: 15 },
-    { id: 'exam-ccs-cert', name: 'CCS Certification Exam', productSlug: 'ccs-certification-exam', description: 'A comprehensive test series for the AHIMA CCS (Certified Coding Specialist) credential, focusing on inpatient coding scenarios with 100 questions.', price: 180, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: false, durationMinutes: 150 },
+    { id: 'exam-ccs-cert', name: 'CCS Certification Exam', productSlug: 'ccs-certification-exam', description: 'A comprehensive test series for the AHIMA CCS (Certified Coding Specialist) credential, focusing on inpatient coding scenarios with 100 questions.', price: 180, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-ccs', isPractice: false, durationMinutes: 150 },
     // Billing
     { id: 'exam-billing-practice', name: 'Medical Billing Practice', description: '', price: 0, questionSourceUrl: '', numberOfQuestions: 10, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: true, durationMinutes: 15 },
     { id: 'exam-billing-cert', name: 'Medical Billing', productSlug: 'medical-billing-certification', description: 'A test series covering core concepts in medical billing and reimbursement.', price: 90, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-billing', isPractice: false, durationMinutes: 150 },
     // Risk
     { id: 'exam-risk-practice', name: 'Risk Adjustment Practice', description: '', price: 0, questionSourceUrl: '', numberOfQuestions: 10, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: true, durationMinutes: 15 },
-    { id: 'exam-risk-cert', name: 'Risk Adjustment Coding', productSlug: 'risk-adjustment-coding-certification', description: 'A test series on risk adjustment models and hierarchical condition categories (HCC).', price: 110, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: false, durationMinutes: 150 },
+    { id: 'exam-risk-cert', name: 'Risk Adjustment Coding', productSlug: 'risk-adjustment-coding-certification', description: 'A test series on risk adjustment models and hierarchical condition categories (HCC).', price: 110, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-crc', isPractice: false, durationMinutes: 150 },
      // ICD
     { id: 'exam-icd-practice', name: 'ICD-10-CM Practice', description: '', price: 0, questionSourceUrl: '', numberOfQuestions: 10, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: true, durationMinutes: 15 },
-    { id: 'exam-icd-cert', name: 'ICD-10-CM Certification Exam', productSlug: 'icd-10-cm-certification-exam', description: 'A test series focusing on ICD-10-CM diagnosis coding proficiency. Includes 100 questions to master the code set.', price: 130, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: false, durationMinutes: 150 },
+    { id: 'exam-icd-cert', name: 'ICD-10-CM Certification Exam', productSlug: 'icd-10-cm-certification-exam', description: 'A test series focusing on ICD-10-CM diagnosis coding proficiency. Includes 100 questions to master the code set.', price: 130, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-icd', isPractice: false, durationMinutes: 150 },
     // CPB
     { id: 'exam-cpb-practice', name: 'CPB Practice Test', description: '', price: 0, questionSourceUrl: '', numberOfQuestions: 10, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: true, durationMinutes: 15 },
     { id: 'exam-cpb-cert', name: 'CPB Certification Exam', productSlug: 'cpb-certification-exam', description: 'A test series for the AAPC CPB (Certified Professional Biller) certification, covering all aspects of the revenue cycle with 100 questions.', price: 100, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-billing', isPractice: false, durationMinutes: 150 },
     // CRC
     { id: 'exam-crc-practice', name: 'CRC Practice Test', description: '', price: 0, questionSourceUrl: '', numberOfQuestions: 10, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: true, durationMinutes: 15 },
-    { id: 'exam-crc-cert', name: 'CRC Certification Exam', productSlug: 'crc-certification-exam', description: 'A test series on risk adjustment models and hierarchical condition categories (HCC) for the CRC certification. Includes 100 specialized questions.', price: 110, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: false, durationMinutes: 150 },
+    { id: 'exam-crc-cert', name: 'CRC Certification Exam', productSlug: 'crc-certification-exam', description: 'A test series on risk adjustment models and hierarchical condition categories (HCC) for the CRC certification. Includes 100 specialized questions.', price: 110, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-crc', isPractice: false, durationMinutes: 150 },
     // CPMA
     { id: 'exam-cpma-practice', name: 'CPMA Practice Test', description: '', price: 0, questionSourceUrl: '', numberOfQuestions: 10, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: true, durationMinutes: 15 },
-    { id: 'exam-cpma-cert', name: 'CPMA Certification Exam', productSlug: 'cpma-certification-exam', description: 'A test series for the AAPC CPMA (Certified Professional Medical Auditor) certification. Includes 100 questions on medical documentation, fraud, and abuse.', price: 160, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: false, durationMinutes: 150 },
+    { id: 'exam-cpma-cert', name: 'CPMA Certification Exam', productSlug: 'cpma-certification-exam', description: 'A test series for the AAPC CPMA (Certified Professional Medical Auditor) certification. Includes 100 questions on medical documentation, fraud, and abuse.', price: 160, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-cpma', isPractice: false, durationMinutes: 150 },
     // COC
     { id: 'exam-coc-practice', name: 'COC Practice Test', description: '', price: 0, questionSourceUrl: '', numberOfQuestions: 10, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: true, durationMinutes: 15 },
-    { id: 'exam-coc-cert', name: 'COC Certification Exam', productSlug: 'coc-certification-exam', description: 'A test series for the AAPC COC (Certified Outpatient Coder) certification, focusing on outpatient hospital and ASC settings with 100 questions.', price: 140, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: false, durationMinutes: 150 },
+    { id: 'exam-coc-cert', name: 'COC Certification Exam', productSlug: 'coc-certification-exam', description: 'A test series for the AAPC COC (Certified Outpatient Coder) certification, focusing on outpatient hospital and ASC settings with 100 questions.', price: 140, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-coc', isPractice: false, durationMinutes: 150 },
     // CIC
     { id: 'exam-cic-practice', name: 'CIC Practice Test', description: '', price: 0, questionSourceUrl: '', numberOfQuestions: 10, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: true, durationMinutes: 15 },
-    { id: 'exam-cic-cert', name: 'CIC Certification Exam', productSlug: 'cic-certification-exam', description: 'A test series for the AAPC CIC (Certified Inpatient Coder) certification, focusing on hospital inpatient facility coding with 100 questions.', price: 170, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: false, durationMinutes: 150 },
+    { id: 'exam-cic-cert', name: 'CIC Certification Exam', productSlug: 'cic-certification-exam', description: 'A test series for the AAPC CIC (Certified Inpatient Coder) certification, focusing on hospital inpatient facility coding with 100 questions.', price: 170, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-cic', isPractice: false, durationMinutes: 150 },
     // MTA
     { id: 'exam-mta-practice', name: 'Medical Terminology & Anatomy Practice', description: '', price: 0, questionSourceUrl: '', numberOfQuestions: 10, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: true, durationMinutes: 15 },
-    { id: 'exam-mta-cert', name: 'Medical Terminology & Anatomy Certification', productSlug: 'medical-terminology-anatomy-certification', description: 'A foundational test series covering core medical terminology and anatomy. Essential for all aspiring medical coders. Includes 100 questions.', price: 80, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: false, durationMinutes: 150 },
+    { id: 'exam-mta-cert', name: 'Medical Terminology & Anatomy Certification', productSlug: 'medical-terminology-anatomy-certification', description: 'A foundational test series covering core medical terminology and anatomy. Essential for all aspiring medical coders. Includes 100 questions.', price: 80, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-mta', isPractice: false, durationMinutes: 150 },
 ];
 
 
