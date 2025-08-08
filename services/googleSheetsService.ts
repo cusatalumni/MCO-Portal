@@ -20,28 +20,44 @@ const MOCK_BOOKS: RecommendedBook[] = [
         title: 'Official CPC Certification Study Guide',
         description: 'The most comprehensive guide to prepare for your certification. Includes practice questions and detailed explanations.',
         imageUrl: 'https://placehold.co/300x400/003366/FFFFFF/png?text=CPC+Guide',
-        affiliateLinks: { com: 'https://www.amazon.com/dp/164018398X?tag=mykada-20', in: 'https://www.amazon.in/dp/164018398X?tag=httpcodingonl-21', ae: 'https://amzn.to/46QduHx' }
+        affiliateLinks: { 
+            com: 'https://www.amazon.com/dp/1622028185?tag=mykada-20', 
+            in: 'https://www.amazon.in/dp/1622028185?tag=httpcodingonl-21', 
+            ae: 'https://www.amazon.ae/dp/1622028185?tag=medical0f1-21' 
+        }
     },
     {
         id: 'book-icd10-cm',
-        title: 'ICD-10-CM Expert for Physicians',
+        title: "Buck's ICD-10-CM for Physicians 2026",
         description: 'Master the ICD-10-CM code set with this expert guide, complete with guidelines and examples.',
         imageUrl: 'https://placehold.co/300x400/660066/FFFFFF/png?text=ICD-10',
-        affiliateLinks: { com: 'https://www.amazon.com/dp/164018398X?tag=mykada-20', in: 'https://www.amazon.in/dp/164018398X?tag=httpcodingonl-21', ae: 'https://amzn.to/46QduHx' }
+        affiliateLinks: { 
+            com: 'https://www.amazon.com/dp/0443380783?tag=mykada-20', 
+            in: 'https://www.amazon.in/dp/0443380783?tag=httpcodingonl-21', 
+            ae: 'https://www.amazon.ae/dp/0443380783?tag=medical0f1-21' 
+        }
     },
     {
         id: 'book-medical-billing',
         title: 'Understanding Medical Billing and Coding',
         description: 'A step-by-step guide to the medical billing process, from claim submission to reimbursement.',
         imageUrl: 'https://placehold.co/300x400/663300/FFFFFF/png?text=Billing',
-        affiliateLinks: { com: 'https://www.amazon.com/dp/164018398X?tag=mykada-20', in: 'https://www.amazon.in/dp/164018398X?tag=httpcodingonl-21', ae: 'https://amzn.to/46QduHx' }
+        affiliateLinks: { 
+            com: 'https://www.amazon.com/dp/1950393005?tag=mykada-20', 
+            in: 'https://www.amazon.in/dp/1950393005?tag=httpcodingonl-21', 
+            ae: 'https://www.amazon.ae/dp/1950393005?tag=medical0f1-21' 
+        }
     },
     {
         id: 'book-anatomy',
         title: 'Medical Terminology & Anatomy for Coding',
         description: 'Build a strong foundation in medical terminology and anatomy, essential for accurate coding.',
         imageUrl: 'https://placehold.co/300x400/006633/FFFFFF/png?text=Anatomy',
-        affiliateLinks: { com: 'https://www.amazon.com/dp/164018398X?tag=mykada-20', in: 'https://www.amazon.in/dp/164018398X?tag=httpcodingonl-21', ae: 'https://amzn.to/46QduHx' }
+        affiliateLinks: { 
+            com: 'https://www.amazon.com/dp/1455770020?tag=mykada-20', 
+            in: 'https://www.amazon.in/dp/1455770020?tag=httpcodingonl-21', 
+            ae: 'https://www.amazon.ae/dp/1455770020?tag=medical0f1-21' 
+        }
     }
 ];
 
