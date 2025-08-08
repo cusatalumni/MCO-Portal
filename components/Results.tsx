@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { googleSheetsService } from '../services/googleSheetsService';
 import type { TestResult, Exam, RecommendedBook } from '../types';
@@ -10,8 +10,8 @@ import Spinner from './Spinner';
 import { Check, X, FileDown, BookUp, ShieldCheck } from 'lucide-react';
 
 const Results: React.FC = () => {
-    const { testId } = ReactRouterDOM.useParams<{ testId: string }>();
-    const navigate = ReactRouterDOM.useNavigate();
+    const { testId } = useParams<{ testId: string }>();
+    const navigate = useNavigate();
     const { user } = useAuth();
     const { activeOrg } = useAppContext();
     

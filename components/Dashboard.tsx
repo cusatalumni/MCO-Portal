@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.tsx';
 import { googleSheetsService } from '../services/googleSheetsService';
 import type { TestResult } from '../types';
@@ -11,7 +11,7 @@ import toast from 'react-hot-toast';
 import SuggestedBooksSidebar from './SuggestedBooksSidebar';
 
 const Dashboard: React.FC = () => {
-    const navigate = ReactRouterDOM.useNavigate();
+    const navigate = useNavigate();
     const { user, paidExamIds, isSubscribed } = useAuth();
     const { activeOrg } = useAppContext();
     const [results, setResults] = useState<TestResult[]>([]);

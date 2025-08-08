@@ -1,13 +1,13 @@
 
 import React, { useEffect, useState, useRef } from 'react';
-import * as ReactRouterDOM from 'react-router-dom';
+import { useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Spinner from './Spinner';
 import toast from 'react-hot-toast';
 
 // This component handles the auth callback from the external site.
 const Login: React.FC = () => {
-    const location = ReactRouterDOM.useLocation();
+    const location = useLocation();
     const searchParams = new URLSearchParams(location.search);
     const { user, loginWithToken } = useAuth();
     const [error, setError] = useState<string | null>(null);
@@ -38,7 +38,7 @@ const Login: React.FC = () => {
 
     // If there was an error during token processing, redirect to the home page.
     if (error) {
-        return <ReactRouterDOM.Navigate to="/" replace />;
+        return <Navigate to="/" replace />;
     }
 
     // Once the user object is available in the context (either from token or session), redirect.
@@ -54,7 +54,7 @@ const Login: React.FC = () => {
              }
         }
         
-        return <ReactRouterDOM.Navigate to={redirectTo} replace />;
+        return <Navigate to={redirectTo} replace />;
     }
 
     // While waiting for the token to be processed and user state to update, show a spinner.
