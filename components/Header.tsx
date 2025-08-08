@@ -3,7 +3,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
-import { LogOut, UserCircle, UserPlus, LogIn, User, Shield, BookMarked, LayoutDashboard } from 'lucide-react';
+import { LogOut, UserPlus, LogIn, User, Shield, BookMarked, LayoutDashboard } from 'lucide-react';
 
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
@@ -75,14 +75,6 @@ const Header: React.FC = () => {
                   <span className="hidden sm:inline font-semibold">Dashboard</span>
                 </Link>
               )}
-               <Link
-                  to="/profile"
-                  className="flex items-center space-x-2 text-slate-600 hover:text-cyan-600 transition duration-200"
-                  title="My Profile"
-                >
-                  <UserCircle size={20} />
-                  <span className="hidden sm:inline font-semibold">Profile</span>
-                </Link>
                {user.isAdmin && (
                   <Link
                     to="/admin"

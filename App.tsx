@@ -17,7 +17,7 @@ import Instructions from './components/Instructions';
 import Integration from './components/Integration';
 import Admin from './components/Admin';
 import BookStore from './components/BookStore';
-import Profile from './components/Profile';
+
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -49,7 +49,6 @@ const AppContent: React.FC = () => {
                         <Route path="/bookstore" element={<BookStore />} />
                         
                         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                         <Route path="/test/:examId" element={<ProtectedRoute><Test /></ProtectedRoute>} />
                         <Route path="/results/:testId" element={<ProtectedRoute><Results /></ProtectedRoute>} />
                         <Route path="/certificate/sample" element={<ProtectedRoute><Certificate /></ProtectedRoute>} />

@@ -5,19 +5,21 @@ import { useAuth } from '../context/AuthContext';
 import { googleSheetsService } from '../services/googleSheetsService';
 import type { TestResult } from '../types';
 import Spinner from './Spinner';
-import { BookCopy, History, FlaskConical, Eye, FileText, BarChart, BadgePercent, Trophy, ArrowRight, Home, RefreshCw, Star, Zap, CheckCircle, Lock } from 'lucide-react';
+import { BookCopy, History, FlaskConical, Eye, FileText, BarChart, BadgePercent, Trophy, ArrowRight, Home, RefreshCw, Star, Zap, CheckCircle, Lock, Edit, Save, X } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import toast from 'react-hot-toast';
 import SuggestedBooksSidebar from './SuggestedBooksSidebar';
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
-    const { user, paidExamIds, isSubscribed } = useAuth();
+    const { user, paidExamIds, isSubscribed, updateUserName } = useAuth();
     const { activeOrg } = useAppContext();
     const [results, setResults] = useState<TestResult[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [stats, setStats] = useState({ avgScore: 0, bestScore: 0, examsTaken: 0 });
     const [practiceStats, setPracticeStats] = useState({ attemptsTaken: 0, attemptsAllowed: 0 });
+    const [isEditingName, setIsEditingName] = useState(false);
+    const [name, setName] = useState(user?.name || '');
    
     const loginUrl = 'https://www.coding-online.net/exam-login/';
     const appDashboardPath = '/dashboard';
@@ -59,6 +61,16 @@ const Dashboard: React.FC = () => {
         fetchResults();
     }, [user, activeOrg]);
 
+    const handleNameSave = () => {
+        if (!name.trim()) {
+            toast.error("Name cannot be empty.");
+            return;
+        }
+        updateUserName(name.trim());
+        setIsEditingName(false);
+        toast.success("Name updated. This will be used on your certificate.");
+    };
+
     const processedPurchasedExams = useMemo(() => {
         if (!activeOrg) return [];
         
@@ -98,7 +110,33 @@ const Dashboard: React.FC = () => {
     return (
         <div>
             <div className="mb-6">
-                 <h1 className="text-3xl font-bold text-slate-800">Welcome back, {user?.name}!</h1>
+                 {isEditingName ? (
+                    <div className="mb-4">
+                        <div className="flex items-center gap-2">
+                            <input 
+                                type="text" 
+                                value={name} 
+                                onChange={(e) => setName(e.target.value)} 
+                                className="border border-slate-300 rounded-md px-3 py-2 text-lg w-full max-w-sm" 
+                                placeholder="Enter your full name" 
+                            />
+                            <button onClick={handleNameSave} className="p-2 bg-green-500 text-white rounded-md hover:bg-green-600" aria-label="Save name">
+                                <Save size={20} />
+                            </button>
+                            <button onClick={() => { setIsEditingName(false); setName(user.name); }} className="p-2 bg-slate-400 text-white rounded-md hover:bg-slate-500" aria-label="Cancel edit">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <p className="text-xs text-slate-500 mt-2">This name will appear on your certificate.</p>
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-3">
+                        <h1 className="text-3xl font-bold text-slate-800">Welcome back, {user?.name}!</h1>
+                        <button onClick={() => setIsEditingName(true)} className="p-1 text-slate-500 hover:text-slate-800" title="Edit your name for the certificate" aria-label="Edit name">
+                            <Edit size={18} />
+                        </button>
+                    </div>
+                )}
                  <p className="text-lg text-slate-500 mt-1">Here's an overview of your exam progress and history.</p>
             </div>
             
