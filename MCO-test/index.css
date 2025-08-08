@@ -1,0 +1,10 @@
+
+/*
+  This file resolves the 404 error and provides a basic set of styles.
+  TailwindCSS is currently loaded via CDN in index.html, which handles most utility classes.
+*/
+body {
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
