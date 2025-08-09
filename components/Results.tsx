@@ -163,7 +163,7 @@ const Results: React.FC = () => {
                                         <span>Buy on {domainName}</span>
                                     </a>
                                     <p className="text-xs text-slate-500 mt-2 max-w-md">
-                                        As an Amazon Associate, we earn from qualifying purchases. This does not add any extra cost to you.
+                                        As an Amazon Associate, we earn from qualifying purchases. This is a geo-targeted affiliate link.
                                     </p>
                                 </div>
                             </div>

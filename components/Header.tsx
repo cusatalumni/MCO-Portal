@@ -1,14 +1,14 @@
 
+
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
-import { LogOut, UserPlus, LogIn, User, Shield, BookMarked, LayoutDashboard } from 'lucide-react';
+import { LogOut, UserCircle, UserPlus, LogIn, User, Shield, BookMarked } from 'lucide-react';
 
 const Header: React.FC = () => {
   const { user, logout } = useAuth();
   const { activeOrg } = useAppContext();
-  const location = useLocation();
 
   const handleLogout = () => {
     logout();
@@ -65,16 +65,10 @@ const Header: React.FC = () => {
             </Link>
           {user ? (
             <>
-              {location.pathname !== '/dashboard' && (
-                <Link
-                  to="/dashboard"
-                  className="flex items-center space-x-2 text-slate-600 hover:text-cyan-600 transition duration-200"
-                  title="Go to Dashboard"
-                >
-                  <LayoutDashboard size={20} />
-                  <span className="hidden sm:inline font-semibold">Dashboard</span>
-                </Link>
-              )}
+              <div className="flex items-center space-x-2 text-slate-600">
+                <UserCircle size={20} />
+                <span className="hidden sm:inline">Welcome, {user.name}{user.isAdmin && ' (Admin)'}</span>
+              </div>
                {user.isAdmin && (
                   <Link
                     to="/admin"
