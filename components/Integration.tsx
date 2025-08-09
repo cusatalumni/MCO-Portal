@@ -3,14 +3,12 @@ import React from 'react';
 const phpCode = `<?php
 /**
  * ===================================================================
- * V15.0: Name Sync & Improved Login UX
+ * V15.1: Include 'processing' orders in sync
  * ===================================================================
- * This version enhances the user experience and data consistency:
- * 1. The "Full Name" field is removed from the login form.
- * 2. The JWT now correctly uses WP first/last name, falling back to display_name.
- * 3. A new secure REST API endpoint (/wp-json/exam-app/v1/update-name) is added.
- *    This allows users to update their certificate name from the app dashboard,
- *    and the change is saved back to their WordPress user profile.
+ * This version enhances the reliability of exam synchronization:
+ * 1. The JWT payload generation now includes products from WooCommerce
+ *    orders with a status of 'processing' in addition to 'completed'.
+ *    This ensures users get access immediately after payment.
  */
 
 // --- CONFIGURATION ---
@@ -91,7 +89,8 @@ function annapoorna_exam_get_payload($user_id) {
             'cpma-certification-exam' => 'exam-cpma-cert', 'coc-certification-exam' => 'exam-coc-cert', 'cic-certification-exam' => 'exam-cic-cert',
             'medical-terminology-anatomy-certification' => 'exam-mta-cert',
         ];
-        $orders = wc_get_orders(['customer_id' => $user->ID, 'status' => 'completed', 'limit' => -1]);
+        // MODIFIED: Include both 'completed' and 'processing' orders
+        $orders = wc_get_orders(['customer_id' => $user->ID, 'status' => ['completed', 'processing'], 'limit' => -1]);
         foreach ($orders as $order) {
             foreach ($order->get_items() as $item) {
                 if ($product = $item->get_product()) {

@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext.tsx';
 import { googleSheetsService } from '../services/googleSheetsService';
 import type { TestResult } from '../types';
 import Spinner from './Spinner';
-import { BookCopy, History, FlaskConical, Eye, FileText, BarChart, BadgePercent, Trophy, ArrowRight, Home, RefreshCw, Star, Zap, CheckCircle, Lock, Edit, Save, X } from 'lucide-react';
+import { BookCopy, History, FlaskConical, Eye, FileText, BarChart, BadgePercent, Trophy, ArrowRight, Home, RefreshCw, Star, Zap, CheckCircle, Lock, Edit, Save, X, ShoppingCart } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import toast from 'react-hot-toast';
 import SuggestedBooksSidebar from './SuggestedBooksSidebar';
@@ -131,6 +131,11 @@ const Dashboard: React.FC = () => {
             });
     }, [activeOrg, paidExamIds, results]);
 
+    const availableToPurchaseExams = useMemo(() => {
+        if (!activeOrg) return [];
+        return activeOrg.exams.filter(e => !e.isPractice && e.productSlug && !paidExamIds.includes(e.id));
+    }, [activeOrg, paidExamIds]);
+
 
     if (isLoading || !activeOrg) {
         return <div className="flex flex-col items-center justify-center h-64"><Spinner /><p className="mt-4">Loading your dashboard...</p></div>;
@@ -250,9 +255,35 @@ const Dashboard: React.FC = () => {
                                 )
                             }) : (
                                 <div className="text-center py-6 text-slate-500">
-                                    <p>You haven't purchased any certification exams yet.</p>
+                                    <p>You haven't purchased any certification exams yet. See available exams below.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Available Certification Exams */}
+                    <div className="bg-white p-6 rounded-xl shadow-md">
+                        <h2 className="text-xl font-bold text-slate-800 flex items-center mb-4"><ShoppingCart className="mr-3 text-cyan-500" /> Available Exams</h2>
+                        <div className="space-y-3">
+                            {availableToPurchaseExams.length > 0 ? availableToPurchaseExams.map(exam => (
+                                <div key={exam.id} className="bg-slate-50 p-3 rounded-lg border border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3">
+                                    <div className="flex-grow">
+                                        <h3 className="font-bold text-slate-700">{exam.name}</h3>
+                                        <p className="text-sm text-slate-500">{exam.description}</p>
+                                    </div>
+                                    <button
+                                        onClick={() => navigate(`/checkout/${exam.productSlug}`)}
+                                        disabled={!exam.productSlug}
+                                        className="w-full sm:w-auto bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition flex items-center justify-center gap-2 disabled:bg-slate-300 disabled:cursor-not-allowed"
+                                    >
+                                        <ShoppingCart size={16} /> Purchase (${exam.price})
+                                    </button>
+                                </div>
+                            )) : (
+                                <div className="text-center py-6 text-slate-500">
+                                    <p>You have purchased all available certification exams.</p>
                                     <a href={browseExamsUrl} target="_blank" rel="noopener noreferrer" className="mt-2 text-sm font-semibold text-cyan-600 hover:text-cyan-800 flex items-center gap-1 mx-auto">
-                                        Browse Exams <ArrowRight size={14} />
+                                        Browse Our Main Store <ArrowRight size={14} />
                                     </a>
                                 </div>
                             )}

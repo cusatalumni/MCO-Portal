@@ -19,6 +19,7 @@ import Integration from './components/Integration';
 import Admin from './components/Admin';
 import BookStore from './components/BookStore';
 import Profile from './components/Profile';
+import Checkout from './components/Checkout';
 
 
 interface ProtectedRouteProps {
@@ -56,6 +57,7 @@ const AppContent: React.FC = () => {
                         <Route path="/results/:testId" element={<ProtectedRoute><Results /></ProtectedRoute>} />
                         <Route path="/certificate/sample" element={<ProtectedRoute><Certificate /></ProtectedRoute>} />
                         <Route path="/certificate/:testId" element={<ProtectedRoute><Certificate /></ProtectedRoute>} />
+                        <Route path="/checkout/:productSlug" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
                         <Route path="/admin" element={<ProtectedRoute adminOnly={true}><Admin /></ProtectedRoute>} />
                     
                         <Route path="*" element={<Navigate to="/" replace />} />
