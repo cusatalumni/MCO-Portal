@@ -3,7 +3,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from './AppContext';
 import { LogOut, UserCircle, UserPlus, LogIn, User, Shield, BookMarked } from 'lucide-react';
 
 const Header: React.FC = () => {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Settings, ExternalLink, Edit, Save, X, Book } from 'lucide-react';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from './AppContext';
 import type { Exam } from '../types';
 import toast from 'react-hot-toast';
 

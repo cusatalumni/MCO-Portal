@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from './AppContext';
 import { BookOpen, ShoppingCart } from 'lucide-react';
 import type { RecommendedBook } from '../types';
 
