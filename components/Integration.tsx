@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Clipboard, Check } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const phpCode = `<?php
 /**
@@ -319,7 +321,22 @@ function annapoorna_exam_login_url($login_url, $redirect) {
 add_filter('login_url', 'annapoorna_exam_login_url', 10, 2);
 ?>`;
 
-const Integration = () => {
+const Integration: React.FC = () => {
+    const [isCopied, setIsCopied] = useState(false);
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(phpCode).then(() => {
+            setIsCopied(true);
+            toast.success('Code copied to clipboard!');
+            setTimeout(() => {
+                setIsCopied(false);
+            }, 2000); // Reset button text after 2 seconds
+        }, (err) => {
+            toast.error('Failed to copy code.');
+            console.error('Could not copy text: ', err);
+        });
+    };
+
     return (
         <div className="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-lg">
             <h1 className="text-3xl font-bold text-slate-800 mb-4">WordPress Integration Guide</h1>
@@ -343,9 +360,26 @@ const Integration = () => {
                     <p className="text-slate-600 mb-2">
                         Copy the entire code block below. This single snippet handles login, SSO, and saving user profile changes.
                     </p>
-                    <pre className="bg-slate-800 text-white p-4 rounded-lg overflow-x-auto text-sm">
-                        <code>{phpCode}</code>
-                    </pre>
+                    <div className="relative group">
+                        <button
+                            onClick={handleCopy}
+                            className="absolute top-2 right-2 bg-slate-600 hover:bg-slate-500 text-white font-semibold py-1 px-2 rounded-md text-xs flex items-center gap-1 transition-all opacity-0 group-hover:opacity-100"
+                            aria-label="Copy PHP code to clipboard"
+                        >
+                            {isCopied ? (
+                                <>
+                                    <Check size={14} /> Copied!
+                                </>
+                            ) : (
+                                <>
+                                    <Clipboard size={14} /> Copy Code
+                                </>
+                            )}
+                        </button>
+                        <pre className="bg-slate-800 text-white p-4 rounded-lg overflow-x-auto text-sm">
+                            <code>{phpCode}</code>
+                        </pre>
+                    </div>
                 </div>
                 
                 <div>
