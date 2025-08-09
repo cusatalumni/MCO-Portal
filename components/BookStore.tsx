@@ -1,4 +1,8 @@
 
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
 import React from 'react';
 import { useAppContext } from '../context/AppContext';
 import Spinner from './Spinner';
