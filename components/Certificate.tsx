@@ -11,16 +11,16 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { signatureBase64 } from '../assets/signature';
 
-const Watermark: React.FC<{ text: string }> = ({ text }) => (
-    <div className="absolute inset-0 grid grid-cols-3 grid-rows-6 gap-4 pointer-events-none overflow-hidden">
-        {Array.from({ length: 18 }).map((_, i) => (
-            <div key={i} className="flex items-center justify-center -rotate-45">
-                <p className="text-gray-400 font-bold text-3xl md:text-4xl tracking-widest opacity-20 select-none whitespace-nowrap">
-                    {text}
-                </p>
-            </div>
-        ))}
-    </div>
+const Watermark: React.FC<WatermarkProps> = ({ text }) => (
+  <div className="absolute inset-0 grid grid-cols-3 grid-rows-8 gap-4 pointer-events-none overflow-hidden bg-[url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 200 200%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22200%22 height=%22200%22 filter=%22url(%23noiseFilter)%22 opacity=%220.05%22/%3E%3C/svg%3E')] bg-repeat">
+    {Array.from({ length: 24 }).map((_, i) => (
+      <div key={i} className="flex items-center justify-center -rotate-45">
+        <p className="text-gray-300 font-bold text-xl md:text-2xl tracking-widest opacity-10 select-none whitespace-nowrap">
+          {text}
+        </p>
+      </div>
+    ))}
+  </div>
 );
 
 const Certificate: React.FC = () => {
