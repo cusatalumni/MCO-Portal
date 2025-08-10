@@ -5,14 +5,12 @@ import toast from 'react-hot-toast';
 const phpCode = `<?php
 /**
  * ===================================================================
- * V26: Explicit Product SKU Retrieval
+ * V27: Definitive SKU Retrieval for Variable Products
  * ===================================================================
- * This version replaces the SKU fetching logic with a more explicit
- * and direct method. Instead of relying on the a general helper,
- * it now uses product and variation IDs directly to get the product
- * object before retrieving the SKU. This approach is more robust and
- * designed to bypass potential environment-specific issues that were
- * preventing purchased exams from syncing correctly.
+ * This version implements the most robust method for SKU retrieval
+ * by using the item's get_product() method directly and explicitly
+ * checking if the product is a variation before falling back to the
+ * parent. This is designed to be the definitive fix for the sync issue.
  */
 
 
@@ -205,30 +203,27 @@ function annapoorna_exam_get_payload($user_id) {
         $orders = wc_get_orders(['customer_id' => $user->ID, 'status' => ['completed', 'processing', 'on-hold'], 'limit' => -1]);
         foreach ($orders as $order) {
             foreach ($order->get_items() as $item_id => $item) {
-                $product_id = $item->get_product_id();
-                $variation_id = $item->get_variation_id();
+                $product = $item->get_product();
+                if (!$product) {
+                    annapoorna_debug_log("Could not get product object for item ID: {$item_id} in order " . $order->get_id());
+                    continue; // Skip to the next item
+                }
                 
-                // Determine which product object to load (variation or parent)
-                $product = $variation_id ? wc_get_product($variation_id) : wc_get_product($product_id);
-                
-                if ($product) {
-                    $sku = $product->get_sku();
-                    
-                    // If the variation has no SKU, try the parent product's SKU
-                    if (empty($sku) && $variation_id) {
-                        $parent_product = wc_get_product($product_id);
-                        if ($parent_product) {
-                            $sku = $parent_product->get_sku();
-                        }
+                $sku = $product->get_sku();
+
+                // If the product is a variation and has no SKU, check the parent.
+                if (empty($sku) && $product->is_type('variation')) {
+                    $parent_product = wc_get_product($product->get_parent_id());
+                    if ($parent_product) {
+                        $sku = $parent_product->get_sku();
+                        annapoorna_debug_log("Variation SKU empty, using parent SKU '{$sku}' for product ID " . $product->get_parent_id());
                     }
-                    
-                    if (!empty($sku) && in_array($sku, $all_exam_skus)) {
-                        $paid_exam_ids[] = $sku;
-                    } else {
-                        annapoorna_debug_log("SKU '{$sku}' for product ID {$product_id} not found or not in exam list.");
-                    }
+                }
+
+                if (!empty($sku) && in_array($sku, $all_exam_skus)) {
+                    $paid_exam_ids[] = $sku;
                 } else {
-                    annapoorna_debug_log("Could not get product for item ID: {$item_id} in order " . $order->get_id());
+                    annapoorna_debug_log("Final SKU '{$sku}' for product ID {$product->get_id()} not found in exam list or is empty.");
                 }
             }
         }
