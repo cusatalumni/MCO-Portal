@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Clipboard, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -6,13 +5,13 @@ import toast from 'react-hot-toast';
 const phpCode = `<?php
 /**
  * ===================================================================
- * V30: Dual Mode Storage & Robust Sync
+ * V31: Definitive Fix for SKU Retrieval
  * ===================================================================
- * This version implements the final fix for the exam sync issue by
- * rewriting the payload function for robust SKU retrieval from orders.
- * It also adds a new REST API endpoint (/get-user-data) to allow the
- * app to fetch the latest user data on-demand, enabling state
- * persistence and sync across multiple devices.
+ * This version implements the final and most robust fix for the exam
+ * sync issue. The logic within 'annapoorna_exam_get_payload' has been
+ * rewritten to explicitly check for variation IDs vs product IDs,
+ * ensuring that SKUs from any product type in WooCommerce are
+ * correctly identified and synced.
  */
 
 
@@ -201,8 +200,13 @@ function annapoorna_exam_get_payload($user_id) {
         $orders = wc_get_orders(['customer_id' => $user->ID, 'status' => ['completed', 'processing', 'on-hold'], 'limit' => -1]);
         foreach ($orders as $order) {
             foreach ($order->get_items() as $item) {
-                $product = $item->get_product(); // This correctly gets the variation product if it exists
-                if ($product && in_array($product->get_sku(), $all_exam_skus)) {
+                $product_id = $item->get_product_id();
+                $variation_id = $item->get_variation_id();
+                
+                // If it's a variation, use the variation_id to get the product, otherwise use product_id
+                $product = $variation_id ? wc_get_product($variation_id) : wc_get_product($product_id);
+                
+                if ($product && $product->get_sku() && in_array($product->get_sku(), $all_exam_skus)) {
                     $paid_exam_ids[] = $product->get_sku();
                 }
             }
