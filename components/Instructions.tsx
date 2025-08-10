@@ -28,8 +28,7 @@ const Instructions: React.FC = () => {
                 <p>
                     For instructions on how to set up the SSO and results-sync functionality with your WordPress site, please see the <a href="#/integration" className="text-cyan-600">Integration Guide</a>.
                 </p>
-            </div>
-        </div>
+
 <div class="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6 m-4">
   <h2 class="text-xl font-semibold text-gray-800 mb-4 text-center">Your Purchased Exams</h2>
   <div id="exam-list" class="mb-4">
@@ -74,6 +73,9 @@ const Instructions: React.FC = () => {
     });
   }
 </script>
+            </div>
+        </div>
+
     );
 };
 
