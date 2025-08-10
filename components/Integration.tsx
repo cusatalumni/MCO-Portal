@@ -5,20 +5,19 @@ import toast from 'react-hot-toast';
 const phpCode = `<?php
 /**
  * ===================================================================
- * V22: Shortcode and Login Form Fix
+ * V23: SKU as Exam ID Refactor
  * ===================================================================
- * This version refactors the login form handling to resolve issues
- * where the shortcode would appear to not work.
- * 1.  Core Fix: Moves form submission logic (login/sync) from the
- *     shortcode handler to the 'init' hook. This prevents "headers
- *     already sent" errors and allows redirects to function correctly.
- * 2.  Improved Auth: Replaces wp_authenticate with wp_signon for a
- *     more reliable login process that correctly sets all auth cookies.
- * 3.  Robustness: Correctly handles email-based logins by using
- *     sanitize_text_field instead of sanitize_user, which could
- *     strip the '@' symbol.
- * 4.  Structure: All actions and filters are now registered within
- *     a single function hooked to 'init' for better loading practice.
+ * This version refactors the integration to use the WooCommerce
+ * product SKU as the primary identifier for exams.
+ * 1.  Robustness: Eliminates the '$exam_map' array, which was a
+ *     potential point of failure. The app now uses the SKU directly
+ *     as the exam ID, simplifying new exam additions.
+ * 2.  Simplification: Logic for fetching paid exam IDs and prices
+ *     is now cleaner, iterating over a simple list of valid SKUs
+ *     instead of a mapping array.
+ * 3.  Consistency: Ensures the identifiers used in the app (exam ID)
+ *     and in WooCommerce (product SKU) are the same, resolving sync
+ *     and pricing issues.
  */
 
 
@@ -183,21 +182,20 @@ function annapoorna_exam_get_payload($user_id) {
     $exam_prices = new stdClass();
 
     if (class_exists('WooCommerce')) {
-        $exam_map = [
-            'CPC-CERT-EXAM' => 'exam-cpc-cert', 'CCA-CERT-EXAM' => 'exam-cca-cert', 'CCS-CERT-EXAM' => 'exam-ccs-cert',
-            'MEDICAL-BILLING-CERT' => 'exam-billing-cert', 'RISK-ADJUSTMENT-CERT' => 'exam-risk-cert',
-            'ICD-10-CM-CERT' => 'exam-icd-cert', 'CPB-CERT-EXAM' => 'exam-cpb-cert', 'CRC-CERT-EXAM' => 'exam-crc-cert',
-            'CPMA-CERT-EXAM' => 'exam-cpma-cert', 'COC-CERT-EXAM' => 'exam-coc-cert', 'CIC-CERT-EXAM' => 'exam-cic-cert',
-            'MTA-CERT' => 'exam-mta-cert',
+        // This list of SKUs must match the 'id' field of certification exams in the app.
+        $all_exam_skus = [
+            'CPC-CERT-EXAM', 'CCA-CERT-EXAM', 'CCS-CERT-EXAM', 'MEDICAL-BILLING-CERT', 
+            'RISK-ADJUSTMENT-CERT', 'ICD-10-CM-CERT', 'CPB-CERT-EXAM', 'CRC-CERT-EXAM',
+            'CPMA-CERT-EXAM', 'COC-CERT-EXAM', 'CIC-CERT-EXAM', 'MTA-CERT'
         ];
         
         $exam_prices = get_transient('annapoorna_exam_prices');
         if (false === $exam_prices) {
             annapoorna_debug_log('Exam prices not cached. Fetching from DB.');
             $exam_prices = new stdClass();
-            foreach ($exam_map as $sku => $exam_id) {
+            foreach ($all_exam_skus as $sku) {
                 if (($product_id = wc_get_product_id_by_sku($sku)) && ($product = wc_get_product($product_id))) {
-                    $exam_prices->{$exam_id} = (float) $product->get_price();
+                    $exam_prices->{$sku} = (float) $product->get_price();
                 }
             }
             set_transient('annapoorna_exam_prices', $exam_prices, 12 * HOUR_IN_SECONDS);
@@ -207,8 +205,8 @@ function annapoorna_exam_get_payload($user_id) {
         foreach ($orders as $order) {
             foreach ($order->get_items() as $item) {
                 $product = $item->get_product();
-                if ($product && ($sku = $product->get_sku()) && isset($exam_map[$sku])) {
-                    $paid_exam_ids[] = $exam_map[$sku];
+                if ($product && ($sku = $product->get_sku()) && in_array($sku, $all_exam_skus)) {
+                    $paid_exam_ids[] = $sku;
                 }
             }
         }
