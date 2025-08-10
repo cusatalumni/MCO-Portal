@@ -5,12 +5,12 @@ import toast from 'react-hot-toast';
 const phpCode = `<?php
 /**
  * ===================================================================
- * V27: Definitive SKU Retrieval for Variable Products
+ * V28: Robust SKU Retrieval and User Test Shortcode
  * ===================================================================
- * This version implements the most robust method for SKU retrieval
- * by using the item's get_product() method directly and explicitly
- * checking if the product is a variation before falling back to the
- * parent. This is designed to be the definitive fix for the sync issue.
+ * This version implements a more robust SKU retrieval logic to handle
+ * all product types from WooCommerce orders. It also includes a new
+ * shortcode [exam_user_details] for testing the data payload directly
+ * within a WordPress page.
  */
 
 
@@ -47,6 +47,7 @@ function annapoorna_exam_app_init() {
     add_filter('login_url', 'annapoorna_exam_login_url', 10, 2);
     
     add_shortcode('exam_portal_login', 'annapoorna_exam_login_shortcode');
+    add_shortcode('exam_user_details', 'annapoorna_exam_user_details_shortcode');
 }
 add_action('init', 'annapoorna_exam_app_init');
 
@@ -182,8 +183,8 @@ function annapoorna_exam_get_payload($user_id) {
             'CPMA-CERT-EXAM', 'COC-CERT-EXAM', 'CIC-CERT-EXAM', 'MTA-CERT'
         ];
         
-        $exam_prices = get_transient('annapoorna_exam_prices');
-        if (false === $exam_prices) {
+        $exam_prices_cache = get_transient('annapoorna_exam_prices');
+        if (false === $exam_prices_cache) {
             annapoorna_debug_log('Exam prices not cached. Fetching from DB.');
             $exam_prices = new stdClass();
             foreach ($all_exam_skus as $sku) {
@@ -198,32 +199,29 @@ function annapoorna_exam_get_payload($user_id) {
                 }
             }
             set_transient('annapoorna_exam_prices', $exam_prices, 12 * HOUR_IN_SECONDS);
+        } else {
+            $exam_prices = $exam_prices_cache;
         }
         
         $orders = wc_get_orders(['customer_id' => $user->ID, 'status' => ['completed', 'processing', 'on-hold'], 'limit' => -1]);
         foreach ($orders as $order) {
             foreach ($order->get_items() as $item_id => $item) {
+                $sku = '';
                 $product = $item->get_product();
-                if (!$product) {
-                    annapoorna_debug_log("Could not get product object for item ID: {$item_id} in order " . $order->get_id());
-                    continue; // Skip to the next item
-                }
-                
-                $sku = $product->get_sku();
 
-                // If the product is a variation and has no SKU, check the parent.
-                if (empty($sku) && $product->is_type('variation')) {
-                    $parent_product = wc_get_product($product->get_parent_id());
-                    if ($parent_product) {
-                        $sku = $parent_product->get_sku();
-                        annapoorna_debug_log("Variation SKU empty, using parent SKU '{$sku}' for product ID " . $product->get_parent_id());
+                if ($product) {
+                    $sku = $product->get_sku();
+                    // Fallback for variable products where the SKU is only set on the parent.
+                    if (empty($sku) && $product->get_parent_id() > 0) {
+                        $parent_product = wc_get_product($product->get_parent_id());
+                        if ($parent_product) {
+                            $sku = $parent_product->get_sku();
+                        }
                     }
                 }
 
                 if (!empty($sku) && in_array($sku, $all_exam_skus)) {
                     $paid_exam_ids[] = $sku;
-                } else {
-                    annapoorna_debug_log("Final SKU '{$sku}' for product ID {$product->get_id()} not found in exam list or is empty.");
                 }
             }
         }
@@ -440,6 +438,66 @@ function annapoorna_exam_login_url($login_url, $redirect) {
     $login_page_url = home_url('/' . ANNAPOORNA_LOGIN_SLUG . '/');
     return !empty($redirect) ? add_query_arg('redirect_to', urlencode($redirect), $login_page_url) : $login_page_url;
 }
+
+/**
+ * Shortcode to display a user's purchased exams and their prices.
+ * Fetches data from the existing annapoorna_exam_get_payload function.
+ */
+function annapoorna_exam_user_details_shortcode() {
+    if (!is_user_logged_in()) {
+        return '<div class="exam-portal-container" style="text-align:center;"><p>Please log in to view your exam details.</p><a href="' . esc_url(wp_login_url()) . '">Log In</a></div>';
+    }
+
+    $user_id = get_current_user_id();
+    $payload = annapoorna_exam_get_payload($user_id);
+    
+    if (!$payload || empty($payload['paidExamIds'])) {
+        return '<div class="exam-portal-container" style="text-align:center;"><p>You have not purchased any exams yet.</p><a href="' . esc_url(home_url('/shop')) . '">Browse Exams</a></div>';
+    }
+
+    $exam_names = [
+        'CPC-CERT-EXAM' => 'CPC Certification Exam',
+        'CCA-CERT-EXAM' => 'CCA Certification Exam',
+        'CCS-CERT-EXAM' => 'CCS Certification Exam',
+        'MEDICAL-BILLING-CERT' => 'Medical Billing Certification',
+        'RISK-ADJUSTMENT-CERT' => 'Risk Adjustment Coding Certification',
+        'ICD-10-CM-CERT' => 'ICD-10-CM Certification Exam',
+        'CPB-CERT-EXAM' => 'CPB Certification Exam',
+        'CRC-CERT-EXAM' => 'CRC Certification Exam',
+        'CPMA-CERT-EXAM' => 'CPMA Certification Exam',
+        'COC-CERT-EXAM' => 'COC Certification Exam',
+        'CIC-CERT-EXAM' => 'CIC Certification Exam',
+        'MTA-CERT' => 'Medical Terminology & Anatomy Certification',
+    ];
+
+    ob_start();
+    ?>
+    <style>
+        .exam-details-container{font-family:sans-serif;max-width:500px;margin:5% auto;padding:40px;background:#fff;border-radius:12px;box-shadow:0 10px 25px -5px rgba(0,0,0,.1)}.exam-details-container h2{text-align:center;font-size:24px;margin-bottom:30px}.exam-details-container ul{list-style:none;padding:0}.exam-details-container li{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee}.exam-details-container .exam-name{font-weight:600;color:#333}.exam-details-container .exam-price{color:#16a34a;font-weight:500}.exam-details-container .promo-message{text-align:center;color:#3b82f6;font-weight:500;margin:20px 0}.exam-details-container .action-button{display:block;width:100%;padding:14px;background-color:#0891b2;color:#fff;border:none;border-radius:8px;font-size:16px;text-align:center;text-decoration:none;cursor:pointer}.exam-details-container .action-button:hover{background-color:#067a8e}
+    </style>
+    <div class="exam-details-container">
+        <h2>Your Purchased Exams</h2>
+        <ul>
+            <?php foreach ($payload['paidExamIds'] as $exam_id): ?>
+                <?php 
+                $exam_name = isset($exam_names[$exam_id]) ? $exam_names[$exam_id] : 'Unknown Exam (' . $exam_id . ')';
+                $price_data = isset($payload['examPrices']->{$exam_id}) ? (array)$payload['examPrices']->{$exam_id} : null;
+                $exam_price = ($price_data && isset($price_data['price'])) ? number_format($price_data['price'], 2) : 'N/A';
+                ?>
+                <li>
+                    <span class="exam-name"><?php echo esc_html($exam_name); ?></span>
+                    <span class="exam-price">$<?php echo esc_html($exam_price); ?></span>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+        <div style="text-align:center; margin-top:20px;">
+            <a href="<?php echo esc_url(home_url('/shop')); ?>" class="action-button">Explore More Exams</a>
+        </div>
+    </div>
+    <?php
+    return ob_get_clean();
+}
+
 ?>`;
 
 const Integration: React.FC = () => {
@@ -512,7 +570,7 @@ const Integration: React.FC = () => {
                         <code>[exam_portal_login]</code>
                     </pre>
                      <p className="text-slate-600 mt-2">
-                        This will display the custom login form. The app is already configured to use this URL for all login buttons.
+                        To test the data fetching on a WordPress page, create another page and add this shortcode: <code>[exam_user_details]</code>
                     </p>
                 </div>
             </div>
