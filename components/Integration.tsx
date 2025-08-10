@@ -5,12 +5,12 @@ import toast from 'react-hot-toast';
 const phpCode = `<?php
 /**
  * ===================================================================
- * V28: Robust SKU Retrieval and User Test Shortcode
+ * V29: Isolated Shortcode Registration
  * ===================================================================
- * This version implements a more robust SKU retrieval logic to handle
- * all product types from WooCommerce orders. It also includes a new
- * shortcode [exam_user_details] for testing the data payload directly
- * within a WordPress page.
+ * This version refactors the initialization logic to register all 
+ * shortcodes in a separate function. This makes the registration
+ * process more robust and prevents other init tasks from potentially
+ * interfering, resolving issues where shortcodes might not be recognized.
  */
 
 
@@ -28,13 +28,14 @@ $annapoorna_login_error = '';
 
 
 /**
- * Main setup function to initialize all hooks and handle POST requests.
+ * Main setup function to initialize hooks and handle POST requests.
+ * Shortcodes are registered in a separate function to ensure they are always available.
  */
 function annapoorna_exam_app_init() {
     // --- Handle POST submissions early ---
     annapoorna_handle_login_form_post();
     
-    // --- Register all hooks and shortcodes ---
+    // --- Register all hooks ---
     add_action('admin_notices', 'annapoorna_check_dependencies');
     add_action('admin_menu', 'annapoorna_exam_add_admin_menu');
     add_action('admin_init', 'annapoorna_exam_register_settings');
@@ -45,11 +46,18 @@ function annapoorna_exam_app_init() {
     
     add_filter('registration_errors', 'annapoorna_exam_validate_reg_fields', 10, 3);
     add_filter('login_url', 'annapoorna_exam_login_url', 10, 2);
-    
+}
+add_action('init', 'annapoorna_exam_app_init');
+
+/**
+ * Registers all shortcodes for the application.
+ * Hooked to 'init' to ensure they are registered on every page load.
+ */
+function annapoorna_exam_app_register_shortcodes() {
     add_shortcode('exam_portal_login', 'annapoorna_exam_login_shortcode');
     add_shortcode('exam_user_details', 'annapoorna_exam_user_details_shortcode');
 }
-add_action('init', 'annapoorna_exam_app_init');
+add_action('init', 'annapoorna_exam_app_register_shortcodes');
 
 
 /**
