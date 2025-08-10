@@ -15,7 +15,7 @@ const Watermark: React.FC<{ text: string }> = ({ text }) => (
     <div className="absolute inset-0 grid grid-cols-3 grid-rows-8 gap-4 pointer-events-none overflow-hidden">
         {Array.from({ length: 18 }).map((_, i) => (
             <div key={i} className="flex items-center justify-center -rotate-45">
-                <p className="text-gray-400 font-bold text-3xl md:text-4xl tracking-widest opacity-20 select-none whitespace-nowrap">
+                <p className="text-gray-300 font-bold text-2xl md:text-3xl tracking-widest opacity-20 select-none whitespace-nowrap">
                     {text}
                 </p>
             </div>
