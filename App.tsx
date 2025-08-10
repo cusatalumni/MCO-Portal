@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 
@@ -37,6 +37,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, adminOnly = f
 };
 
 const AppContent: React.FC = () => {
+    const { user, token, syncUserData } = useAuth();
+
+    useEffect(() => {
+        // If a token exists from a previous session but we don't have user data yet (e.g., new device),
+        // try to sync the data from the backend.
+        if (token && !user) {
+            syncUserData();
+        }
+    }, [token, user, syncUserData]);
+
     return (
         <div className="flex flex-col min-h-screen bg-slate-50 text-slate-800">
             <Header />
