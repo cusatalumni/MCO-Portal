@@ -12,7 +12,7 @@ import html2canvas from 'html2canvas';
 import { signatureBase64 } from '../assets/signature';
 
 const Watermark: React.FC<{ text: string }> = ({ text }) => (
-    <div className="absolute inset-0 grid grid-cols-8 grid-rows-16 gap-0 pointer-events-none overflow-hidden">
+    <div className="absolute inset-0 grid grid-cols-8 grid-rows-16 gap-1 pointer-events-none overflow-hidden">
         {Array.from({ length: 128 }).map((_, i) => (
             <div key={i} className="flex items-center justify-center -rotate-45">
                 <p className="text-gray-400 font-bold text-xs md:text-sm tracking-widest opacity-15 select-none whitespace-nowrap">
