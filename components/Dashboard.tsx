@@ -136,6 +136,14 @@ const Dashboard: React.FC = () => {
         return activeOrg.exams.filter(e => !e.isPractice && e.productSku && !paidExamIds.includes(e.id));
     }, [activeOrg, paidExamIds]);
 
+    const handlePurchaseClick = (slug: string | undefined) => {
+        if (slug) {
+            window.location.href = `https://www.coding-online.net/product/${slug}/`;
+        } else {
+            toast.error("Product link is not available for this exam.");
+        }
+    };
+
 
     if (isLoading || !activeOrg) {
         return <div className="flex flex-col items-center justify-center h-64"><Spinner /><p className="mt-4">Loading your dashboard...</p></div>;
@@ -283,7 +291,7 @@ const Dashboard: React.FC = () => {
                                             )}
                                         </div>
                                         <button
-                                            onClick={() => navigate(`/checkout/${exam.productSlug}`)}
+                                            onClick={() => handlePurchaseClick(exam.productSlug)}
                                             disabled={!exam.productSlug}
                                             className="bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-cyan-700 transition flex items-center justify-center gap-2 disabled:bg-slate-300 disabled:cursor-not-allowed shrink-0"
                                         >

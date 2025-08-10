@@ -5,18 +5,19 @@ import toast from 'react-hot-toast';
 const phpCode = `<?php
 /**
  * ===================================================================
- * V24: Sale Price Sync
+ * V25: Robust SKU Fetching & Streamlined Checkout
  * ===================================================================
- * This version enhances price syncing from WooCommerce.
- * 1.  Dual Price Fetch: The JWT payload now includes both the current
- *     'price' and the 'regularPrice' for each exam product if it's
- *     on sale.
- * 2.  Richer Payload: The 'examPrices' object in the payload is
- *     now an object containing price details, e.g.,
- *     { "price": 99, "regularPrice": 120 }.
- * 3.  Enables Sale UI: This change provides the necessary data for the
- *     frontend application to display strikethrough pricing for
- *     items on sale, as requested.
+ * This version introduces a critical fix for purchase syncing and a
+ * user-requested UX improvement.
+ * 1.  Robust SKU Logic: The payload generation now correctly handles
+ *     variable products in WooCommerce. It checks for a SKU on the
+ *     product variation first, and if not found, falls back to the
+ *     parent product's SKU. This resolves the bug where some
+ *     purchased exams were not appearing after sync.
+ * 2.  Direct Checkout: Based on user feedback, the intermediate
+ *     in-app checkout page has been removed. The app now links
+ *     directly to the WooCommerce product page, simplifying the
+ *     purchase flow.
  */
 
 
@@ -210,8 +211,27 @@ function annapoorna_exam_get_payload($user_id) {
         foreach ($orders as $order) {
             foreach ($order->get_items() as $item) {
                 $product = $item->get_product();
-                if ($product && ($sku = $product->get_sku()) && in_array($sku, $all_exam_skus)) {
-                    $paid_exam_ids[] = $sku;
+                if ($product) {
+                    $sku_to_check = '';
+                    if ($product->is_type('variation')) {
+                        // For variations, prioritize the variation's SKU, then fall back to the parent's SKU.
+                        $variation_sku = $product->get_sku();
+                        if (!empty($variation_sku)) {
+                            $sku_to_check = $variation_sku;
+                        } else {
+                            $parent_product = wc_get_product($product->get_parent_id());
+                            if ($parent_product) {
+                                $sku_to_check = $parent_product->get_sku();
+                            }
+                        }
+                    } else {
+                        // For simple products, just get its SKU.
+                        $sku_to_check = $product->get_sku();
+                    }
+        
+                    if (!empty($sku_to_check) && in_array($sku_to_check, $all_exam_skus)) {
+                        $paid_exam_ids[] = $sku_to_check;
+                    }
                 }
             }
         }
