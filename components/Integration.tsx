@@ -5,13 +5,12 @@ import toast from 'react-hot-toast';
 const phpCode = `<?php
 /**
  * ===================================================================
- * V31: Definitive Fix for SKU Retrieval
+ * V32: User-Validated SKU Retrieval Logic
  * ===================================================================
- * This version implements the final and most robust fix for the exam
- * sync issue. The logic within 'annapoorna_exam_get_payload' has been
- * rewritten to explicitly check for variation IDs vs product IDs,
- * ensuring that SKUs from any product type in WooCommerce are
- * correctly identified and synced.
+ * This version incorporates the user-confirmed "working" logic for
+ * fetching product data from a WooCommerce order item by using the
+ * more direct and reliable '$item->get_product()' method. This should
+ * be the definitive fix for the synchronization issue.
  */
 
 
@@ -161,7 +160,7 @@ function annapoorna_get_exam_app_url($is_admin = false) {
 }
 
 /**
- * DEFINITIVE FIX: Generates JWT payload, robustly fetching purchased exam SKUs.
+ * Generates JWT payload, using the user-validated robust method for fetching exam SKUs.
  * This function is the single source of truth for user data.
  * @param  int $user_id The user's ID.
  * @return array|null The payload data or null on failure.
@@ -200,11 +199,8 @@ function annapoorna_exam_get_payload($user_id) {
         $orders = wc_get_orders(['customer_id' => $user->ID, 'status' => ['completed', 'processing', 'on-hold'], 'limit' => -1]);
         foreach ($orders as $order) {
             foreach ($order->get_items() as $item) {
-                $product_id = $item->get_product_id();
-                $variation_id = $item->get_variation_id();
-                
-                // If it's a variation, use the variation_id to get the product, otherwise use product_id
-                $product = $variation_id ? wc_get_product($variation_id) : wc_get_product($product_id);
+                // This is the more reliable method confirmed by the user's testing.
+                $product = $item->get_product(); 
                 
                 if ($product && $product->get_sku() && in_array($product->get_sku(), $all_exam_skus)) {
                     $paid_exam_ids[] = $product->get_sku();
