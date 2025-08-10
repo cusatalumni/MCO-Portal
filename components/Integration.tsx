@@ -5,13 +5,21 @@ import toast from 'react-hot-toast';
 const phpCode = `<?php
 /**
  * ===================================================================
- * V19: Robust Product & Variation Handling
+ * V21: Security, Performance, and Quality-of-Life Update
  * ===================================================================
- * This version enhances the logic for detecting purchased exams within
- * WooCommerce orders. It now correctly handles both simple and variable
- * products by checking for a variation_id on the order item first,
- * ensuring that the correct SKU is always used to identify a purchased exam.
+ * This version incorporates a number of best practices for a more
+ * robust and secure integration with the exam application.
+ * 1.  Security: Stricter validation for the JWT secret key.
+ * 2.  Performance: Caches WooCommerce exam prices using transients.
+ * 3.  Robustness: Adds a dependency check for WooCommerce, and includes
+ *     a meta-refresh fallback on the login redirect.
+ * 4.  Validation: Implements stricter server-side validation for
+ *     test results submitted via the REST API.
+ * 5.  Maintainability: Adds PHPDoc blocks to all functions and
+ *     introduces a debug logging system.
+ * 6.  UX: Minor text improvement on the admin login button.
  */
+
 
 // --- CONFIGURATION ---
 define('ANNAPOORNA_LOGIN_SLUG', 'exam-login');
@@ -19,10 +27,38 @@ define('ANNAPOORNA_EXAM_APP_URL', 'https://exams.coding-online.net/');
 define('ANNAPOORNA_EXAM_APP_TEST_URL', 'https://mco-exam-jkfzdt3bj-manoj-balakrishnans-projects-aa177a85.vercel.app/');
 // IMPORTANT: Define a secure, random key in wp-config.php
 // define('ANNAPOORNA_JWT_SECRET', 'your-very-strong-secret-key-that-is-long-and-random');
+// define('ANNAPOORNA_DEBUG', true); // Add for debug logging
 // --- END CONFIGURATION ---
 
+
 /**
- * Registers the 'Exam App Settings' page.
+ * Debug logging function. Only logs when ANNAPOORNA_DEBUG is true.
+ *
+ * @param mixed $message The message or object to log.
+ */
+function annapoorna_debug_log($message) {
+    if (defined('ANNAPOORNA_DEBUG') && ANNAPOORNA_DEBUG) {
+        if (is_array($message) || is_object($message)) {
+            error_log('Exam App Debug: ' . print_r($message, true));
+        } else {
+            error_log('Exam App Debug: ' . $message);
+        }
+    }
+}
+
+/**
+ * Displays an admin notice if WooCommerce is not active.
+ */
+function annapoorna_check_dependencies() {
+    if (!class_exists('WooCommerce')) {
+        echo '<div class="notice notice-error"><p><strong>Exam App Integration:</strong> WooCommerce is not active. Exam purchasing and pricing features will not work.</p></div>';
+    }
+}
+add_action('admin_notices', 'annapoorna_check_dependencies');
+
+
+/**
+ * Registers the 'Exam App Settings' page in the admin menu.
  */
 function annapoorna_exam_add_admin_menu() {
     add_options_page('Exam App Settings', 'Exam App Settings', 'manage_options', 'exam-app-settings', 'annapoorna_exam_settings_page_html');
@@ -30,7 +66,7 @@ function annapoorna_exam_add_admin_menu() {
 add_action('admin_menu', 'annapoorna_exam_add_admin_menu');
 
 /**
- * Registers the setting for the admin page.
+ * Registers the settings for the admin page.
  */
 function annapoorna_exam_register_settings() {
     register_setting('annapoorna_exam_app_settings_group', 'annapoorna_exam_app_mode');
@@ -64,6 +100,9 @@ function annapoorna_exam_settings_page_html() {
 
 /**
  * Returns the appropriate exam app URL based on user role and saved admin setting.
+ *
+ * @param  bool $is_admin Whether the current user is an administrator.
+ * @return string The exam app URL.
  */
 function annapoorna_get_exam_app_url($is_admin = false) {
     if ($is_admin) {
@@ -74,7 +113,11 @@ function annapoorna_get_exam_app_url($is_admin = false) {
 }
 
 /**
- * Generates JWT payload, including dynamic prices.
+ * Generates JWT payload, including dynamic prices from WooCommerce.
+ * Prices are cached using a transient to improve performance.
+ *
+ * @param  int $user_id The user's ID.
+ * @return array|null The payload data or null on failure.
  */
 function annapoorna_exam_get_payload($user_id) {
     if (!$user = get_userdata($user_id)) return null;
@@ -83,7 +126,7 @@ function annapoorna_exam_get_payload($user_id) {
     $user_full_name = trim($user->first_name . ' ' . $user->last_name) ?: $user->display_name;
     
     $paid_exam_ids = [];
-    $exam_prices = new stdClass(); // FIX: Initialize as an object to ensure correct JSON encoding
+    $exam_prices = new stdClass();
 
     if (class_exists('WooCommerce')) {
         $exam_map = [
@@ -93,30 +136,29 @@ function annapoorna_exam_get_payload($user_id) {
             'CPMA-CERT-EXAM' => 'exam-cpma-cert', 'COC-CERT-EXAM' => 'exam-coc-cert', 'CIC-CERT-EXAM' => 'exam-cic-cert',
             'MTA-CERT' => 'exam-mta-cert',
         ];
-
-        // Fetch prices for all exams
-        foreach ($exam_map as $sku => $exam_id) {
-            $product_id = wc_get_product_id_by_sku($sku);
-            if ($product_id && $product = wc_get_product($product_id)) {
-                // get_price() correctly fetches the sale price if active
-                $exam_prices->{$exam_id} = (float) $product->get_price();
+        
+        $exam_prices = get_transient('annapoorna_exam_prices');
+        if (false === $exam_prices) {
+            annapoorna_debug_log('Exam prices not cached. Fetching from DB.');
+            $exam_prices = new stdClass();
+            foreach ($exam_map as $sku => $exam_id) {
+                $product_id = wc_get_product_id_by_sku($sku);
+                if ($product_id && $product = wc_get_product($product_id)) {
+                    $exam_prices->{$exam_id} = (float) $product->get_price();
+                }
             }
+            set_transient('annapoorna_exam_prices', $exam_prices, 12 * HOUR_IN_SECONDS);
         }
         
-        // Check orders for purchased exams
-        $orders = wc_get_orders(['customer_id' => $user->ID, 'status' => ['completed', 'processing'], 'limit' => -1]);
+        $orders = wc_get_orders(['customer_id' => $user->ID, 'status' => ['completed', 'processing', 'on-hold'], 'limit' => -1]);
         foreach ($orders as $order) {
             foreach ($order->get_items() as $item) {
-                // This logic correctly handles both simple and variable products.
                 $product_id = $item->get_product_id();
                 $variation_id = $item->get_variation_id();
                 $target_product = $variation_id ? wc_get_product($variation_id) : wc_get_product($product_id);
                 
-                if ($target_product) {
-                    $sku = $target_product->get_sku();
-                    if ($sku && isset($exam_map[$sku])) {
-                        $paid_exam_ids[] = $exam_map[$sku];
-                    }
+                if ($target_product && ($sku = $target_product->get_sku()) && isset($exam_map[$sku])) {
+                    $paid_exam_ids[] = $exam_map[$sku];
                 }
             }
         }
@@ -131,18 +173,23 @@ function annapoorna_exam_get_payload($user_id) {
     ];
 }
 
-/**
- * Helper functions for JWT encoding/decoding.
- */
+/** Helper function for Base64 URL encoding. */
 function annapoorna_base64url_encode($data) { return rtrim(strtr(base64_encode($data), '+/', '-_'), '='); }
+/** Helper function for Base64 URL decoding. */
 function annapoorna_base64url_decode($data) { return base64_decode(strtr($data, '-_', '+/')); }
 
 /**
  * Generates a secure JWT.
+ *
+ * @param  int $user_id The user ID to generate a token for.
+ * @return string|null The JWT or null on failure.
  */
 function annapoorna_generate_exam_jwt($user_id) {
     $secret_key = defined('ANNAPOORNA_JWT_SECRET') ? ANNAPOORNA_JWT_SECRET : '';
-    if (empty($secret_key) || strpos($secret_key, 'your-very-strong-secret-key') !== false) return null;
+    if (empty($secret_key) || strlen($secret_key) < 32 || strpos($secret_key, 'your-very-strong-secret-key') !== false) {
+        annapoorna_debug_log('JWT Secret is not configured or is too weak.');
+        return null;
+    }
     $payload = annapoorna_exam_get_payload($user_id);
     if (!$payload) return null;
 
@@ -156,11 +203,16 @@ function annapoorna_generate_exam_jwt($user_id) {
 
 /**
  * Verifies a JWT and returns the payload on success.
+ *
+ * @param  string $token The JWT to verify.
+ * @return array|null The decoded payload or null on failure.
  */
 function annapoorna_verify_exam_jwt($token) {
     $secret_key = defined('ANNAPOORNA_JWT_SECRET') ? ANNAPOORNA_JWT_SECRET : '';
-    if (empty($secret_key)) return null;
-
+    if (empty($secret_key) || strlen($secret_key) < 32) {
+        annapoorna_debug_log('JWT Secret is not configured or is too weak for verification.');
+        return null;
+    }
     $parts = explode('.', $token);
     if (count($parts) !== 3) return null;
 
@@ -178,11 +230,15 @@ function annapoorna_verify_exam_jwt($token) {
 
 
 /**
- * Redirects after WooCommerce purchase.
+ * Redirects after WooCommerce purchase and clears the cart.
+ *
+ * @param int $order_id The ID of the completed order.
  */
 function annapoorna_redirect_after_purchase($order_id) {
     if (!$order_id || !($order = wc_get_order($order_id)) || !($user_id = $order->get_customer_id())) return;
-    if ($user_id > 0 && $order->has_status(['completed', 'processing'])) {
+
+    if ($user_id > 0 && $order->has_status(['completed', 'processing', 'on-hold'])) {
+        if (function_exists('WC') && WC()->cart) WC()->cart->empty_cart();
         if ($token = annapoorna_generate_exam_jwt($user_id)) {
             $user = get_userdata($user_id);
             $base_url = annapoorna_get_exam_app_url(in_array('administrator', (array) $user->roles));
@@ -194,11 +250,13 @@ function annapoorna_redirect_after_purchase($order_id) {
 add_action('woocommerce_thankyou', 'annapoorna_redirect_after_purchase', 10, 1);
 
 /**
- * Shortcode for the login form.
+ * Shortcode handler for the custom login form.
+ *
+ * @return string HTML for the login form.
  */
 function annapoorna_exam_login_shortcode() {
-    if (!defined('ANNAPOORNA_JWT_SECRET') || strpos(ANNAPOORNA_JWT_SECRET, 'your-very-strong-secret-key') !== false) {
-        return "<p class='exam-portal-error'>Configuration error: Please define a valid ANNAPOORNA_JWT_SECRET in wp-config.php.</p>";
+    if (!defined('ANNAPOORNA_JWT_SECRET') || strlen(ANNAPOORNA_JWT_SECRET) < 32 || strpos(ANNAPOORNA_JWT_SECRET, 'your-very-strong-secret-key') !== false) {
+        return "<p class='exam-portal-error'>Configuration error: A strong, unique ANNAPOORNA_JWT_SECRET (at least 32 characters) must be defined in wp-config.php.</p>";
     }
     
     $login_error = '';
@@ -215,9 +273,9 @@ function annapoorna_exam_login_shortcode() {
                 wp_set_auth_cookie($user->ID);
                 $user_id = $user->ID;
             }
-        } elseif (!empty($_POST['admin_sync_nonce']) && wp_verify_nonce($_POST['admin_sync_nonce'], 'admin_sync_action')) {
+        } elseif (!empty($_POST['annapoorna_admin_sync_nonce']) && wp_verify_nonce($_POST['annapoorna_admin_sync_nonce'], 'annapoorna_admin_sync_action')) {
             $user_id = get_current_user_id();
-            if (!$user_id) $login_error = 'Error: User not authenticated.';
+            if (!$user_id) $login_error = 'Error: User not authenticated for admin sync.';
         }
         
         if ($user_id > 0) {
@@ -241,8 +299,8 @@ function annapoorna_exam_login_shortcode() {
             ?>
             <div class="exam-portal-container"><h2>Exam Portal Access</h2><p>You are logged in as an administrator. Click to sync and go.</p>
                 <form name="syncform" action="<?php echo esc_url(add_query_arg('redirect_to', urlencode($redirect_to), '')); ?>" method="post">
-                    <div class="form-row"><button type="submit">Sync & Go to Exam App</button></div>
-                    <?php wp_nonce_field('admin_sync_action', 'admin_sync_nonce'); ?>
+                    <div class="form-row"><button type="submit" title="This securely syncs your latest purchases and profile info.">Access Exam App</button></div>
+                    <?php wp_nonce_field('annapoorna_admin_sync_action', 'annapoorna_admin_sync_nonce'); ?>
                 </form>
                 <div class="exam-portal-links"><a href="<?php echo esc_url(wp_logout_url(home_url(ANNAPOORNA_LOGIN_SLUG))); ?>">Log Out</a></div>
             </div>
@@ -250,7 +308,11 @@ function annapoorna_exam_login_shortcode() {
         } else {
             $token = annapoorna_generate_exam_jwt($user_id);
             $url = annapoorna_get_exam_app_url(false) . '#/auth?token=' . $token . '&redirect_to=' . urlencode($redirect_to);
-            echo "<div class='exam-portal-container' style='text-align:center;'><p>Redirecting...</p><script>window.location.href='" . esc_url_raw($url) . "';</script></div>";
+            echo "<div class='exam-portal-container' style='text-align:center;'>
+                      <p>Redirecting...</p>
+                      <script>window.location.href='" . esc_url_raw($url) . "';</script>
+                      <noscript><meta http-equiv='refresh' content='0;url=" . esc_url_raw($url) . "'></noscript>
+                  </div>";
         }
     } else {
         ?>
@@ -288,7 +350,10 @@ function annapoorna_exam_register_rest_api() {
 add_action('rest_api_init', 'annapoorna_exam_register_rest_api');
 
 /**
- * Permission callback for REST API to verify JWT.
+ * Permission callback for REST API to verify JWT from Authorization header.
+ *
+ * @param  WP_REST_Request $request The request object.
+ * @return bool|WP_Error True if authenticated, otherwise WP_Error.
  */
 function annapoorna_exam_api_permission_check($request) {
     $token = $request->get_header('Authorization');
@@ -301,16 +366,17 @@ function annapoorna_exam_api_permission_check($request) {
         return new WP_Error('jwt_invalid', 'Invalid or expired token.', array('status' => 403));
     }
     
-    // Pass the validated user ID to the main callback so we don't have to parse the token twice.
     $request->set_param('jwt_user_id', $payload['user']['id']);
     return true;
 }
 
 /**
  * Callback to handle updating a user's name from the app.
+ *
+ * @param  WP_REST_Request $request The request object.
+ * @return WP_REST_Response|WP_Error Response object.
  */
 function annapoorna_exam_update_user_name_callback($request) {
-    // The user ID is now pre-validated and passed by the permission callback.
     $user_id = (int)$request->get_param('jwt_user_id');
     $body = $request->get_json_params();
     $full_name = isset($body['fullName']) ? sanitize_text_field($body['fullName']) : '';
@@ -331,22 +397,25 @@ function annapoorna_exam_update_user_name_callback($request) {
 
 /**
  * Callback to handle saving a test result from the app.
+ *
+ * @param  WP_REST_Request $request The request object.
+ * @return WP_REST_Response|WP_Error Response object.
  */
 function annapoorna_exam_submit_result_callback($request) {
     $user_id = (int)$request->get_param('jwt_user_id');
     $result_data = $request->get_json_params();
 
-    // Basic validation
-    if (empty($result_data) || !isset($result_data['testId'])) {
-        return new WP_Error('invalid_data', 'Test result data is missing or invalid.', array('status' => 400));
+    $required_keys = ['testId', 'examId', 'score', 'correctCount', 'totalQuestions', 'timestamp'];
+    foreach ($required_keys as $key) {
+        if (!isset($result_data[$key])) {
+            annapoorna_debug_log("Submit result failed for user {$user_id}: Missing key '{$key}'.");
+            return new WP_Error('invalid_data', "Missing required key in result data: {$key}", array('status' => 400));
+        }
     }
     
-    // Save the entire result object as user meta. 
-    // This stores the result under a key that includes the unique testId.
     $meta_key = 'exam_result_' . sanitize_key($result_data['testId']);
     update_user_meta($user_id, $meta_key, $result_data);
 
-    // Optional: Also store an index of all test IDs for easy retrieval.
     $all_results_index = get_user_meta($user_id, 'all_exam_results_index', true);
     if (!is_array($all_results_index)) $all_results_index = [];
     if (!in_array($result_data['testId'], $all_results_index)) {
@@ -359,17 +428,20 @@ function annapoorna_exam_submit_result_callback($request) {
 
 
 // --- Registration & Redirect Helpers ---
+/** Adds custom fields to the WP registration form. */
 function annapoorna_exam_add_custom_registration_fields() {
     ?><p><label for="first_name">First Name<br/><input type="text" name="first_name" id="first_name" required/></label></p><p><label for="last_name">Last Name<br/><input type="text" name="last_name" id="last_name" required/></label></p><?php
 }
 add_action('register_form', 'annapoorna_exam_add_custom_registration_fields');
 
+/** Validates the custom registration fields. */
 function annapoorna_exam_validate_reg_fields($errors, $login, $email) {
     if (empty($_POST['first_name']) || empty($_POST['last_name'])) $errors->add('field_error', 'First and Last Name are required.');
     return $errors;
 }
 add_filter('registration_errors', 'annapoorna_exam_validate_reg_fields', 10, 3);
 
+/** Saves the custom registration fields. */
 function annapoorna_exam_save_reg_fields($user_id) {
     if (!empty($_POST['first_name'])) update_user_meta($user_id, 'first_name', sanitize_text_field($_POST['first_name']));
     if (!empty($_POST['last_name'])) update_user_meta($user_id, 'last_name', sanitize_text_field($_POST['last_name']));
@@ -377,12 +449,15 @@ function annapoorna_exam_save_reg_fields($user_id) {
 add_action('user_register', 'annapoorna_exam_save_reg_fields');
 
 /**
- * REVISED: Filters the WordPress login URL to point to our custom page.
+ * Filters the WordPress login URL to point to our custom login page.
+ *
+ * @param string $login_url The original login URL.
+ * @param string $redirect  The redirect_to query parameter.
+ * @return string The modified login URL.
  */
 function annapoorna_exam_login_url($login_url, $redirect) {
     $login_page_url = home_url('/' . ANNAPOORNA_LOGIN_SLUG . '/');
     if (!empty($redirect)) {
-        // urlencode the redirect parameter to handle special characters safely.
         return add_query_arg('redirect_to', urlencode($redirect), $login_page_url);
     }
     return $login_page_url;
@@ -417,7 +492,7 @@ const Integration: React.FC = () => {
                  <div>
                     <h2 className="text-2xl font-semibold text-slate-700 mb-2">Step 1: Define Your Secret Key</h2>
                     <p className="text-slate-600 mb-2">
-                        For security, you <strong>must</strong> add a unique secret key to your <code>wp-config.php</code> file. This key is used to sign the login tokens. Use a password generator to create a long, random key.
+                        For security, you <strong>must</strong> add a unique secret key (at least 32 random characters) to your <code>wp-config.php</code> file. This key is used to sign the login tokens. Use a password generator to create a strong key.
                     </p>
                     <pre className="bg-slate-800 text-white p-4 rounded-lg overflow-x-auto">
                         <code>define('ANNAPOORNA_JWT_SECRET', 'your-super-secret-key-that-is-long-and-random');</code>
