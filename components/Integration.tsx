@@ -5,14 +5,13 @@ import toast from 'react-hot-toast';
 const phpCode = `<?php
 /**
  * ===================================================================
- * V17: Robust Login Redirect & API Security
+ * V18: Correct JSON Formatting for Dynamic Pricing
  * ===================================================================
- * This version includes two key improvements:
- * 1. Robust Redirects: The login URL filter is updated to construct
- *    redirect URLs more reliably, preventing issues with special
- *    characters in destination paths.
- * 2. API Security: The permission callback for the REST API endpoint now
- *    correctly verifies the JWT, improving security best practices.
+ * This version corrects a subtle bug in the JWT payload generation.
+ * The 'examPrices' field is now guaranteed to be a JSON object ({})
+ * instead of a JSON array ([]), even when empty. This prevents
+ * parsing errors in the React application and ensures both dynamic
+ * prices and purchased exam data are loaded correctly.
  */
 
 // --- CONFIGURATION ---
@@ -85,7 +84,7 @@ function annapoorna_exam_get_payload($user_id) {
     $user_full_name = trim($user->first_name . ' ' . $user->last_name) ?: $user->display_name;
     
     $paid_exam_ids = [];
-    $exam_prices = [];
+    $exam_prices = new stdClass(); // FIX: Initialize as an object to ensure correct JSON encoding
 
     if (class_exists('WooCommerce')) {
         $exam_map = [
@@ -101,7 +100,7 @@ function annapoorna_exam_get_payload($user_id) {
             $product_id = wc_get_product_id_by_sku($sku);
             if ($product_id && $product = wc_get_product($product_id)) {
                 // get_price() correctly fetches the sale price if active
-                $exam_prices[$exam_id] = (float) $product->get_price();
+                $exam_prices->{$exam_id} = (float) $product->get_price();
             }
         }
         
@@ -276,6 +275,11 @@ function annapoorna_exam_register_rest_api() {
         'callback' => 'annapoorna_exam_update_user_name_callback',
         'permission_callback' => 'annapoorna_exam_api_permission_check'
     ));
+    register_rest_route('exam-app/v1', '/submit-result', array(
+        'methods' => 'POST',
+        'callback' => 'annapoorna_exam_submit_result_callback',
+        'permission_callback' => 'annapoorna_exam_api_permission_check'
+    ));
 }
 add_action('rest_api_init', 'annapoorna_exam_register_rest_api');
 
@@ -319,6 +323,34 @@ function annapoorna_exam_update_user_name_callback($request) {
     update_user_meta($user_id, 'last_name', $last_name);
 
     return new WP_REST_Response(array('success' => true, 'message' => 'Name updated successfully.'), 200);
+}
+
+/**
+ * Callback to handle saving a test result from the app.
+ */
+function annapoorna_exam_submit_result_callback($request) {
+    $user_id = (int)$request->get_param('jwt_user_id');
+    $result_data = $request->get_json_params();
+
+    // Basic validation
+    if (empty($result_data) || !isset($result_data['testId'])) {
+        return new WP_Error('invalid_data', 'Test result data is missing or invalid.', array('status' => 400));
+    }
+    
+    // Save the entire result object as user meta. 
+    // This stores the result under a key that includes the unique testId.
+    $meta_key = 'exam_result_' . sanitize_key($result_data['testId']);
+    update_user_meta($user_id, $meta_key, $result_data);
+
+    // Optional: Also store an index of all test IDs for easy retrieval.
+    $all_results_index = get_user_meta($user_id, 'all_exam_results_index', true);
+    if (!is_array($all_results_index)) $all_results_index = [];
+    if (!in_array($result_data['testId'], $all_results_index)) {
+        $all_results_index[] = $result_data['testId'];
+        update_user_meta($user_id, 'all_exam_results_index', $all_results_index);
+    }
+
+    return new WP_REST_Response(array('success' => true, 'message' => 'Result saved successfully.'), 200);
 }
 
 
