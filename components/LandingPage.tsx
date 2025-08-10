@@ -1,6 +1,7 @@
+
 import React, { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAppContext } from './AppContext';
+import { useAppContext } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { LogIn, UserPlus } from 'lucide-react';
 import Spinner from './Spinner';

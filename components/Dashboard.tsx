@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.tsx';
@@ -5,7 +6,7 @@ import { googleSheetsService } from '../services/googleSheetsService';
 import type { TestResult } from '../types';
 import Spinner from './Spinner';
 import { BookCopy, History, FlaskConical, Eye, FileText, BarChart, BadgePercent, Trophy, ArrowRight, Home, RefreshCw, Star, Zap, CheckCircle, Lock, Edit, Save, X, ShoppingCart } from 'lucide-react';
-import { useAppContext } from './AppContext';
+import { useAppContext } from '../context/AppContext';
 import toast from 'react-hot-toast';
 import SuggestedBooksSidebar from './SuggestedBooksSidebar';
 
@@ -133,7 +134,7 @@ const Dashboard: React.FC = () => {
 
     const availableToPurchaseExams = useMemo(() => {
         if (!activeOrg) return [];
-        return activeOrg.exams.filter(e => !e.isPractice && e.productSlug && !paidExamIds.includes(e.id));
+        return activeOrg.exams.filter(e => !e.isPractice && e.productSku && !paidExamIds.includes(e.id));
     }, [activeOrg, paidExamIds]);
 
 
