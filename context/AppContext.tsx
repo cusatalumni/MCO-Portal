@@ -3,7 +3,7 @@ import React, { createContext, useState, useContext, ReactNode, useEffect, useMe
 import { googleSheetsService } from '../services/googleSheetsService';
 import type { Organization, RecommendedBook } from '../types';
 import toast from 'react-hot-toast';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from './AuthContext';
 
 interface AppContextType {
   organizations: Organization[];
@@ -39,16 +39,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             : initialOrgs;
 
         setOrganizations(pricedOrgs);
-        if (pricedOrgs.length > 0) {
-            const currentActive = pricedOrgs.find(o => o.id === activeOrg?.id) || pricedOrgs[0];
-            setActiveOrg(currentActive);
-        }
+        setActiveOrg(currentOrg => {
+            if (pricedOrgs.length === 0) return null;
+            const nextActiveOrg = currentOrg ? pricedOrgs.find(o => o.id === currentOrg.id) : pricedOrgs[0];
+            return nextActiveOrg || pricedOrgs[0];
+        });
         setIsInitializing(false);
         setIsLoading(false);
     };
 
     initializeApp();
-  }, [examPrices, activeOrg]);
+  }, [examPrices]);
 
   const suggestedBooks = useMemo(() => {
     if (!activeOrg) return [];

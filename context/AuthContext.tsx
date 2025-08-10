@@ -6,6 +6,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   paidExamIds: string[];
+  examPrices: { [id: string]: number } | null;
   isSubscribed: boolean;
   loginWithToken: (token: string) => void;
   logout: () => void;
@@ -37,18 +38,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           return [];
       }
   });
+  const [examPrices, setExamPrices] = useState<{ [id: string]: number } | null>(() => {
+    try {
+        const storedPrices = localStorage.getItem('examPrices');
+        return storedPrices ? JSON.parse(storedPrices) : null;
+    } catch (error) {
+        console.error("Failed to parse examPrices from localStorage", error);
+        return null;
+    }
+  });
   const [isSubscribed, setIsSubscribed] = useState<boolean>(false);
 
   const loginWithToken = (jwtToken: string) => {
     try {
-        // A proper JWT has three parts separated by dots.
         const parts = jwtToken.split('.');
         if (parts.length !== 3) {
             throw new Error("Invalid JWT format.");
         }
         const payloadBase64Url = parts[1];
-        // The payload is base64url encoded. We need to replace URL-specific characters
-        // and add padding if necessary before using atob.
         const payloadBase64 = payloadBase64Url.replace(/-/g, '+').replace(/_/g, '/');
         const decodedPayload = decodeURIComponent(atob(payloadBase64).split('').map(function(c) {
             return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
@@ -63,17 +70,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             localStorage.setItem('examUser', JSON.stringify(payload.user));
             localStorage.setItem('paidExamIds', JSON.stringify(payload.paidExamIds));
             localStorage.setItem('authToken', jwtToken);
-            // In the future, subscription status could be passed in the token
-            // setIsSubscribed(payload.isSubscribed || false);
+
+            if (payload.examPrices) {
+                setExamPrices(payload.examPrices);
+                localStorage.setItem('examPrices', JSON.stringify(payload.examPrices));
+            }
         } else {
             throw new Error("Invalid token payload structure.");
         }
     } catch(e) {
         console.error("Failed to decode or parse token:", e);
-        localStorage.removeItem('examUser');
-        localStorage.removeItem('paidExamIds');
-        localStorage.removeItem('authToken');
-        // re-throw to be caught in the callback component
+        logout();
         throw new Error("Invalid authentication token.");
     }
   };
@@ -82,16 +89,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(null);
     setPaidExamIds([]);
     setToken(null);
+    setExamPrices(null);
     setIsSubscribed(false);
     localStorage.removeItem('examUser');
     localStorage.removeItem('paidExamIds');
     localStorage.removeItem('authToken');
-    // The redirect will be handled in the Header component
+    localStorage.removeItem('examPrices');
   };
 
   const useFreeAttempt = () => {
-    // This is a placeholder. In a real application, this could be used
-    // to track or limit the number of free attempts a user has.
     console.log('User has started a free practice attempt.');
   };
 
@@ -105,7 +111,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
 
   return (
-    <AuthContext.Provider value={{ user, token, paidExamIds, isSubscribed, loginWithToken, logout, useFreeAttempt, updateUserName }}>
+    <AuthContext.Provider value={{ user, token, paidExamIds, examPrices, isSubscribed, loginWithToken, logout, useFreeAttempt, updateUserName }}>
       {children}
     </AuthContext.Provider>
   );
