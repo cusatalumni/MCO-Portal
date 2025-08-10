@@ -5,19 +5,14 @@ import toast from 'react-hot-toast';
 const phpCode = `<?php
 /**
  * ===================================================================
- * V25: Robust SKU Fetching & Streamlined Checkout
+ * V26: Explicit Product SKU Retrieval
  * ===================================================================
- * This version introduces a critical fix for purchase syncing and a
- * user-requested UX improvement.
- * 1.  Robust SKU Logic: The payload generation now correctly handles
- *     variable products in WooCommerce. It checks for a SKU on the
- *     product variation first, and if not found, falls back to the
- *     parent product's SKU. This resolves the bug where some
- *     purchased exams were not appearing after sync.
- * 2.  Direct Checkout: Based on user feedback, the intermediate
- *     in-app checkout page has been removed. The app now links
- *     directly to the WooCommerce product page, simplifying the
- *     purchase flow.
+ * This version replaces the SKU fetching logic with a more explicit
+ * and direct method. Instead of relying on the a general helper,
+ * it now uses product and variation IDs directly to get the product
+ * object before retrieving the SKU. This approach is more robust and
+ * designed to bypass potential environment-specific issues that were
+ * preventing purchased exams from syncing correctly.
  */
 
 
@@ -209,29 +204,31 @@ function annapoorna_exam_get_payload($user_id) {
         
         $orders = wc_get_orders(['customer_id' => $user->ID, 'status' => ['completed', 'processing', 'on-hold'], 'limit' => -1]);
         foreach ($orders as $order) {
-            foreach ($order->get_items() as $item) {
-                $product = $item->get_product();
+            foreach ($order->get_items() as $item_id => $item) {
+                $product_id = $item->get_product_id();
+                $variation_id = $item->get_variation_id();
+                
+                // Determine which product object to load (variation or parent)
+                $product = $variation_id ? wc_get_product($variation_id) : wc_get_product($product_id);
+                
                 if ($product) {
-                    $sku_to_check = '';
-                    if ($product->is_type('variation')) {
-                        // For variations, prioritize the variation's SKU, then fall back to the parent's SKU.
-                        $variation_sku = $product->get_sku();
-                        if (!empty($variation_sku)) {
-                            $sku_to_check = $variation_sku;
-                        } else {
-                            $parent_product = wc_get_product($product->get_parent_id());
-                            if ($parent_product) {
-                                $sku_to_check = $parent_product->get_sku();
-                            }
+                    $sku = $product->get_sku();
+                    
+                    // If the variation has no SKU, try the parent product's SKU
+                    if (empty($sku) && $variation_id) {
+                        $parent_product = wc_get_product($product_id);
+                        if ($parent_product) {
+                            $sku = $parent_product->get_sku();
                         }
+                    }
+                    
+                    if (!empty($sku) && in_array($sku, $all_exam_skus)) {
+                        $paid_exam_ids[] = $sku;
                     } else {
-                        // For simple products, just get its SKU.
-                        $sku_to_check = $product->get_sku();
+                        annapoorna_debug_log("SKU '{$sku}' for product ID {$product_id} not found or not in exam list.");
                     }
-        
-                    if (!empty($sku_to_check) && in_array($sku_to_check, $all_exam_skus)) {
-                        $paid_exam_ids[] = $sku_to_check;
-                    }
+                } else {
+                    annapoorna_debug_log("Could not get product for item ID: {$item_id} in order " . $order->get_id());
                 }
             }
         }
