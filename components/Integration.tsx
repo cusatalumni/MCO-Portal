@@ -5,13 +5,12 @@ import toast from 'react-hot-toast';
 const phpCode = `<?php
 /**
  * ===================================================================
- * V18: Correct JSON Formatting for Dynamic Pricing
+ * V19: Robust Product & Variation Handling
  * ===================================================================
- * This version corrects a subtle bug in the JWT payload generation.
- * The 'examPrices' field is now guaranteed to be a JSON object ({})
- * instead of a JSON array ([]), even when empty. This prevents
- * parsing errors in the React application and ensures both dynamic
- * prices and purchased exam data are loaded correctly.
+ * This version enhances the logic for detecting purchased exams within
+ * WooCommerce orders. It now correctly handles both simple and variable
+ * products by checking for a variation_id on the order item first,
+ * ensuring that the correct SKU is always used to identify a purchased exam.
  */
 
 // --- CONFIGURATION ---
@@ -108,8 +107,13 @@ function annapoorna_exam_get_payload($user_id) {
         $orders = wc_get_orders(['customer_id' => $user->ID, 'status' => ['completed', 'processing'], 'limit' => -1]);
         foreach ($orders as $order) {
             foreach ($order->get_items() as $item) {
-                if ($product = $item->get_product()) {
-                    $sku = $product->get_sku();
+                // This logic correctly handles both simple and variable products.
+                $product_id = $item->get_product_id();
+                $variation_id = $item->get_variation_id();
+                $target_product = $variation_id ? wc_get_product($variation_id) : wc_get_product($product_id);
+                
+                if ($target_product) {
+                    $sku = $target_product->get_sku();
                     if ($sku && isset($exam_map[$sku])) {
                         $paid_exam_ids[] = $exam_map[$sku];
                     }
