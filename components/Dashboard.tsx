@@ -133,7 +133,7 @@ const Dashboard: React.FC = () => {
 
     const availableToPurchaseExams = useMemo(() => {
         if (!activeOrg) return [];
-        return activeOrg.exams.filter(e => !e.isPractice && e.productSku && !paidExamIds.includes(e.id));
+        return activeOrg.exams.filter(e => !e.isPractice && e.productSlug && !paidExamIds.includes(e.id));
     }, [activeOrg, paidExamIds]);
 
 

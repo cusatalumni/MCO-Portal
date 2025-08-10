@@ -5,14 +5,12 @@ import toast from 'react-hot-toast';
 const phpCode = `<?php
 /**
  * ===================================================================
- * V17: Robust Login Redirect & API Security
+ * V15.1: Include 'processing' orders in sync
  * ===================================================================
- * This version includes two key improvements:
- * 1. Robust Redirects: The login URL filter is updated to construct
- *    redirect URLs more reliably, preventing issues with special
- *    characters in destination paths.
- * 2. API Security: The permission callback for the REST API endpoint now
- *    correctly verifies the JWT, improving security best practices.
+ * This version enhances the reliability of exam synchronization:
+ * 1. The JWT payload generation now includes products from WooCommerce
+ *    orders with a status of 'processing' in addition to 'completed'.
+ *    This ensures users get access immediately after payment.
  */
 
 // --- CONFIGURATION ---
@@ -76,7 +74,7 @@ function annapoorna_get_exam_app_url($is_admin = false) {
 }
 
 /**
- * Generates JWT payload, including dynamic prices.
+ * REVISED: Generates JWT payload, now deriving name from standard WP fields.
  */
 function annapoorna_exam_get_payload($user_id) {
     if (!$user = get_userdata($user_id)) return null;
@@ -85,34 +83,22 @@ function annapoorna_exam_get_payload($user_id) {
     $user_full_name = trim($user->first_name . ' ' . $user->last_name) ?: $user->display_name;
     
     $paid_exam_ids = [];
-    $exam_prices = [];
-
     if (class_exists('WooCommerce')) {
         $exam_map = [
-            'CPC-CERT-EXAM' => 'exam-cpc-cert', 'CCA-CERT-EXAM' => 'exam-cca-cert', 'CCS-CERT-EXAM' => 'exam-ccs-cert',
-            'MEDICAL-BILLING-CERT' => 'exam-billing-cert', 'RISK-ADJUSTMENT-CERT' => 'exam-risk-cert',
-            'ICD-10-CM-CERT' => 'exam-icd-cert', 'CPB-CERT-EXAM' => 'exam-cpb-cert', 'CRC-CERT-EXAM' => 'exam-crc-cert',
-            'CPMA-CERT-EXAM' => 'exam-cpma-cert', 'COC-CERT-EXAM' => 'exam-coc-cert', 'CIC-CERT-EXAM' => 'exam-cic-cert',
-            'MTA-CERT' => 'exam-mta-cert',
+            'cpc-certification-exam' => 'exam-cpc-cert', 'cca-certification-exam' => 'exam-cca-cert', 'ccs-certification-exam' => 'exam-ccs-cert',
+            'medical-billing-certification' => 'exam-billing-cert', 'risk-adjustment-coding-certification' => 'exam-risk-cert',
+            'icd-10-cm-certification-exam' => 'exam-icd-cert', 'cpb-certification-exam' => 'exam-cpb-cert', 'crc-certification-exam' => 'exam-crc-cert',
+            'cpma-certification-exam' => 'exam-cpma-cert', 'coc-certification-exam' => 'exam-coc-cert', 'cic-certification-exam' => 'exam-cic-cert',
+            'medical-terminology-anatomy-certification' => 'exam-mta-cert',
         ];
-
-        // Fetch prices for all exams
-        foreach ($exam_map as $sku => $exam_id) {
-            $product_id = wc_get_product_id_by_sku($sku);
-            if ($product_id && $product = wc_get_product($product_id)) {
-                // get_price() correctly fetches the sale price if active
-                $exam_prices[$exam_id] = (float) $product->get_price();
-            }
-        }
-        
-        // Check orders for purchased exams
+        // MODIFIED: Include both 'completed' and 'processing' orders
         $orders = wc_get_orders(['customer_id' => $user->ID, 'status' => ['completed', 'processing'], 'limit' => -1]);
         foreach ($orders as $order) {
             foreach ($order->get_items() as $item) {
                 if ($product = $item->get_product()) {
-                    $sku = $product->get_sku();
-                    if ($sku && isset($exam_map[$sku])) {
-                        $paid_exam_ids[] = $exam_map[$sku];
+                    $slug_or_sku = $product->get_sku() ?: $product->get_slug();
+                    if (isset($exam_map[$slug_or_sku])) {
+                        $paid_exam_ids[] = $exam_map[$slug_or_sku];
                     }
                 }
             }
@@ -123,8 +109,7 @@ function annapoorna_exam_get_payload($user_id) {
     return [
         'iss' => get_site_url(), 'iat' => time(), 'exp' => time() + (60 * 60 * 2),
         'user' => ['id' => (string)$user->ID, 'name' => $user_full_name, 'email' => $user->user_email, 'isAdmin' => $is_admin], 
-        'paidExamIds' => $paid_exam_ids,
-        'examPrices' => $exam_prices,
+        'paidExamIds' => $paid_exam_ids
     ];
 }
 
@@ -152,7 +137,7 @@ function annapoorna_generate_exam_jwt($user_id) {
 }
 
 /**
- * Verifies a JWT and returns the payload on success.
+ * NEW: Verifies a JWT and returns the payload on success.
  */
 function annapoorna_verify_exam_jwt($token) {
     $secret_key = defined('ANNAPOORNA_JWT_SECRET') ? ANNAPOORNA_JWT_SECRET : '';
@@ -191,7 +176,7 @@ function annapoorna_redirect_after_purchase($order_id) {
 add_action('woocommerce_thankyou', 'annapoorna_redirect_after_purchase', 10, 1);
 
 /**
- * Shortcode for the login form.
+ * REVISED: Shortcode for the login form, no longer asks for full name.
  */
 function annapoorna_exam_login_shortcode() {
     if (!defined('ANNAPOORNA_JWT_SECRET') || strpos(ANNAPOORNA_JWT_SECRET, 'your-very-strong-secret-key') !== false) {
@@ -268,21 +253,21 @@ function annapoorna_exam_login_shortcode() {
 add_shortcode('exam_portal_login', 'annapoorna_exam_login_shortcode');
 
 /**
- * Registers REST API endpoints for the exam app.
+ * NEW: Registers REST API endpoints for the exam app.
  */
 function annapoorna_exam_register_rest_api() {
     register_rest_route('exam-app/v1', '/update-name', array(
         'methods' => 'POST',
         'callback' => 'annapoorna_exam_update_user_name_callback',
-        'permission_callback' => 'annapoorna_exam_api_permission_check'
+        'permission_callback' => '__return_true' 
     ));
 }
 add_action('rest_api_init', 'annapoorna_exam_register_rest_api');
 
 /**
- * Permission callback for REST API to verify JWT.
+ * NEW: Callback to handle updating a user's name from the app.
  */
-function annapoorna_exam_api_permission_check($request) {
+function annapoorna_exam_update_user_name_callback($request) {
     $token = $request->get_header('Authorization');
     if (!$token || !preg_match('/Bearer\\s(\\S+)/', $token, $matches)) {
         return new WP_Error('jwt_missing', 'Authorization token not found.', array('status' => 401));
@@ -293,17 +278,7 @@ function annapoorna_exam_api_permission_check($request) {
         return new WP_Error('jwt_invalid', 'Invalid or expired token.', array('status' => 403));
     }
     
-    // Pass the validated user ID to the main callback so we don't have to parse the token twice.
-    $request->set_param('jwt_user_id', $payload['user']['id']);
-    return true;
-}
-
-/**
- * Callback to handle updating a user's name from the app.
- */
-function annapoorna_exam_update_user_name_callback($request) {
-    // The user ID is now pre-validated and passed by the permission callback.
-    $user_id = (int)$request->get_param('jwt_user_id');
+    $user_id = (int)$payload['user']['id'];
     $body = $request->get_json_params();
     $full_name = isset($body['fullName']) ? sanitize_text_field($body['fullName']) : '';
     
@@ -340,16 +315,8 @@ function annapoorna_exam_save_reg_fields($user_id) {
 }
 add_action('user_register', 'annapoorna_exam_save_reg_fields');
 
-/**
- * REVISED: Filters the WordPress login URL to point to our custom page.
- */
 function annapoorna_exam_login_url($login_url, $redirect) {
-    $login_page_url = home_url('/' . ANNAPOORNA_LOGIN_SLUG . '/');
-    if (!empty($redirect)) {
-        // urlencode the redirect parameter to handle special characters safely.
-        return add_query_arg('redirect_to', urlencode($redirect), $login_page_url);
-    }
-    return $login_page_url;
+    return home_url(add_query_arg('redirect_to', $redirect, ANNAPOORNA_LOGIN_SLUG));
 }
 add_filter('login_url', 'annapoorna_exam_login_url', 10, 2);
 ?>`;
@@ -391,7 +358,7 @@ const Integration: React.FC = () => {
                 <div>
                     <h2 className="text-2xl font-semibold text-slate-700 mb-2">Step 2: Add Full Code to WordPress</h2>
                     <p className="text-slate-600 mb-2">
-                        Copy the entire code block below. This single snippet handles login, SSO, dynamic pricing, and saving user profile changes.
+                        Copy the entire code block below. This single snippet handles login, SSO, and saving user profile changes.
                     </p>
                     <div className="relative group">
                         <button

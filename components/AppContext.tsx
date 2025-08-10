@@ -1,10 +1,8 @@
 
-
 import React, { createContext, useState, useContext, ReactNode, useEffect, useMemo } from 'react';
 import { googleSheetsService } from '../services/googleSheetsService';
 import type { Organization, RecommendedBook } from '../types';
 import toast from 'react-hot-toast';
-import { useAuth } from '../context/AuthContext';
 
 interface AppContextType {
   organizations: Organization[];
@@ -23,34 +21,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [activeOrg, setActiveOrg] = useState<Organization | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isInitializing, setIsInitializing] = useState(true);
-  const { examPrices } = useAuth();
 
   useEffect(() => {
-    const initializeApp = () => {
-        const initialOrgs = googleSheetsService.getOrganizations();
-        
-        // Apply prices if they are available (e.g., from auth context via localStorage)
-        const pricedOrgs = examPrices 
-            ? initialOrgs.map(org => ({
-                ...org,
-                exams: org.exams.map(exam => ({
-                    ...exam,
-                    price: examPrices[exam.id] !== undefined ? examPrices[exam.id] : exam.price
-                }))
-            }))
-            : initialOrgs;
-
-        setOrganizations(pricedOrgs);
-        if (pricedOrgs.length > 0) {
-            const currentActive = pricedOrgs.find(o => o.id === activeOrg?.id) || pricedOrgs[0];
-            setActiveOrg(currentActive);
-        }
-        setIsInitializing(false);
-        setIsLoading(false);
+    const initializeApp = async () => {
+      // The complex exam initialization has been removed to simplify the app's startup.
+      const allOrgs = googleSheetsService.getOrganizations();
+      setOrganizations(allOrgs);
+      if (allOrgs.length > 0) {
+          setActiveOrg(allOrgs[0]);
+      }
+      setIsInitializing(false);
+      setIsLoading(false);
     };
 
     initializeApp();
-  }, [examPrices]);
+  }, []);
 
   const suggestedBooks = useMemo(() => {
     if (!activeOrg) return [];
@@ -59,6 +44,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         .map(exam => exam.recommendedBook)
         .filter((book): book is RecommendedBook => book !== undefined);
 
+    // Filter for unique books by title to avoid duplicates in the sidebar
     const uniqueBooks = Array.from(new Map(books.map(book => [book.title, book])).values());
     
     return uniqueBooks;
