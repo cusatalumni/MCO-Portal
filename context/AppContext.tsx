@@ -1,5 +1,6 @@
 
 
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useMemo } from 'react';
 import { googleSheetsService } from '../services/googleSheetsService';
 import type { Organization, RecommendedBook } from '../types';
@@ -29,14 +30,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const initializeApp = () => {
         const initialOrgs = googleSheetsService.getOrganizations();
         
-        // Apply prices if they are available (e.g., from auth context via localStorage)
         const pricedOrgs = examPrices 
             ? initialOrgs.map(org => ({
                 ...org,
-                exams: org.exams.map(exam => ({
-                    ...exam,
-                    price: examPrices[exam.id] !== undefined ? examPrices[exam.id] : exam.price
-                }))
+                exams: org.exams.map(exam => {
+                    const syncedPriceData = examPrices[exam.id];
+                    if (syncedPriceData) {
+                        return {
+                            ...exam,
+                            price: syncedPriceData.price,
+                            regularPrice: syncedPriceData.regularPrice
+                        };
+                    }
+                    return exam;
+                })
             }))
             : initialOrgs;
 

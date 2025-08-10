@@ -266,23 +266,35 @@ const Dashboard: React.FC = () => {
                         <h2 className="text-xl font-bold text-slate-800 flex items-center mb-4"><ShoppingCart className="mr-3 text-cyan-500" /> Available Exams</h2>
                         <div className="space-y-3">
                             {availableToPurchaseExams.length > 0 ? availableToPurchaseExams.map(exam => (
-                                <div key={exam.id} className="bg-slate-50 p-3 rounded-lg border border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3">
+                                <div key={exam.id} className="bg-slate-50 p-3 rounded-lg border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                                     <div className="flex-grow">
                                         <h3 className="font-bold text-slate-700">{exam.name}</h3>
                                         <p className="text-sm text-slate-500">{exam.description}</p>
                                     </div>
-                                    <button
-                                        onClick={() => navigate(`/checkout/${exam.productSlug}`)}
-                                        disabled={!exam.productSlug}
-                                        className="w-full sm:w-auto bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition flex items-center justify-center gap-2 disabled:bg-slate-300 disabled:cursor-not-allowed"
-                                    >
-                                        <ShoppingCart size={16} /> Purchase (${exam.price})
-                                    </button>
+                                    <div className="flex items-center justify-end gap-3 w-full sm:w-auto">
+                                        <div className="text-right">
+                                            {exam.regularPrice && exam.regularPrice > exam.price ? (
+                                                <>
+                                                    <span className="text-2xl font-bold text-green-600">${exam.price.toFixed(2)}</span>
+                                                    <span className="text-md text-slate-500 line-through ml-2">${exam.regularPrice.toFixed(2)}</span>
+                                                </>
+                                            ) : (
+                                                <span className="text-2xl font-bold text-slate-700">${exam.price.toFixed(2)}</span>
+                                            )}
+                                        </div>
+                                        <button
+                                            onClick={() => navigate(`/checkout/${exam.productSlug}`)}
+                                            disabled={!exam.productSlug}
+                                            className="bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-cyan-700 transition flex items-center justify-center gap-2 disabled:bg-slate-300 disabled:cursor-not-allowed shrink-0"
+                                        >
+                                            Purchase Now
+                                        </button>
+                                    </div>
                                 </div>
                             )) : (
                                 <div className="text-center py-6 text-slate-500">
                                     <p>You have purchased all available certification exams.</p>
-                                    <a href={browseExamsUrl} target="_blank" rel="noopener noreferrer" className="mt-2 text-sm font-semibold text-cyan-600 hover:text-cyan-800 flex items-center gap-1 mx-auto">
+                                    <a href={browseExamsUrl} target="_blank" rel="noopener noreferrer" className="mt-2 text-sm font-semibold text-cyan-600 hover:text-cyan-800 flex items-center justify-center gap-1 mx-auto">
                                         Browse Our Main Store <ArrowRight size={14} />
                                     </a>
                                 </div>

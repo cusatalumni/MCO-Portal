@@ -5,19 +5,18 @@ import toast from 'react-hot-toast';
 const phpCode = `<?php
 /**
  * ===================================================================
- * V23: SKU as Exam ID Refactor
+ * V24: Sale Price Sync
  * ===================================================================
- * This version refactors the integration to use the WooCommerce
- * product SKU as the primary identifier for exams.
- * 1.  Robustness: Eliminates the '$exam_map' array, which was a
- *     potential point of failure. The app now uses the SKU directly
- *     as the exam ID, simplifying new exam additions.
- * 2.  Simplification: Logic for fetching paid exam IDs and prices
- *     is now cleaner, iterating over a simple list of valid SKUs
- *     instead of a mapping array.
- * 3.  Consistency: Ensures the identifiers used in the app (exam ID)
- *     and in WooCommerce (product SKU) are the same, resolving sync
- *     and pricing issues.
+ * This version enhances price syncing from WooCommerce.
+ * 1.  Dual Price Fetch: The JWT payload now includes both the current
+ *     'price' and the 'regularPrice' for each exam product if it's
+ *     on sale.
+ * 2.  Richer Payload: The 'examPrices' object in the payload is
+ *     now an object containing price details, e.g.,
+ *     { "price": 99, "regularPrice": 120 }.
+ * 3.  Enables Sale UI: This change provides the necessary data for the
+ *     frontend application to display strikethrough pricing for
+ *     items on sale, as requested.
  */
 
 
@@ -195,7 +194,13 @@ function annapoorna_exam_get_payload($user_id) {
             $exam_prices = new stdClass();
             foreach ($all_exam_skus as $sku) {
                 if (($product_id = wc_get_product_id_by_sku($sku)) && ($product = wc_get_product($product_id))) {
-                    $exam_prices->{$sku} = (float) $product->get_price();
+                    $price = (float) $product->get_price();
+                    $regular_price = (float) $product->get_regular_price();
+                    if ($regular_price > $price) {
+                        $exam_prices->{$sku} = ['price' => $price, 'regularPrice' => $regular_price];
+                    } else {
+                        $exam_prices->{$sku} = ['price' => $price, 'regularPrice' => $price];
+                    }
                 }
             }
             set_transient('annapoorna_exam_prices', $exam_prices, 12 * HOUR_IN_SECONDS);

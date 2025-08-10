@@ -1,5 +1,6 @@
 
 
+
 import React, { createContext, useState, useContext, ReactNode } from 'react';
 import type { User, TokenPayload } from '../types';
 
@@ -7,7 +8,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   paidExamIds: string[];
-  examPrices: { [id: string]: number } | null;
+  examPrices: { [id: string]: { price: number; regularPrice?: number; } } | null;
   isSubscribed: boolean;
   loginWithToken: (token: string) => void;
   logout: () => void;
@@ -39,7 +40,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           return [];
       }
   });
-  const [examPrices, setExamPrices] = useState<{ [id: string]: number } | null>(() => {
+  const [examPrices, setExamPrices] = useState<{ [id: string]: { price: number; regularPrice?: number; } } | null>(() => {
     try {
         const storedPrices = localStorage.getItem('examPrices');
         return storedPrices ? JSON.parse(storedPrices) : null;
