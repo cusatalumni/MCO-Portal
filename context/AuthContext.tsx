@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useState, useContext, ReactNode } from 'react';
 import type { User, TokenPayload } from '../types';
 
@@ -51,6 +52,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const loginWithToken = (jwtToken: string) => {
     try {
+        // A proper JWT has three parts separated by dots.
         const parts = jwtToken.split('.');
         if (parts.length !== 3) {
             throw new Error("Invalid JWT format.");
@@ -80,7 +82,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     } catch(e) {
         console.error("Failed to decode or parse token:", e);
-        logout();
+        logout(); // Clear all auth state on error
         throw new Error("Invalid authentication token.");
     }
   };

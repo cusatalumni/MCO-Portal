@@ -1,4 +1,5 @@
 
+
 import React, { createContext, useState, useContext, ReactNode, useEffect, useMemo } from 'react';
 import { googleSheetsService } from '../services/googleSheetsService';
 import type { Organization, RecommendedBook } from '../types';
@@ -28,6 +29,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const initializeApp = () => {
         const initialOrgs = googleSheetsService.getOrganizations();
         
+        // Apply prices if they are available (e.g., from auth context via localStorage)
         const pricedOrgs = examPrices 
             ? initialOrgs.map(org => ({
                 ...org,
@@ -39,17 +41,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             : initialOrgs;
 
         setOrganizations(pricedOrgs);
-        setActiveOrg(currentOrg => {
-            if (pricedOrgs.length === 0) return null;
-            const nextActiveOrg = currentOrg ? pricedOrgs.find(o => o.id === currentOrg.id) : pricedOrgs[0];
-            return nextActiveOrg || pricedOrgs[0];
-        });
+        if (pricedOrgs.length > 0) {
+            const currentActive = pricedOrgs.find(o => o.id === activeOrg?.id) || pricedOrgs[0];
+            setActiveOrg(currentActive);
+        }
         setIsInitializing(false);
         setIsLoading(false);
     };
 
     initializeApp();
-  }, [examPrices]);
+  }, [examPrices, activeOrg?.id]);
 
   const suggestedBooks = useMemo(() => {
     if (!activeOrg) return [];

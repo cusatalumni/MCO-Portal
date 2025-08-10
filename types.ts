@@ -1,4 +1,5 @@
 
+
 export interface User {
   id: string;
   name: string;
@@ -53,6 +54,7 @@ export interface CertificateData {
 export interface TokenPayload {
     user: User;
     paidExamIds: string[];
+    examPrices?: { [examId: string]: number };
     iat?: number;
     exp?: number;
 }
@@ -95,6 +97,7 @@ export interface Exam {
     certificateTemplateId: string;
     recommendedBook?: RecommendedBook;
     isPractice: boolean;
+    productSku?: string;
     productSlug?: string;
     durationMinutes?: number;
 }

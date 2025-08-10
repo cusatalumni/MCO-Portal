@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAppContext } from '../context/AppContext';
 import { BookOpen, ShoppingCart } from 'lucide-react';

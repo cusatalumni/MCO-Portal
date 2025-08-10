@@ -4,20 +4,23 @@ import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 
-import { AuthProvider, useAuth } from './context/AuthContext.tsx';
+import { AuthProvider, useAuth } from './context/AuthContext';
 
-import Login from './components/Login.tsx';
-import Dashboard from './components/Dashboard.tsx';
-import Test from './components/Test.tsx';
-import Results from './components/Results.tsx';
-import Certificate from './components/Certificate.tsx';
-import Header from './components/Header.tsx';
-import Footer from './components/Footer.tsx';
-import LandingPage from './components/LandingPage.tsx';
-import Instructions from './components/Instructions.tsx';
-import Integration from './components/Integration.tsx';
-import Admin from './components/Admin.tsx';
-import BookStore from './components/BookStore.tsx';
+import Login from './components/Login';
+import Dashboard from './components/Dashboard';
+import Test from './components/Test';
+import Results from './components/Results';
+import Certificate from './components/Certificate';
+import Header from './components/Header';
+import Footer from './components/Footer';
+import LandingPage from './components/LandingPage';
+import Instructions from './components/Instructions';
+import Integration from './components/Integration';
+import Admin from './components/Admin';
+import BookStore from './components/BookStore';
+import Profile from './components/Profile';
+import Checkout from './components/Checkout';
+
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -49,10 +52,12 @@ const AppContent: React.FC = () => {
                         <Route path="/bookstore" element={<BookStore />} />
                         
                         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                         <Route path="/test/:examId" element={<ProtectedRoute><Test /></ProtectedRoute>} />
                         <Route path="/results/:testId" element={<ProtectedRoute><Results /></ProtectedRoute>} />
                         <Route path="/certificate/sample" element={<ProtectedRoute><Certificate /></ProtectedRoute>} />
                         <Route path="/certificate/:testId" element={<ProtectedRoute><Certificate /></ProtectedRoute>} />
+                        <Route path="/checkout/:productSlug" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
                         <Route path="/admin" element={<ProtectedRoute adminOnly={true}><Admin /></ProtectedRoute>} />
                     
                         <Route path="*" element={<Navigate to="/" replace />} />
