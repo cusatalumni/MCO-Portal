@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -136,14 +137,6 @@ const Dashboard: React.FC = () => {
         if (!activeOrg) return [];
         return activeOrg.exams.filter(e => !e.isPractice && e.productSku && !paidExamIds.includes(e.productSku));
     }, [activeOrg, paidExamIds]);
-
-    const handlePurchaseClick = (slug: string | undefined) => {
-        if (slug) {
-            navigate(`/checkout/${slug}`);
-        } else {
-            toast.error("Product link is not available for this exam.");
-        }
-    };
 
 
     if (isLoading || !activeOrg) {
@@ -291,13 +284,20 @@ const Dashboard: React.FC = () => {
                                                 <span className="text-2xl font-bold text-slate-700">${exam.price.toFixed(2)}</span>
                                             )}
                                         </div>
-                                        <button
-                                            onClick={() => handlePurchaseClick(exam.productSlug)}
-                                            disabled={!exam.productSlug}
-                                            className="bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-cyan-700 transition flex items-center justify-center gap-2 disabled:bg-slate-300 disabled:cursor-not-allowed shrink-0"
+                                        <a
+                                            href={exam.productSlug ? `https://www.coding-online.net/product/${exam.productSlug}/` : '#'}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            onClick={(e) => {
+                                                if (!exam.productSlug) {
+                                                    e.preventDefault();
+                                                    toast.error("Product link is not available for this exam.");
+                                                }
+                                            }}
+                                            className={`bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-cyan-700 transition flex items-center justify-center gap-2 shrink-0 ${!exam.productSlug ? 'opacity-50 cursor-not-allowed' : ''}`}
                                         >
                                             Purchase Now
-                                        </button>
+                                        </a>
                                     </div>
                                 </div>
                             )) : (
