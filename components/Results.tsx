@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { googleSheetsService } from '../services/googleSheetsService';
+import { apiService } from '../services/googleSheetsService';
 import type { TestResult, Exam, RecommendedBook } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
@@ -11,7 +11,7 @@ import { Check, X, FileDown, BookUp, ShieldCheck } from 'lucide-react';
 const Results: React.FC = () => {
     const { testId } = useParams<{ testId: string }>();
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, token } = useAuth();
     const { activeOrg } = useAppContext();
     
     const [result, setResult] = useState<TestResult | null>(null);
@@ -19,8 +19,9 @@ const Results: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        if (!testId || !user || !activeOrg) {
-            toast.error("Required data is missing.");
+        if (!testId || !user || !activeOrg || !token) {
+            if(!token) toast.error("Authentication session has expired.");
+            else toast.error("Required data is missing.");
             navigate('/dashboard');
             return;
         }
@@ -28,10 +29,10 @@ const Results: React.FC = () => {
         const fetchResultAndExam = async () => {
             setIsLoading(true);
             try {
-                const foundResult = await googleSheetsService.getTestResult(user, testId);
+                const foundResult = await apiService.getTestResult(token, testId);
                 if (foundResult) {
                     setResult(foundResult);
-                    const examConfig = googleSheetsService.getExamConfig(activeOrg.id, foundResult.examId);
+                    const examConfig = activeOrg.exams.find(e => e.id === foundResult.examId);
                     if (examConfig) {
                         setExam(examConfig);
                     } else {
@@ -50,43 +51,22 @@ const Results: React.FC = () => {
             }
         };
         fetchResultAndExam();
-    }, [testId, user, activeOrg, navigate]);
+    }, [testId, user, activeOrg, navigate, token]);
     
     const getGeoAffiliateLink = (book: RecommendedBook): { url: string; domainName: string } => {
         const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         let domainKey: keyof RecommendedBook['affiliateLinks'] = 'com';
         let domainName = 'Amazon.com';
 
-        // List of IANA timezone names for GCC countries
-        const gccTimezones = [
-            'Asia/Dubai',       // UAE
-            'Asia/Riyadh',      // Saudi Arabia
-            'Asia/Qatar',       // Qatar
-            'Asia/Bahrain',     // Bahrain
-            'Asia/Kuwait',      // Kuwait
-            'Asia/Muscat'       // Oman
-        ];
-        
-        // Check for India
+        const gccTimezones = ['Asia/Dubai', 'Asia/Riyadh', 'Asia/Qatar', 'Asia/Bahrain', 'Asia/Kuwait', 'Asia/Muscat'];
         if (timeZone.includes('Asia/Kolkata') || timeZone.includes('Asia/Calcutta')) {
-            domainKey = 'in';
-            domainName = 'Amazon.in';
-        } 
-        // Check for GCC countries
-        else if (gccTimezones.some(tz => timeZone === tz)) {
-            domainKey = 'ae';
-            domainName = 'Amazon.ae';
+            domainKey = 'in'; domainName = 'Amazon.in';
+        } else if (gccTimezones.some(tz => timeZone === tz)) {
+            domainKey = 'ae'; domainName = 'Amazon.ae';
         }
-        // Default is 'com' which is already set
-
+        
         const url = book.affiliateLinks[domainKey];
-
-        // Fallback to .com if a specific regional link is missing for some reason
-        if (!url) {
-            return { url: book.affiliateLinks.com, domainName: 'Amazon.com' };
-        }
-
-        return { url, domainName };
+        return !url ? { url: book.affiliateLinks.com, domainName: 'Amazon.com' } : { url, domainName };
     };
 
 

@@ -2,8 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
-import { useAppContext } from '../context/AppContext';
-import { googleSheetsService } from '../services/googleSheetsService';
+import { apiService } from '../services/googleSheetsService';
 import type { CertificateData } from '../types';
 import Spinner from './Spinner';
 import { Download, ArrowLeft } from 'lucide-react';
@@ -12,10 +11,10 @@ import html2canvas from 'html2canvas';
 import { signatureBase64 } from '../assets/signature';
 
 const Watermark: React.FC<{ text: string }> = ({ text }) => (
-    <div className="absolute inset-0 grid grid-cols-6 grid-rows-10 gap-2 pointer-events-none overflow-hidden">
-        {Array.from({ length: 128 }).map((_, i) => (
+    <div className="absolute inset-0 grid grid-cols-3 grid-rows-6 gap-4 pointer-events-none overflow-hidden">
+        {Array.from({ length: 18 }).map((_, i) => (
             <div key={i} className="flex items-center justify-center -rotate-45">
-                <p className="text-gray-400 font-bold text-l md:text-l tracking-widest opacity-20 select-none whitespace-nowrap">
+                <p className="text-gray-400 font-bold text-3xl md:text-4xl tracking-widest opacity-20 select-none whitespace-nowrap">
                     {text}
                 </p>
             </div>
@@ -26,8 +25,7 @@ const Watermark: React.FC<{ text: string }> = ({ text }) => (
 const Certificate: React.FC = () => {
     const { testId = 'sample' } = useParams<{ testId?: string }>();
     const navigate = useNavigate();
-    const { user } = useAuth();
-    const { activeOrg } = useAppContext();
+    const { user, token } = useAuth();
     const [certData, setCertData] = useState<CertificateData | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isDownloading, setIsDownloading] = useState(false);
@@ -35,7 +33,7 @@ const Certificate: React.FC = () => {
 
     useEffect(() => {
         const fetchCertificateData = async () => {
-            if (!user || !activeOrg) {
+            if (!user || !token) {
                 toast.error("Invalid data. Cannot generate certificate.");
                 navigate('/dashboard');
                 return;
@@ -43,7 +41,7 @@ const Certificate: React.FC = () => {
             
             setIsLoading(true);
             try {
-                const data = await googleSheetsService.getCertificateData(user, testId, activeOrg.id);
+                const data = await apiService.getCertificateData(token, testId);
                 if (data) {
                     setCertData(data);
                 } else {
@@ -59,7 +57,7 @@ const Certificate: React.FC = () => {
         };
 
         fetchCertificateData();
-    }, [testId, user, activeOrg, navigate]);
+    }, [testId, user, token, navigate]);
 
     const handleDownload = async () => {
         if (!certificateRef.current) return;

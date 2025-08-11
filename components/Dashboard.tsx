@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { googleSheetsService } from '../services/googleSheetsService';
+import { apiService } from '../services/googleSheetsService';
 import type { TestResult } from '../types';
 import Spinner from './Spinner';
 import { BookCopy, History, FlaskConical, Eye, FileText, BarChart, BadgePercent, Trophy, ArrowRight, Home, RefreshCw, Star, Zap, CheckCircle, Lock, Edit, Save, X, ShoppingCart } from 'lucide-react';
@@ -11,7 +11,7 @@ import SuggestedBooksSidebar from './SuggestedBooksSidebar';
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
-    const { user, paidExamIds, isSubscribed, updateUserName, token, syncUserData, isSyncing } = useAuth();
+    const { user, paidExamIds, isSubscribed, updateUserName, token } = useAuth();
     const { activeOrg } = useAppContext();
     const [results, setResults] = useState<TestResult[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -21,16 +21,19 @@ const Dashboard: React.FC = () => {
     const [isSavingName, setIsSavingName] = useState(false);
     const [name, setName] = useState(user?.name || '');
 
+    const loginUrl = 'https://www.coding-online.net/exam-login/';
+    const appDashboardPath = '/dashboard';
+    const syncUrl = `${loginUrl}?redirect_to=${encodeURIComponent(appDashboardPath)}`;
     const browseExamsUrl = 'https://www.coding-online.net/exam-programs';
     const updateNameEndpoint = 'https://www.coding-online.net/wp-json/exam-app/v1/update-name';
 
 
     useEffect(() => {
-        if (!user || !activeOrg) return;
+        if (!user || !activeOrg || !token) return;
         const fetchResults = async () => {
             setIsLoading(true);
             try {
-                const userResults = await googleSheetsService.getTestResultsForUser(user);
+                const userResults = await apiService.getTestResultsForUser(token);
                 setResults(userResults);
                 
                 if (userResults.length > 0) {
@@ -58,7 +61,7 @@ const Dashboard: React.FC = () => {
             }
         };
         fetchResults();
-    }, [user, activeOrg]);
+    }, [user, activeOrg, token]);
 
     const handleNameSave = async () => {
         if (!name.trim()) {
@@ -140,15 +143,6 @@ const Dashboard: React.FC = () => {
             toast.error("Product link is not available for this exam.");
         }
     };
-    
-    const handleSync = async () => {
-        const toastId = toast.loading('Syncing your data...');
-        const success = await syncUserData();
-        toast.dismiss(toastId);
-        if (success) {
-            toast.success('Sync complete!');
-        }
-    };
 
 
     if (isLoading || !activeOrg) {
@@ -202,18 +196,17 @@ const Dashboard: React.FC = () => {
                         <div className="flex items-center justify-center space-x-3">
                             <RefreshCw className="text-blue-600" size={24} />
                             <div>
-                                <p className="font-semibold text-blue-800">Just made a purchase or using a new device?</p>
-                                <p className="text-sm text-blue-700">Click below to sync your latest data from our main site.</p>
+                                <p className="font-semibold text-blue-800">Just made a purchase or switching sites?</p>
+                                <p className="text-sm text-blue-700">Click below to sync your latest data. This loads purchased exams and test history.</p>
                             </div>
                         </div>
-                        <button
-                            onClick={handleSync}
-                            disabled={isSyncing}
-                            className="mt-3 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed"
-                            title="This securely syncs your purchased exams with your account."
+                        <a
+                            href={syncUrl}
+                            className="mt-3 inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+                            title="This takes you to our main site to securely sync your purchased exams with your account."
                         >
-                            {isSyncing ? 'Syncing...' : 'Sync My Exams'}
-                        </button>
+                            Sync My Exams
+                        </a>
                     </div>
 
                     {/* My Certification Exams */}
