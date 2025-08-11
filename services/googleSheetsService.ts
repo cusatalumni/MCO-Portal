@@ -1,3 +1,5 @@
+
+
 import { GoogleGenAI, Type } from "@google/genai";
 import type { Question, TestResult, CertificateData, Organization, UserAnswer, User } from '../types';
 import { logoBase64 } from '../assets/logo';
