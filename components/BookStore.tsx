@@ -1,6 +1,3 @@
-
-
-
 import React from 'react';
 import { useAppContext } from './AppContext';
 import Spinner from './Spinner';
