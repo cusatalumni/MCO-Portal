@@ -9,7 +9,7 @@ const Integration: React.FC = () => {
 /**
  * Plugin Name: Medical Coding Online Exam App Integration
  * Description: Integrates the React-based examination app with WordPress, handling user authentication (SSO), WooCommerce purchases, and results synchronization.
- * Version: 3.1
+ * Version: 3.2
  * Author: Annapoorna Infotech
  */
 
@@ -380,7 +380,34 @@ function annapoorna_exam_submit_result_callback($request) {
 }
 
 // Shortcode and Registration
-function annapoorna_exam_login_shortcode() { global $annapoorna_login_error; if (!defined('ANNAPOORNA_JWT_SECRET') || strlen(ANNAPOORNA_JWT_SECRET) < 32 || strpos(ANNAPOORNA_JWT_SECRET, 'your-very-strong-secret-key') !== false) return "<p class='exam-portal-error'>Configuration error: A strong, unique ANNAPOORNA_JWT_SECRET must be defined in wp-config.php.</p>"; $redirect_to = isset($_REQUEST['redirect_to']) ? esc_url_raw(urldecode($_REQUEST['redirect_to'])) : '/dashboard'; ob_start(); ?> <style>.exam-portal-container{font-family:sans-serif;max-width:400px;margin:5% auto;padding:40px;background:#fff;border-radius:12px;box-shadow:0 10px 25px -5px rgba(0,0,0,.1)}.exam-portal-container h2{text-align:center;font-size:24px;margin-bottom:30px}.exam-portal-container .form-row{margin-bottom:20px}.exam-portal-container label{display:block;margin-bottom:8px;font-weight:600}.exam-portal-container input{width:100%;padding:12px;border:1px solid #ccc;border-radius:8px;box-sizing:border-box}.exam-portal-container button{width:100%;padding:14px;background-color:#0891b2;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer}.exam-portal-container button:hover{background-color:#067a8e}.exam-portal-links{margin-top:20px;text-align:center}.exam-portal-error{color:red;text-align:center;margin-bottom:20px}</style> <?php if (is_user_logged_in()) { if (current_user_can('administrator')) { ?> <div class="exam-portal-container"><h2>Exam Portal Access</h2><p>You are logged in as an administrator. Click to sync and go.</p><form name="syncform" action="<?php echo esc_url(add_query_arg('redirect_to', urlencode($redirect_to), '')); ?>" method="post"><div class="form-row"><button type="submit" title="This securely syncs your latest purchases and profile info.">Access Exam App</button></div><?php wp_nonce_field('annapoorna_admin_sync_action', 'annapoorna_admin_sync_nonce'); ?></form><div class="exam-portal-links"><a href="<?php echo esc_url(wp_logout_url(home_url(ANNAPOORNA_LOGIN_SLUG))); ?>">Log Out</a></div></div> <?php } else { $url = annapoorna_get_exam_app_url(false) . '#/auth?token=' . annapoorna_generate_exam_jwt(get_current_user_id()) . '&redirect_to=' . urlencode($redirect_to); echo "<div class='exam-portal-container' style='text-align:center;'><p>Redirecting...</p><script>window.location.href='" . esc_url_raw($url) . "';</script><noscript><meta http-equiv='refresh' content='0;url=" . esc_url_raw($url) . "'></noscript></div>"; } } else { ?> <div class="exam-portal-container"><h2>Exam Portal Login</h2> <?php if ($annapoorna_login_error) echo "<p class='exam-portal-error'>" . esc_html($annapoorna_login_error) . "</p>"; ?> <form name="loginform" action="<?php echo esc_url(add_query_arg('redirect_to', urlencode($redirect_to), '')); ?>" method="post"><div class="form-row"><label for="log">Username or Email</label><input type="text" name="log" id="log" required></div><div class="form-row"><label for="pwd">Password</label><input type="password" name="pwd" id="pwd" required></div><div class="form-row"><button type="submit">Log In</button></div><?php wp_nonce_field('exam_login_action', 'exam_login_nonce'); ?></form><div class="exam-portal-links"><a href="<?php echo esc_url(wp_registration_url()); ?>">Register</a> | <a href="<?php echo esc_url(wp_lostpassword_url()); ?>">Lost Password?</a></div></div> <?php } return ob_get_clean(); }
+function annapoorna_exam_login_shortcode() {
+    global $annapoorna_login_error;
+    if (!defined('ANNAPOORNA_JWT_SECRET') || strlen(ANNAPOORNA_JWT_SECRET) < 32 || strpos(ANNAPOORNA_JWT_SECRET, 'your-very-strong-secret-key') !== false) {
+        return "<p class='exam-portal-error' style='color:red; font-weight:bold; text-align:center; border: 1px solid red; padding: 10px;'>Configuration error: A strong, unique ANNAPOORNA_JWT_SECRET must be defined in wp-config.php.</p>";
+    }
+
+    $redirect_to = isset($_REQUEST['redirect_to']) ? esc_url_raw(urldecode($_REQUEST['redirect_to'])) : '/dashboard';
+    ob_start();
+    ?>
+    <style>.exam-portal-container{font-family:sans-serif;max-width:400px;margin:5% auto;padding:40px;background:#fff;border-radius:12px;box-shadow:0 10px 25px -5px rgba(0,0,0,.1)}.exam-portal-container h2{text-align:center;font-size:24px;margin-bottom:30px}.exam-portal-container .form-row{margin-bottom:20px}.exam-portal-container label{display:block;margin-bottom:8px;font-weight:600}.exam-portal-container input{width:100%;padding:12px;border:1px solid #ccc;border-radius:8px;box-sizing:border-box}.exam-portal-container button{width:100%;padding:14px;background-color:#0891b2;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer}.exam-portal-container button:hover{background-color:#067a8e}.exam-portal-links{margin-top:20px;text-align:center}.exam-portal-error{color:red;text-align:center;margin-bottom:20px}</style>
+    <?php
+    if (is_user_logged_in()) {
+        $token = annapoorna_generate_exam_jwt(get_current_user_id());
+        if ($token) {
+            if (current_user_can('administrator')) { ?>
+                <div class="exam-portal-container"><h2>Exam Portal Access</h2><p>You are logged in as an administrator. Click to sync and go.</p><form name="syncform" action="<?php echo esc_url(add_query_arg('redirect_to', urlencode($redirect_to), '')); ?>" method="post"><div class="form-row"><button type="submit" title="This securely syncs your latest purchases and profile info.">Access Exam App</button></div><?php wp_nonce_field('annapoorna_admin_sync_action', 'annapoorna_admin_sync_nonce'); ?></form><div class="exam-portal-links"><a href="<?php echo esc_url(wp_logout_url(home_url(ANNAPOORNA_LOGIN_SLUG))); ?>">Log Out</a></div></div>
+            <?php } else {
+                $url = annapoorna_get_exam_app_url(false) . '#/auth?token=' . $token . '&redirect_to=' . urlencode($redirect_to);
+                echo "<div class='exam-portal-container' style='text-align:center;'><p>Redirecting...</p><script>window.location.href='" . esc_url_raw($url) . "';</script><noscript><meta http-equiv='refresh' content='0;url=" . esc_url_raw($url) . "'></noscript></div>";
+            }
+        } else {
+            echo "<div class='exam-portal-container'><p class='exam-portal-error'>Could not generate a secure login token. This may be a temporary issue. Please try again or contact support if the problem persists.</p></div>";
+        }
+    } else { ?>
+        <div class="exam-portal-container"><h2>Exam Portal Login</h2> <?php if ($annapoorna_login_error) echo "<p class='exam-portal-error'>" . esc_html($annapoorna_login_error) . "</p>"; ?> <form name="loginform" action="<?php echo esc_url(add_query_arg('redirect_to', urlencode($redirect_to), '')); ?>" method="post"><div class="form-row"><label for="log">Username or Email</label><input type="text" name="log" id="log" required></div><div class="form-row"><label for="pwd">Password</label><input type="password" name="pwd" id="pwd" required></div><div class="form-row"><button type="submit">Log In</button></div><?php wp_nonce_field('exam_login_action', 'exam_login_nonce'); ?></form><div class="exam-portal-links"><a href="<?php echo esc_url(wp_registration_url()); ?>">Register</a> | <a href="<?php echo esc_url(wp_lostpassword_url()); ?>">Lost Password?</a></div></div>
+    <?php }
+    return ob_get_clean();
+}
 function annapoorna_exam_add_custom_registration_fields() { ?><p><label for="first_name">First Name<br/><input type="text" name="first_name" id="first_name" required/></label></p><p><label for="last_name">Last Name<br/><input type="text" name="last_name" id="last_name" required/></label></p><?php }
 function annapoorna_exam_validate_reg_fields($errors, $login, $email) { if (empty($_POST['first_name']) || empty($_POST['last_name'])) $errors->add('field_error', 'First and Last Name are required.'); return $errors; }
 function annapoorna_exam_save_reg_fields($user_id) { if (!empty($_POST['first_name'])) update_user_meta($user_id, 'first_name', sanitize_text_field($_POST['first_name'])); if (!empty($_POST['last_name'])) update_user_meta($user_id, 'last_name', sanitize_text_field($_POST['last_name'])); }
