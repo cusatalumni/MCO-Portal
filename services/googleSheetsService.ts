@@ -5,8 +5,20 @@ import toast from 'react-hot-toast';
 
 const API_BASE_URL = 'https://www.coding-online.net/wp-json/exam-app/v1';
 
-// Initialize the Google AI client
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Initialize the Google AI client lazily to prevent app crash on load
+let ai: GoogleGenAI | null = null;
+const getAiClient = (): GoogleGenAI => {
+    if (!ai) {
+        const apiKey = process.env.API_KEY;
+        if (!apiKey) {
+            console.error("Gemini API key is not configured.");
+            // This error will be caught by the calling function's try/catch block
+            throw new Error("API key for AI question generation is missing.");
+        }
+        ai = new GoogleGenAI({ apiKey });
+    }
+    return ai;
+};
 
 
 export const apiService = {
@@ -66,6 +78,7 @@ export const apiService = {
         // 2. Fallback to Gemini API if bank is empty or fails
         const toastId = toast.loading(`Generating ${numberOfQuestions} unique questions for your exam...`);
         try {
+            const client = getAiClient();
             const prompt = `Generate ${numberOfQuestions} multiple-choice questions for a "${examName}". Each question should have 4 options. Return the data as a JSON array where each object has "id" (a unique number for this set of questions starting from 1), "question" (string), "options" (array of 4 strings), and "correctAnswer" (number, the 1-based index of the correct option).`;
 
             const responseSchema = {
@@ -85,7 +98,7 @@ export const apiService = {
               }
             };
 
-            const response = await ai.models.generateContent({
+            const response = await client.models.generateContent({
               model: 'gemini-2.5-flash',
               contents: prompt,
               config: {
