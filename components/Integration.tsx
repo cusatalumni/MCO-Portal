@@ -1,24 +1,23 @@
+import React from 'react';
+import toast from 'react-hot-toast';
+
+const Integration: React.FC = () => {
+
+    const phpCode = `
 <?php
 /**
- * ===================================================================
- * V28: Complete Data Source & CORS Fix
- * ===================================================================
- * This version completes the data source arrays within the PHP code,
- * which was the likely cause of the "Failed to fetch" error. By
- * providing a full set of exam, book, and template data, the /app-config
- * endpoint will now return a valid response.
- *
- * Additionally, CORS (Cross-Origin Resource Sharing) headers have been
- * added to the API to ensure the frontend app (on a different domain)
- * can properly communicate with the WordPress backend.
+ * Plugin Name: Medical Coding Online Exam App Integration
+ * Description: Integrates the React-based examination app with WordPress, handling user authentication (SSO), WooCommerce purchases, and results synchronization.
+ * Version: 2.9
+ * Author: Annapoorna Infotech
  */
-
 
 // --- CONFIGURATION ---
 define('ANNAPOORNA_LOGIN_SLUG', 'exam-login');
 define('ANNAPOORNA_EXAM_APP_URL', 'https://exams.coding-online.net/');
 define('ANNAPOORNA_EXAM_APP_TEST_URL', 'https://mco-exam-jkfzdt3bj-manoj-balakrishnans-projects-aa177a85.vercel.app/');
-// IMPORTANT: Define a secure, random key in wp-config.php
+
+// IMPORTANT: Define a secure, random key in wp-config.php. It must be at least 32 characters.
 // define('ANNAPOORNA_JWT_SECRET', 'your-very-strong-secret-key-that-is-long-and-random');
 // define('ANNAPOORNA_DEBUG', true); // Add for debug logging
 // --- END CONFIGURATION ---
@@ -83,7 +82,7 @@ function annapoorna_get_all_app_data() {
     ];
     
     $CERTIFICATE_TEMPLATES = [
-        ['id' => 'cert-mco-1', 'title' => 'Medical Coding Proficiency', 'body' => 'For successfully demonstrating proficiency in medical coding principles and practices with a final score of <strong>{finalScore}%</strong>. This achievement certifies the holder\'s competence in the standards required for this certification.', 'signature1Name' => 'Dr. Amelia Reed', 'signature1Title' => 'Program Director', 'signature2Name' => 'B. Manoj', 'signature2Title' => 'Chief Instructor'],
+        ['id' => 'cert-mco-1', 'title' => 'Medical Coding Proficiency', 'body' => 'For successfully demonstrating proficiency in medical coding principles and practices with a final score of <strong>{finalScore}%</strong>. This achievement certifies the holder\\'s competence in the standards required for this certification.', 'signature1Name' => 'Dr. Amelia Reed', 'signature1Title' => 'Program Director', 'signature2Name' => 'B. Manoj', 'signature2Title' => 'Chief Instructor'],
         ['id' => 'cert-mco-2', 'title' => 'Advanced Specialty Coding', 'body' => 'Awarded for exceptional performance and mastery in advanced specialty coding topics, achieving a score of <strong>{finalScore}%</strong>. This signifies a high level of expertise and dedication to the field.', 'signature1Name' => 'Dr. Amelia Reed', 'signature1Title' => 'Program Director', 'signature2Name' => 'B. Manoj', 'signature2Title' => 'Chief Instructor']
     ];
     
@@ -119,7 +118,6 @@ function annapoorna_get_all_app_data() {
         if ($exam['isPractice']) {
             $exam['recommendedBook'] = null;
         } else {
-            // Simple logic to assign a book based on exam name keywords
             if (strpos($exam['name'], 'CPC') !== false) $exam['recommendedBook'] = $MOCK_BOOKS[0];
             elseif (strpos($exam['name'], 'ICD-10-CM') !== false) $exam['recommendedBook'] = $MOCK_BOOKS[1];
             elseif (strpos($exam['name'], 'CPT') !== false) $exam['recommendedBook'] = $MOCK_BOOKS[2];
@@ -132,7 +130,7 @@ function annapoorna_get_all_app_data() {
     return [
         [
             'id' => 'org-mco', 'name' => 'Medical Coding Online', 'website' => 'www.coding-online.net',
-            'logo' => '', // Logo is handled on the frontend
+            'logo' => '',
             'exams' => $exams_with_books,
             'examProductCategories' => $EXAM_PRODUCT_CATEGORIES,
             'certificateTemplates' => $CERTIFICATE_TEMPLATES
@@ -155,7 +153,9 @@ function annapoorna_exam_get_payload($user_id) {
             foreach ($all_exam_skus as $sku) {
                 if (($product_id = wc_get_product_id_by_sku($sku)) && ($product = wc_get_product($product_id))) {
                     $price = (float) $product->get_price(); $regular_price = (float) $product->get_regular_price();
-                    $exam_prices->{$sku} = ['price' => $price, 'regularPrice' => $regular_price > $price ? $regular_price : $price];
+                    if ($price > 0) {
+                        $exam_prices->{$sku} = ['price' => $price, 'regularPrice' => $regular_price > $price ? $regular_price : $price];
+                    }
                 }
             }
             set_transient('annapoorna_exam_prices', $exam_prices, 12 * HOUR_IN_SECONDS);
@@ -205,19 +205,19 @@ function annapoorna_rest_send_cors_headers($served, $result, $request, $server) 
         rtrim(ANNAPOORNA_EXAM_APP_TEST_URL, '/')
     ];
 
-    // Allow local development origin as well
-    if (defined('WP_DEBUG') && WP_DEBUG) {
-        $allowed_origins[] = 'http://localhost:5173';
+    if (defined('WP_DEBUG') && WP_DEBUG && $origin) {
+        if (preg_match('/http:\\/\\/localhost:[0-9]+$/', $origin)) {
+             $allowed_origins[] = $origin;
+        }
     }
 
     if ($origin && in_array($origin, $allowed_origins, true)) {
         $server->send_header('Access-Control-Allow-Origin', $origin);
-        $server->send_header('Access-Control-Allow-Methods', 'GET, POST');
+        $server->send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
         $server->send_header('Access-Control-Allow-Headers', 'Authorization, Content-Type');
         $server->send_header('Access-Control-Allow-Credentials', 'true');
     }
     
-    // Handle OPTIONS pre-flight request
     if ('OPTIONS' === $request->get_method()) {
         status_header(200);
         exit();
@@ -299,7 +299,7 @@ function annapoorna_exam_submit_result_callback($request) {
     foreach (['testId', 'examId', 'score', 'correctCount', 'totalQuestions', 'timestamp'] as $key) {
         if (!isset($result_data[$key])) return new WP_Error('invalid_data', "Missing required key: {$key}", ['status' => 400]);
     }
-    $result_data['userId'] = (string)$user_id; // Add userId to the result object
+    $result_data['userId'] = (string)$user_id;
     update_user_meta($user_id, 'exam_result_' . sanitize_key($result_data['testId']), $result_data);
     $index = get_user_meta($user_id, 'all_exam_results_index', true) ?: [];
     if (!in_array($result_data['testId'], $index)) { $index[] = $result_data['testId']; update_user_meta($user_id, 'all_exam_results_index', $index); }
@@ -312,4 +312,63 @@ function annapoorna_exam_add_custom_registration_fields() { ?><p><label for="fir
 function annapoorna_exam_validate_reg_fields($errors, $login, $email) { if (empty($_POST['first_name']) || empty($_POST['last_name'])) $errors->add('field_error', 'First and Last Name are required.'); return $errors; }
 function annapoorna_exam_save_reg_fields($user_id) { if (!empty($_POST['first_name'])) update_user_meta($user_id, 'first_name', sanitize_text_field($_POST['first_name'])); if (!empty($_POST['last_name'])) update_user_meta($user_id, 'last_name', sanitize_text_field($_POST['last_name'])); }
 function annapoorna_exam_login_url($login_url, $redirect) { $login_page_url = home_url('/' . ANNAPOORNA_LOGIN_SLUG . '/'); return !empty($redirect) ? add_query_arg('redirect_to', urlencode($redirect), $login_page_url) : $login_page_url; }
+
 ?>
+`;
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(phpCode.trim());
+        toast.success('Code copied to clipboard!');
+    };
+
+    return (
+        <div className="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-lg">
+            <h1 className="text-3xl font-bold text-slate-800 mb-4">WordPress Integration Guide</h1>
+            <div className="prose max-w-none text-slate-600">
+                <p>
+                    This application is designed to work with a WordPress site using WooCommerce. The following PHP code provides the necessary backend functionality for Single Sign-On (SSO), data synchronization, and API endpoints.
+                </p>
+
+                <h2 className="text-2xl font-semibold text-slate-700 mt-6 mb-2">Setup Instructions</h2>
+                <ol className="list-decimal pl-5 space-y-2">
+                    <li>
+                        <strong>Create a Plugin:</strong> Copy the code below into a new PHP file (e.g., <code>mco-exam-integration.php</code>) in your <code>/wp-content/plugins/</code> directory.
+                    </li>
+                    <li>
+                        <strong>Activate the Plugin:</strong> Go to your WordPress admin dashboard, navigate to "Plugins", and activate the "Medical Coding Online Exam App Integration" plugin.
+                    </li>
+                    <li>
+                        <strong>Configure the Secret Key:</strong> Add a secure, random JWT secret key to your <code>wp-config.php</code> file. This is crucial for security.
+                        <pre className="bg-slate-100 p-2 rounded text-sm"><code>define('ANNAPOORNA_JWT_SECRET', 'your-very-strong-secret-key-that-is-long-and-random');</code></pre>
+                    </li>
+                    <li>
+                        <strong>Create a Login Page:</strong> Create a new page in WordPress with the slug <code>exam-login</code> and add the shortcode <code>[exam_portal_login]</code> to its content. This will be your new login portal.
+                    </li>
+                    <li>
+                        <strong>Verify Setup:</strong> Log out and visit your new login page. Attempt to log in. You should be redirected to this exam application.
+                    </li>
+                </ol>
+
+                <h2 className="text-2xl font-semibold text-slate-700 mt-6 mb-2">Integration Code</h2>
+                <p>
+                    Click the button to copy the entire PHP code snippet required for the plugin.
+                </p>
+                <div className="relative">
+                    <button 
+                        onClick={handleCopy}
+                        className="absolute top-2 right-2 bg-slate-600 text-white text-xs font-bold py-1 px-3 rounded-md hover:bg-slate-700 transition"
+                    >
+                        Copy Code
+                    </button>
+                    <pre className="bg-slate-800 text-white p-4 rounded-lg overflow-x-auto text-sm">
+                        <code>
+                            {phpCode.trim()}
+                        </code>
+                    </pre>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default Integration;
