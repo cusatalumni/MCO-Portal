@@ -76,14 +76,14 @@ function annapoorna_get_exam_app_url($is_admin = false) { if ($is_admin) return 
 function annapoorna_get_all_app_data() {
     $MOCK_BOOKS = [
         ['id' => 'book-cpc-guide', 'title' => 'Official CPC® Certification Study Guide (AAPC)', 'description' => 'AAPC’s official CPC exam study guide — anatomy, medical terminology, ICD-10-CM, CPT, HCPCS, practice questions and exam tips.', 'imageUrl' => 'https://exams.coding-online.net/wp-content/uploads/2024/04/cpc-study-guide.jpg', 'affiliateLinks' => ['com' => 'https://www.amazon.com/dp/1635278910?tag=mykada-20', 'in' => 'https://www.amazon.in/dp/1635278910?tag=httpcodingonl-21', 'ae' => 'https://www.amazon.ae/dp/1285427998?tag=medical0f1-21']],
-        ['id' => 'book-icd10-cm', 'title' => "Buck's ICD-10-CM for Physicians 2026", 'description' => 'Physician-focused ICD-10-CM code manual (full-color, guidelines and examples).', 'imageUrl' => 'https://exams.coding-online.net/wp-content/uploads/2024/04/icd-10-cm-physicians.jpg', 'affiliateLinks' => ['com' => 'https://www.amazon.com/dp/0443380783?tag=mykada-20', 'in' => 'https://www.amazon.com/dp/0443380783?tag=httpcodingonl-21', 'ae' => 'https://www.amazon.ae/dp/0443380783?tag=medical0f1-21']],
+        ['id' => 'book-icd10-cm', 'title' => "Buck's ICD-10-CM for Physicians 2026", 'description' => 'Physician-focused ICD-10-CM code manual (full-color, guidelines and examples).', 'imageUrl' => 'https://exams.coding-online.net/wp-content/uploads/2024/04/icd-10-cm-physicians.jpg', 'affiliateLinks' => ['com' => 'https://www.amazon.com/dp/0443380783?tag=mykada-20', 'in' => 'https://www.amazon.in/dp/0443380783?tag=httpcodingonl-21', 'ae' => 'https://www.amazon.ae/dp/0443380783?tag=medical0f1-21']],
         ['id' => 'book-cpt-pro', 'title' => 'AMA CPT® Professional 2026', 'description' => 'Official Current Procedural Terminology (CPT) codebook from the American Medical Association.', 'imageUrl' => 'https://exams.coding-online.net/wp-content/uploads/2024/04/cpt-professional.jpg', 'affiliateLinks' => ['com' => 'https://www.amazon.com/dp/1640163354?tag=mykada-20', 'in' => 'https://www.amazon.in/dp/1640163354?tag=httpcodingonl-21', 'ae' => 'https://www.amazon.ae/dp/1640163354?tag=medical0f1-21']],
         ['id' => 'book-hcpcs-level2', 'title' => 'HCPCS Level II Professional 2026', 'description' => 'Comprehensive guide for HCPCS Level II codes used for supplies, equipment, and drugs.', 'imageUrl' => 'https://exams.coding-online.net/wp-content/uploads/2024/04/hcpcs-level-2.jpg', 'affiliateLinks' => ['com' => 'https://www.amazon.com/dp/1622029947?tag=mykada-20', 'in' => 'https://www.amazon.in/dp/1622029947?tag=httpcodingonl-21', 'ae' => 'https://www.amazon.ae/dp/1622029947?tag=medical0f1-21']],
         ['id' => 'book-medical-billing', 'title' => 'Medical Billing & Coding For Dummies', 'description' => 'An easy-to-understand guide covering the basics of medical billing and coding.', 'imageUrl' => 'https://exams.coding-online.net/wp-content/uploads/2024/04/coding-for-dummies.jpg', 'affiliateLinks' => ['com' => 'https://www.amazon.com/dp/1119750393?tag=mykada-20', 'in' => 'https://www.amazon.in/dp/1119750393?tag=httpcodingonl-21', 'ae' => 'https://www.amazon.ae/dp/1119750393?tag=medical0f1-21']]
     ];
     
     $CERTIFICATE_TEMPLATES = [
-        ['id' => 'cert-mco-1', 'title' => 'Medical Coding Proficiency', 'body' => 'For successfully demonstrating proficiency in medical coding principles and practices with a final score of <strong>{finalScore}%</strong>. This achievement certifies the holder\\'s competence in the standards required for this certification.', 'signature1Name' => 'Dr. Amelia Reed', 'signature1Title' => 'Program Director', 'signature2Name' => 'B. Manoj', 'signature2Title' => 'Chief Instructor'],
+        ['id' => 'cert-mco-1', 'title' => 'Medical Coding Proficiency', 'body' => 'For successfully demonstrating proficiency in medical coding principles and practices with a final score of <strong>{finalScore}%</strong>. This achievement certifies the holder\'s competence in the standards required for this certification.', 'signature1Name' => 'Dr. Amelia Reed', 'signature1Title' => 'Program Director', 'signature2Name' => 'B. Manoj', 'signature2Title' => 'Chief Instructor'],
         ['id' => 'cert-mco-2', 'title' => 'Advanced Specialty Coding', 'body' => 'Awarded for exceptional performance and mastery in advanced specialty coding topics, achieving a score of <strong>{finalScore}%</strong>. This signifies a high level of expertise and dedication to the field.', 'signature1Name' => 'Dr. Amelia Reed', 'signature1Title' => 'Program Director', 'signature2Name' => 'B. Manoj', 'signature2Title' => 'Chief Instructor']
     ];
     
@@ -153,9 +153,14 @@ function annapoorna_exam_get_payload($user_id) {
             $exam_prices = new stdClass();
             foreach ($all_exam_skus as $sku) {
                 if (($product_id = wc_get_product_id_by_sku($sku)) && ($product = wc_get_product($product_id))) {
-                    $price = (float) $product->get_price(); $regular_price = (float) $product->get_regular_price();
-                    if ($price > 0) {
-                        $exam_prices->{$sku} = ['price' => $price, 'regularPrice' => $regular_price > $price ? $regular_price : $price];
+                    $price = (float) $product->get_price();
+                    $regular_price = (float) $product->get_regular_price();
+                    // A promotion exists if the regular_price is set and is greater than the current price.
+                    if ($regular_price > $price) {
+                        $exam_prices->{$sku} = ['price' => $price, 'regularPrice' => $regular_price];
+                    } else {
+                        // Otherwise, there's no sale. Price and regular price are the same.
+                        $exam_prices->{$sku} = ['price' => $price, 'regularPrice' => $price];
                     }
                 }
             }
@@ -222,8 +227,11 @@ function annapoorna_get_app_config_callback() { return new WP_REST_Response(anna
 
 function annapoorna_get_user_results_callback($request) {
     $user_id = (int)$request->get_param('jwt_user_id');
+    if ($user_id <= 0) {
+        return new WP_Error('invalid_user', 'Invalid user ID.', ['status' => 403]);
+    }
     $results = get_user_meta($user_id, 'annapoorna_exam_results', true);
-    if (!is_array($results)) {
+    if (empty($results) || !is_array($results)) {
         $results = [];
     }
     return new WP_REST_Response(array_values($results), 200);
@@ -320,9 +328,10 @@ function annapoorna_exam_login_url($login_url, $redirect) { $login_page_url = ho
 ?>
 `;
 
-    const handleCopy = () => {
-        navigator.clipboard.writeText(phpCode.trim());
-        toast.success('Code copied to clipboard!');
+    const copyToClipboard = () => {
+        navigator.clipboard.writeText(phpCode.trim())
+            .then(() => toast.success('PHP code copied to clipboard!'))
+            .catch(err => toast.error('Failed to copy code.'));
     };
 
     return (
@@ -330,41 +339,39 @@ function annapoorna_exam_login_url($login_url, $redirect) { $login_page_url = ho
             <h1 className="text-3xl font-bold text-slate-800 mb-4">WordPress Integration Guide</h1>
             <div className="prose max-w-none text-slate-600">
                 <p>
-                    This application is designed to work with a WordPress site using WooCommerce. The following PHP code provides the necessary backend functionality for Single Sign-On (SSO), data synchronization, and API endpoints.
+                    To integrate this examination application with your WordPress site, you need to use a custom plugin. This plugin will handle Single Sign-On (SSO), sync purchased exams from WooCommerce, and allow results to be saved back to your WordPress user profiles.
                 </p>
 
-                <h2 className="text-2xl font-semibold text-slate-700 mt-6 mb-2">Setup Instructions</h2>
-                <ol className="list-decimal pl-5 space-y-2">
+                <h2 className="text-2xl font-semibold text-slate-700 mt-6 mb-2">Setup Steps</h2>
+                <ol className="list-decimal list-inside space-y-2">
                     <li>
-                        <strong>Create a Plugin:</strong> Copy the code below into a new PHP file (e.g., <code>mco-exam-integration.php</code>) in your <code>/wp-content/plugins/</code> directory.
+                        <strong>Create a new plugin file:</strong> In your WordPress installation, navigate to the <code>wp-content/plugins/</code> directory. Create a new file named <code>mco-exam-integration.php</code>.
                     </li>
                     <li>
-                        <strong>Activate the Plugin:</strong> Go to your WordPress admin dashboard, navigate to "Plugins", and activate the "Medical Coding Online Exam App Integration" plugin.
+                        <strong>Copy the code:</strong> Copy the entire PHP code block below and paste it into the <code>mco-exam-integration.php</code> file you just created.
                     </li>
                     <li>
-                        <strong>Configure the Secret Key:</strong> Add a secure, random JWT secret key to your <code>wp-config.php</code> file. This is crucial for security.
-                        <pre className="bg-slate-100 p-2 rounded text-sm"><code>define('ANNAPOORNA_JWT_SECRET', 'your-very-strong-secret-key-that-is-long-and-random');</code></pre>
+                        <strong>Configure the JWT Secret:</strong> Open your <code>wp-config.php</code> file (in the root of your WordPress installation) and add the following line. <strong>Important:</strong> Replace <code>'your-very-strong-secret-key...'</code> with a long, random string generated from a secure source (e.g., a password generator).
+                        <pre className="bg-slate-100 p-2 rounded mt-2"><code>define('ANNAPOORNA_JWT_SECRET', 'your-very-strong-secret-key-that-is-long-and-random');</code></pre>
                     </li>
                     <li>
-                        <strong>Create a Login Page:</strong> Create a new page in WordPress with the slug <code>exam-login</code> and add the shortcode <code>[exam_portal_login]</code> to its content. This will be your new login portal.
+                        <strong>Activate the plugin:</strong> Go to your WordPress admin dashboard, navigate to "Plugins", find "Medical Coding Online Exam App Integration", and click "Activate".
                     </li>
                     <li>
-                        <strong>Verify Setup:</strong> Log out and visit your new login page. Attempt to log in. You should be redirected to this exam application.
+                        <strong>Create Login Page:</strong> Create a new page in WordPress, give it a title like "Exam Login", and use the slug <code>exam-login</code>. In the page content, add the shortcode: <code>[exam_portal_login]</code>. This page will now be your login portal.
                     </li>
                 </ol>
 
-                <h2 className="text-2xl font-semibold text-slate-700 mt-6 mb-2">Integration Code</h2>
-                <p>
-                    Click the button to copy the entire PHP code snippet required for the plugin.
-                </p>
+                <h2 className="text-2xl font-semibold text-slate-700 mt-6 mb-2">Plugin Code</h2>
                 <div className="relative">
                     <button 
-                        onClick={handleCopy}
-                        className="absolute top-2 right-2 bg-slate-600 text-white text-xs font-bold py-1 px-3 rounded-md hover:bg-slate-700 transition"
+                        onClick={copyToClipboard}
+                        className="absolute top-2 right-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-1 px-3 rounded-lg text-sm z-10"
+                        aria-label="Copy PHP code to clipboard"
                     >
                         Copy Code
                     </button>
-                    <pre className="bg-slate-800 text-white p-4 rounded-lg overflow-x-auto text-sm">
+                    <pre className="bg-slate-900 text-white p-4 rounded-lg overflow-x-auto text-sm">
                         <code>
                             {phpCode.trim()}
                         </code>
