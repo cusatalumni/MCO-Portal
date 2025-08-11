@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAppContext } from './AppContext';
+import { useAppContext } from '../context/AppContext';
 import { BookOpen, ShoppingCart } from 'lucide-react';
 import type { RecommendedBook } from '../types';
 
@@ -67,7 +67,7 @@ const SuggestedBooksSidebar: React.FC = () => {
                      return (
                         <div key={book.id} className="flex items-start gap-4">
                             <img src={book.imageUrl} alt={book.title} className="w-16 h-20 object-cover rounded shadow-sm flex-shrink-0" />
-                            <div className="flex-grow">
+                            <div className="flex-grow min-w-0">
                                 <h4 className="font-bold text-slate-700 leading-tight">{book.title}</h4>
                                 <p className="text-xs text-slate-500 mt-1 mb-2">{book.description.substring(0, 60)}...</p>
                                 <a 
