@@ -83,7 +83,7 @@ const Test: React.FC = () => {
 
       try {
         setIsLoading(true);
-        const fetchedQuestions = await apiService.getQuestions(config.numberOfQuestions);
+        const fetchedQuestions = await apiService.getQuestions(config.id, config.name, config.numberOfQuestions, token);
         if (fetchedQuestions.length === 0) {
             toast.error("Could not load questions for this exam.");
             navigate('/dashboard');
@@ -147,7 +147,7 @@ const Test: React.FC = () => {
 
   const handlePrev = () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(prev => prev + 1);
+      setCurrentQuestionIndex(prev => prev - 1);
     }
   };
 
