@@ -1,7 +1,3 @@
-
-
-
-
 import type { Question, UserAnswer, TestResult, CertificateData, Organization, Exam, ExamProductCategory, User, RecommendedBook, CertificateTemplate } from '../types';
 import { logoBase64 } from '../assets/logo';
 
@@ -13,7 +9,10 @@ const MOCK_QUESTIONS: Question[] = [
     { id: 4, question: "What does 'CM' in ICD-10-CM stand for?", options: ["Case Mix", "Clinical Modification", "Care Management", "Chronic Morbidity"], correctAnswer: 2 },
     { id: 5, question: "A 'new patient' is one who has not received any professional services from the physician within the last ___ years.", options: ["One", "Two", "Three", "Five"], correctAnswer: 3 },
     { id: 6, question: "The suffix '-ectomy' means:", options: ["Incision", "Surgical removal", "Visual examination", "Repair"], correctAnswer: 2 },
-    { id: 7, question: "Which of the following is NOT a part of the small intestine?", options: ["Duodenum", "Jejunum", "Ileum", "Cecum"], correctAnswer: 4 }
+    { id: 7, question: "Which of the following is NOT a part of the small intestine?", options: ["Duodenum", "Jejunum", "Ileum", "Cecum"], correctAnswer: 4 },
+    { id: 8, question: "What does the abbreviation 'NPO' stand for?", options: ["Nothing by mouth", "No prior operation", "Non-patient observation", "New patient only"], correctAnswer: 1 },
+    { id: 9, question: "Which modifier indicates a bilateral procedure?", options: ["-25", "-50", "-59", "-76"], correctAnswer: 2 },
+    { id: 10, question: "A 'sequela' is also known as a:", options: ["Late effect", "Congenital anomaly", "Chronic condition", "Primary diagnosis"], correctAnswer: 1 }
 ];
 
 const MOCK_BOOKS: RecommendedBook[] = [
@@ -279,6 +278,15 @@ const CERTIFICATE_TEMPLATES: CertificateTemplate[] = [
         signature2Title: 'Chief Instructor'
     },
     {
+        id: 'cert-cpb',
+        title: 'Certified Professional Biller (CPB)',
+        body: 'For successfully passing the Certified Professional Biller (CPB) examination with a score of {finalScore}%. This certificate signifies a high level of expertise in medical billing and reimbursement.',
+        signature1Name: 'Dr. Amelia Reed',
+        signature1Title: 'Program Director',
+        signature2Name: 'B. Manoj',
+        signature2Title: 'Chief Instructor'
+    },
+    {
         id: 'cert-ccs',
         title: 'Certified Coding Specialist (CCS)',
         body: 'For successfully passing the Certified Coding Specialist (CCS) examination with a score of {finalScore}%. This achievement certifies expertise in classifying medical data from patient records, generally in an inpatient hospital setting.',
@@ -379,7 +387,7 @@ const ALL_EXAMS: Exam[] = [
     { id: 'ICD-10-CM-CERT', name: 'ICD-10-CM Certification Exam', productSku: 'ICD-10-CM-CERT', productSlug: 'exam-icd-cert', regularPrice: undefined, description: 'A test series focusing on ICD-10-CM diagnosis coding proficiency. Includes 100 questions to master the code set.', price: 130, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-icd', isPractice: false, durationMinutes: 150 },
     // CPB
     { id: 'exam-cpb-practice', name: 'CPB Practice Test', description: '', price: 0, questionSourceUrl: '', numberOfQuestions: 10, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: true, durationMinutes: 15 },
-    { id: 'CPB-CERT-EXAM', name: 'CPB Certification Exam', productSku: 'CPB-CERT-EXAM', productSlug: 'exam-cpb-cert', regularPrice: undefined, description: 'A test series for the AAPC CPB (Certified Professional Biller) certification, covering all aspects of the revenue cycle with 100 questions.', price: 100, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-billing', isPractice: false, durationMinutes: 150 },
+    { id: 'CPB-CERT-EXAM', name: 'CPB Certification Exam', productSku: 'CPB-CERT-EXAM', productSlug: 'exam-cpb-cert', regularPrice: undefined, description: 'A test series for the AAPC CPB (Certified Professional Biller) certification, covering all aspects of the revenue cycle with 100 questions.', price: 100, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-cpb', isPractice: false, durationMinutes: 150 },
     // CRC
     { id: 'exam-crc-practice', name: 'CRC Practice Test', description: '', price: 0, questionSourceUrl: '', numberOfQuestions: 10, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: true, durationMinutes: 15 },
     { id: 'CRC-CERT-EXAM', name: 'CRC Certification Exam', productSku: 'CRC-CERT-EXAM', productSlug: 'exam-crc-cert', regularPrice: undefined, description: 'A test series on risk adjustment models and hierarchical condition categories (HCC) for the CRC certification. Includes 100 specialized questions.', price: 110, questionSourceUrl: '', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-crc', isPractice: false, durationMinutes: 150 },
@@ -481,7 +489,19 @@ export const googleSheetsService = {
         }
 
         const template = org.certificateTemplates.find(t => t.id === exam.certificateTemplateId);
-        if (!template) return null;
+        if (!template) {
+             // Fallback to the first (generic) template if a specific one isn't found
+            const genericTemplate = org.certificateTemplates[0];
+            return {
+                certificateNumber: `${result.userId.slice(0, 4)}-${result.testId.slice(5, 11)}`,
+                candidateName: user.name,
+                finalScore: result.score,
+                date: new Date(result.timestamp).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+                totalQuestions: result.totalQuestions,
+                organization: org,
+                template: genericTemplate
+            };
+        }
 
         return {
             certificateNumber: `${result.userId.slice(0, 4)}-${result.testId.slice(5, 11)}`,

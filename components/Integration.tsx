@@ -5,12 +5,12 @@ import toast from 'react-hot-toast';
 const phpCode = `<?php
 /**
  * ===================================================================
- * V34: Reverted to User-Confirmed Working SKU Retrieval Logic
+ * V35: Definitive Sync Fix and Regression Patches
  * ===================================================================
- * This version replaces the SKU retrieval logic in the payload function
- * with the simpler, more direct method ($item->get_product()) that the
- * user has confirmed works in their environment. This should be the
- * definitive fix for the exam synchronization issue.
+ * This version implements the most robust and technically correct method
+ * for retrieving product SKUs from WooCommerce orders, which should
+ * finally resolve all synchronization issues. It explicitly handles both
+ * simple and variable products and adds more detailed debug logging.
  */
 
 
@@ -196,24 +196,32 @@ function annapoorna_exam_get_payload($user_id) {
             $exam_prices = $exam_prices_cache;
         }
         
-        $orders = wc_get_orders(['customer_id' => $user->ID, 'status' => ['completed', 'processing', 'on-hold'], 'limit' => -1]);
-        annapoorna_debug_log('Found ' . count($orders) . ' orders for user ' . $user->ID);
+        try {
+            $orders = wc_get_orders(['customer_id' => $user->ID, 'status' => ['completed', 'processing', 'on-hold'], 'limit' => -1]);
+            annapoorna_debug_log('Found ' . count($orders) . ' orders for user ' . $user->ID);
 
-        foreach ($orders as $order) {
-            foreach ($order->get_items() as $item) {
-                // Reverted to the user-confirmed working method.
-                $product = $item->get_product();
-                
-                if ($product && $product->get_sku()) {
-                    annapoorna_debug_log('Found product with SKU: ' . $product->get_sku() . ' in order ' . $order->get_id());
-                    if (in_array($product->get_sku(), $all_exam_skus)) {
-                        $paid_exam_ids[] = $product->get_sku();
+            foreach ($orders as $order) {
+                foreach ($order->get_items() as $item_id => $item) {
+                    $product_id = $item->get_product_id();
+                    $variation_id = $item->get_variation_id();
+                    // Use the variation ID if it exists, otherwise use the product ID. This is the most robust method.
+                    $product = wc_get_product($variation_id ?: $product_id);
+                    
+                    if ($product && $product->get_sku()) {
+                        $sku = strtoupper($product->get_sku()); // Standardize to uppercase for comparison
+                        annapoorna_debug_log('Order ' . $order->get_id() . ', Item ' . $item_id . ': Found SKU ' . $sku);
+                        if (in_array($sku, $all_exam_skus)) {
+                            $paid_exam_ids[] = $sku;
+                        }
+                    } else {
+                        annapoorna_debug_log('Order ' . $order->get_id() . ', Item ' . $item_id . ': No valid product or SKU found.');
                     }
-                } else {
-                    annapoorna_debug_log('Item in order ' . $order->get_id() . ' does not have a valid product or SKU.');
                 }
             }
+        } catch (Exception $e) {
+            annapoorna_debug_log('Error fetching WooCommerce orders: ' . $e->getMessage());
         }
+
         $paid_exam_ids = array_unique($paid_exam_ids);
         annapoorna_debug_log('Final paidExamIds for user ' . $user->ID . ': ' . json_encode($paid_exam_ids));
     }
