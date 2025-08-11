@@ -1,4 +1,5 @@
-import React, { useEffect } from 'react';
+
+import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 
@@ -18,6 +19,7 @@ import Integration from './components/Integration';
 import Admin from './components/Admin';
 import BookStore from './components/BookStore';
 import Profile from './components/Profile';
+import Checkout from './components/Checkout';
 
 
 interface ProtectedRouteProps {
@@ -37,16 +39,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, adminOnly = f
 };
 
 const AppContent: React.FC = () => {
-    const { user, token, syncUserData } = useAuth();
-
-    useEffect(() => {
-        // If a token exists from a previous session but we don't have user data yet (e.g., new device),
-        // try to sync the data from the backend.
-        if (token && !user) {
-            syncUserData();
-        }
-    }, [token, user, syncUserData]);
-
     return (
         <div className="flex flex-col min-h-screen bg-slate-50 text-slate-800">
             <Header />
@@ -65,6 +57,7 @@ const AppContent: React.FC = () => {
                         <Route path="/results/:testId" element={<ProtectedRoute><Results /></ProtectedRoute>} />
                         <Route path="/certificate/sample" element={<ProtectedRoute><Certificate /></ProtectedRoute>} />
                         <Route path="/certificate/:testId" element={<ProtectedRoute><Certificate /></ProtectedRoute>} />
+                        <Route path="/checkout/:productSlug" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
                         <Route path="/admin" element={<ProtectedRoute adminOnly={true}><Admin /></ProtectedRoute>} />
                     
                         <Route path="*" element={<Navigate to="/" replace />} />

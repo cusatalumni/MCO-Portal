@@ -1,3 +1,4 @@
+
 import React from 'react';
 import toast from 'react-hot-toast';
 
@@ -8,7 +9,7 @@ const Integration: React.FC = () => {
 /**
  * Plugin Name: Medical Coding Online Exam App Integration
  * Description: Integrates the React-based examination app with WordPress, handling user authentication (SSO), WooCommerce purchases, and results synchronization.
- * Version: 2.9
+ * Version: 3.0
  * Author: Annapoorna Infotech
  */
 
@@ -144,7 +145,7 @@ function annapoorna_exam_get_payload($user_id) {
     $paid_exam_ids = []; $exam_prices = new stdClass();
     
     if (class_exists('WooCommerce')) {
-        $all_exam_skus = ['CPC-CERT-EXAM', 'CCA-CERT-EXAM', 'CCS-CERT-EXAM', 'MEDICAL-BILLING-CERT', 'RISK-ADJUSTMENT-CERT', 'ICD-10-CM-CERT', 'CPB-CERT-EXAM', 'CRC-CERT-EXAM', 'CPMA-CERT-EXAM', 'COC-CERT-EXAM', 'CIC-CERT-EXAM', 'MTA-CERT'];
+        $all_exam_skus = array_column(array_filter(annapoorna_get_all_app_data()[0]['exams'], function($e) { return !$e['isPractice'] && isset($e['productSku']); }), 'productSku');
         
         $exam_prices = get_transient('annapoorna_exam_prices');
         if (false === $exam_prices) {
@@ -161,11 +162,17 @@ function annapoorna_exam_get_payload($user_id) {
             set_transient('annapoorna_exam_prices', $exam_prices, 12 * HOUR_IN_SECONDS);
         }
 
-        foreach ($all_exam_skus as $sku) {
-            if (($product_id = wc_get_product_id_by_sku($sku)) && wc_customer_bought_product($user->user_email, $user_id, $product_id)) {
-                $paid_exam_ids[] = $sku;
+        $customer_orders = wc_get_orders(['customer' => $user_id, 'status' => ['wc-completed', 'wc-processing'], 'limit' => -1]);
+        $purchased_skus = [];
+        if ($customer_orders) {
+            foreach ($customer_orders as $order) {
+                foreach ($order->get_items() as $item) {
+                    $product = $item->get_product();
+                    if ($product && $product->get_sku()) $purchased_skus[] = $product->get_sku();
+                }
             }
         }
+        $paid_exam_ids = array_values(array_intersect($all_exam_skus, array_unique($purchased_skus)));
     }
     
     return ['iss' => get_site_url(), 'iat' => time(), 'exp' => time() + (60 * 60 * 2), 'user' => ['id' => (string)$user->ID, 'name' => $user_full_name, 'email' => $user->user_email, 'isAdmin' => user_can($user, 'administrator')], 'paidExamIds' => array_unique($paid_exam_ids), 'examPrices' => $exam_prices];
@@ -211,24 +218,27 @@ function annapoorna_rest_send_cors_headers($served, $result, $request, $server) 
     return $served;
 }
 
-
 function annapoorna_get_app_config_callback() { return new WP_REST_Response(annapoorna_get_all_app_data(), 200); }
+
 function annapoorna_get_user_results_callback($request) {
     $user_id = (int)$request->get_param('jwt_user_id');
-    $results = [];
-    if ($index = get_user_meta($user_id, 'all_exam_results_index', true)) {
-        foreach ($index as $test_id) {
-            if ($result = get_user_meta($user_id, 'exam_result_' . sanitize_key($test_id), true)) $results[] = $result;
-        }
+    $results = get_user_meta($user_id, 'annapoorna_exam_results', true);
+    if (!is_array($results)) {
+        $results = [];
     }
-    return new WP_REST_Response($results, 200);
+    return new WP_REST_Response(array_values($results), 200);
 }
+
 function annapoorna_get_single_result_callback($request) {
     $user_id = (int)$request->get_param('jwt_user_id');
     $test_id = sanitize_key($request['test_id']);
-    $result = get_user_meta($user_id, 'exam_result_' . $test_id, true);
-    return $result ? new WP_REST_Response($result, 200) : new WP_Error('not_found', 'Result not found.', ['status' => 404]);
+    $all_results = get_user_meta($user_id, 'annapoorna_exam_results', true);
+    if (is_array($all_results) && isset($all_results[$test_id])) {
+        return new WP_REST_Response($all_results[$test_id], 200);
+    }
+    return new WP_Error('not_found', 'Result not found.', ['status' => 404]);
 }
+
 function annapoorna_get_certificate_data_callback($request) {
     $user_id = (int)$request->get_param('jwt_user_id');
     $test_id = $request['test_id'];
@@ -246,9 +256,12 @@ function annapoorna_get_certificate_data_callback($request) {
         return new WP_REST_Response($data, 200);
     }
     
-    $result = get_user_meta($user_id, 'exam_result_' . sanitize_key($test_id), true);
-    if (!$result) return new WP_Error('not_found', 'Result not found.', ['status' => 404]);
-
+    $all_results = get_user_meta($user_id, 'annapoorna_exam_results', true);
+    if (!is_array($all_results) || !isset($all_results[sanitize_key($test_id)])) {
+        return new WP_Error('not_found', 'Result not found.', ['status' => 404]);
+    }
+    $result = $all_results[sanitize_key($test_id)];
+    
     $exam = null;
     foreach ($org['exams'] as $e) { if ($e['id'] === $result['examId']) { $exam = $e; break; } }
     if (!$exam || ($result['score'] < $exam['passScore'] && !user_can($user, 'administrator'))) {
@@ -285,9 +298,15 @@ function annapoorna_exam_submit_result_callback($request) {
         if (!isset($result_data[$key])) return new WP_Error('invalid_data', "Missing required key: {$key}", ['status' => 400]);
     }
     $result_data['userId'] = (string)$user_id;
-    update_user_meta($user_id, 'exam_result_' . sanitize_key($result_data['testId']), $result_data);
-    $index = get_user_meta($user_id, 'all_exam_results_index', true) ?: [];
-    if (!in_array($result_data['testId'], $index)) { $index[] = $result_data['testId']; update_user_meta($user_id, 'all_exam_results_index', $index); }
+
+    $all_results = get_user_meta($user_id, 'annapoorna_exam_results', true);
+    if (!is_array($all_results)) {
+        $all_results = [];
+    }
+    $all_results[$result_data['testId']] = $result_data;
+    
+    update_user_meta($user_id, 'annapoorna_exam_results', $all_results);
+    
     return new WP_REST_Response($result_data, 200);
 }
 

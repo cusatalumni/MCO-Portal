@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -108,7 +109,7 @@ const Dashboard: React.FC = () => {
         if (!activeOrg) return [];
         
         return activeOrg.exams
-            .filter(e => paidExamIds.includes(e.id) && !e.isPractice)
+            .filter(e => e.productSku && paidExamIds.includes(e.productSku) && !e.isPractice)
             .map(exam => {
                 const examResults = results.filter(r => r.examId === exam.id);
                 const attemptsMade = examResults.length;
@@ -133,12 +134,12 @@ const Dashboard: React.FC = () => {
 
     const availableToPurchaseExams = useMemo(() => {
         if (!activeOrg) return [];
-        return activeOrg.exams.filter(e => !e.isPractice && e.productSku && !paidExamIds.includes(e.id));
+        return activeOrg.exams.filter(e => !e.isPractice && e.productSku && !paidExamIds.includes(e.productSku));
     }, [activeOrg, paidExamIds]);
 
     const handlePurchaseClick = (slug: string | undefined) => {
         if (slug) {
-            window.location.href = `https://www.coding-online.net/product/${slug}/`;
+            navigate(`/checkout/${slug}`);
         } else {
             toast.error("Product link is not available for this exam.");
         }
