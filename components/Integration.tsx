@@ -5,12 +5,13 @@ import toast from 'react-hot-toast';
 const phpCode = `<?php
 /**
  * ===================================================================
- * V32: User-Validated SKU Retrieval Logic
+ * V33: Definitive SKU Retrieval & Admin Redirect Fix
  * ===================================================================
- * This version incorporates the user-confirmed "working" logic for
- * fetching product data from a WooCommerce order item by using the
- * more direct and reliable '$item->get_product()' method. This should
- * be the definitive fix for the synchronization issue.
+ * This version introduces two critical fixes:
+ * 1. A more explicit and robust SKU retrieval logic for WooCommerce
+ *    that correctly handles both simple and variable products.
+ * 2. An update to the login URL filter to prevent administrators from
+ *    being redirected away from the wp-admin login screen.
  */
 
 
@@ -160,7 +161,7 @@ function annapoorna_get_exam_app_url($is_admin = false) {
 }
 
 /**
- * Generates JWT payload, using the user-validated robust method for fetching exam SKUs.
+ * Generates JWT payload, using the new definitive method for fetching exam SKUs.
  * This function is the single source of truth for user data.
  * @param  int $user_id The user's ID.
  * @return array|null The payload data or null on failure.
@@ -199,8 +200,10 @@ function annapoorna_exam_get_payload($user_id) {
         $orders = wc_get_orders(['customer_id' => $user->ID, 'status' => ['completed', 'processing', 'on-hold'], 'limit' => -1]);
         foreach ($orders as $order) {
             foreach ($order->get_items() as $item) {
-                // This is the more reliable method confirmed by the user's testing.
-                $product = $item->get_product(); 
+                $product_id = $item->get_product_id();
+                $variation_id = $item->get_variation_id();
+                // This is the more explicit and robust method to handle simple and variable products.
+                $product = wc_get_product($variation_id ? $variation_id : $product_id);
                 
                 if ($product && $product->get_sku() && in_array($product->get_sku(), $all_exam_skus)) {
                     $paid_exam_ids[] = $product->get_sku();
@@ -419,8 +422,12 @@ function annapoorna_exam_save_reg_fields($user_id) {
     if (!empty($_POST['last_name'])) update_user_meta($user_id, 'last_name', sanitize_text_field($_POST['last_name']));
 }
 
-/** Filters the WordPress login URL to point to our custom login page. */
+/** Filters the WordPress login URL to point to our custom login page, ignoring wp-admin requests. */
 function annapoorna_exam_login_url($login_url, $redirect) {
+    // If the user is trying to access the admin area, use the default WordPress login.
+    if (strpos($redirect, 'wp-admin') !== false) {
+        return $login_url;
+    }
     $login_page_url = home_url('/' . ANNAPOORNA_LOGIN_SLUG . '/');
     return !empty($redirect) ? add_query_arg('redirect_to', urlencode($redirect), $login_page_url) : $login_page_url;
 }
