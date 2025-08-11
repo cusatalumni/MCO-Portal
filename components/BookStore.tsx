@@ -1,5 +1,8 @@
+
+
+
 import React from 'react';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from './AppContext';
 import Spinner from './Spinner';
 import type { RecommendedBook } from '../types';
 import { ShoppingCart, BookOpenCheck } from 'lucide-react';
