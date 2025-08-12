@@ -1,5 +1,3 @@
-
-
 import React from 'react';
 import toast from 'react-hot-toast';
 
@@ -10,7 +8,7 @@ const Integration: React.FC = () => {
 /**
  * Plugin Name: Medical Coding Online Exam App Integration
  * Description: Integrates the React-based examination app with WordPress, handling user authentication (SSO), WooCommerce purchases, and results synchronization.
- * Version: 3.4
+ * Version: 3.5
  * Author: Annapoorna Infotech
  */
 
@@ -72,7 +70,7 @@ function annapoorna_get_all_app_data() {
 
     $ALL_EXAMS = [
         // Practice Exams
-        ['id' => 'exam-cpc-practice', 'name' => 'CPC Practice Test', 'description' => 'A short practice test to prepare for the CPC certification.', 'price' => 0, 'productSku' => 'exam-cpc-practice', 'numberOfQuestions' => 10, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 25],
+        ['id' => 'exam-cpc-practice', 'name' => 'CPC Practice Test', 'description' => 'A short practice test to prepare for the CPC certification.', 'price' => 0, 'productSku' => 'exam-cpc-practice', 'numberOfQuestions' => 10, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 25, 'questionSourceUrl' => 'https://docs.google.com/spreadsheets/d/1-2abcdefghijklmnopqrstuvwxyz/edit?usp=sharing'],
         ['id' => 'exam-cca-practice', 'name' => 'CCA Practice Test', 'description' => 'A short practice test for the Certified Coding Associate exam.', 'price' => 0, 'productSku' => 'exam-cca-practice', 'numberOfQuestions' => 10, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 25],
         ['id' => 'exam-billing-practice', 'name' => 'Medical Billing Practice Test', 'description' => 'A short practice test for medical billing concepts.', 'price' => 0, 'productSku' => 'exam-billing-practice', 'numberOfQuestions' => 10, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-2', 'isPractice' => true, 'durationMinutes' => 20],
         ['id' => 'exam-ccs-practice', 'name' => 'CCS Practice Test', 'description' => 'Practice for the Certified Coding Specialist exam.', 'price' => 0, 'productSku' => 'exam-ccs-practice', 'numberOfQuestions' => 10, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 25],
@@ -86,18 +84,18 @@ function annapoorna_get_all_app_data() {
         ['id' => 'exam-mta-practice', 'name' => 'Medical Terminology & Anatomy Practice', 'description' => 'Practice for the Medical Terminology and Anatomy exam.', 'price' => 0, 'productSku' => 'exam-mta-practice', 'numberOfQuestions' => 10, 'passScore' => 80, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 20],
 
         // Certification Exams
-        ['id' => 'exam-cpc-cert', 'name' => 'CPC Certification Exam', 'description' => 'Full certification exam for Certified Professional Coder.', 'price' => 150, 'regularPrice' => 150, 'productSku' => 'exam-cpc-cert', 'productSlug' => 'exam-cpc-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 240],
-        ['id' => 'exam-cca-cert', 'name' => 'CCA Certification Exam', 'description' => 'Full certification exam for Certified Coding Associate.', 'price' => 120, 'regularPrice' => 120, 'productSku' => 'exam-cca-cert', 'productSlug' => 'exam-cca-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 180],
-        ['id' => 'exam-ccs-cert', 'name' => 'CCS Certification Exam', 'description' => 'Full certification exam for Certified Coding Specialist.', 'price' => 160, 'regularPrice' => 160, 'productSku' => 'exam-ccs-cert', 'productSlug' => 'exam-ccs-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 240],
-        ['id' => 'exam-billing-cert', 'name' => 'Medical Billing Certification Exam', 'description' => 'Comprehensive exam covering medical billing and reimbursement.', 'price' => 100, 'regularPrice' => 100, 'productSku' => 'exam-billing-cert', 'productSlug' => 'exam-billing-cert', 'numberOfQuestions' => 100, 'passScore' => 75, 'certificateTemplateId' => 'cert-mco-2', 'isPractice' => false, 'durationMinutes' => 150],
-        ['id' => 'exam-risk-cert', 'name' => 'Risk Adjustment (CRC) Certification Exam', 'description' => 'Exam for Certified Risk Adjustment Coder.', 'price' => 150, 'regularPrice' => 150, 'productSku' => 'exam-risk-cert', 'productSlug' => 'exam-risk-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 240],
-        ['id' => 'exam-icd-cert', 'name' => 'ICD-10-CM Certification Exam', 'description' => 'Proficiency exam for ICD-10-CM coding.', 'price' => 90, 'regularPrice' => 90, 'productSku' => 'exam-icd-cert', 'productSlug' => 'exam-icd-cert', 'numberOfQuestions' => 100, 'passScore' => 75, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 120],
-        ['id' => 'exam-cpb-cert', 'name' => 'CPB Certification Exam', 'description' => 'Full certification exam for Certified Professional Biller.', 'price' => 150, 'regularPrice' => 150, 'productSku' => 'exam-cpb-cert', 'productSlug' => 'exam-cpb-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-2', 'isPractice' => false, 'durationMinutes' => 240],
-        ['id' => 'exam-crc-cert', 'name' => 'CRC Certification Exam', 'description' => 'Full certification exam for Certified Risk Adjustment Coder.', 'price' => 150, 'regularPrice' => 150, 'productSku' => 'exam-crc-cert', 'productSlug' => 'exam-crc-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 240],
-        ['id' => 'exam-cpma-cert', 'name' => 'CPMA Certification Exam', 'description' => 'Full certification exam for Certified Professional Medical Auditor.', 'price' => 150, 'regularPrice' => 150, 'productSku' => 'exam-cpma-cert', 'productSlug' => 'exam-cpma-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 240],
-        ['id' => 'exam-coc-cert', 'name' => 'COC Certification Exam', 'description' => 'Full certification exam for Certified Outpatient Coder.', 'price' => 150, 'regularPrice' => 150, 'productSku' => 'exam-coc-cert', 'productSlug' => 'exam-coc-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 240],
-        ['id' => 'exam-cic-cert', 'name' => 'CIC Certification Exam', 'description' => 'Full certification exam for Certified Inpatient Coder.', 'price' => 150, 'regularPrice' => 150, 'productSku' => 'exam-cic-cert', 'productSlug' => 'exam-cic-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 240],
-        ['id' => 'exam-mta-cert', 'name' => 'Medical Terminology & Anatomy Exam', 'description' => 'Proficiency exam for Medical Terminology and Anatomy.', 'price' => 75, 'regularPrice' => 75, 'productSku' => 'exam-mta-cert', 'productSlug' => 'exam-mta-cert', 'numberOfQuestions' => 100, 'passScore' => 80, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 60]
+        ['id' => 'exam-cpc-cert', 'name' => 'CPC Certification Exam', 'description' => 'Full certification exam for Certified Professional Coder.', 'price' => 150, 'regularPrice' => 150, 'productSku' => 'exam-cpc-cert', 'productSlug' => 'exam-cpc-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 240, 'questionSourceUrl' => ''],
+        ['id' => 'exam-cca-cert', 'name' => 'CCA Certification Exam', 'description' => 'Full certification exam for Certified Coding Associate.', 'price' => 120, 'regularPrice' => 120, 'productSku' => 'exam-cca-cert', 'productSlug' => 'exam-cca-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 180, 'questionSourceUrl' => ''],
+        ['id' => 'exam-ccs-cert', 'name' => 'CCS Certification Exam', 'description' => 'Full certification exam for Certified Coding Specialist.', 'price' => 160, 'regularPrice' => 160, 'productSku' => 'exam-ccs-cert', 'productSlug' => 'exam-ccs-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 240, 'questionSourceUrl' => ''],
+        ['id' => 'exam-billing-cert', 'name' => 'Medical Billing Certification Exam', 'description' => 'Comprehensive exam covering medical billing and reimbursement.', 'price' => 100, 'regularPrice' => 100, 'productSku' => 'exam-billing-cert', 'productSlug' => 'exam-billing-cert', 'numberOfQuestions' => 100, 'passScore' => 75, 'certificateTemplateId' => 'cert-mco-2', 'isPractice' => false, 'durationMinutes' => 150, 'questionSourceUrl' => ''],
+        ['id' => 'exam-risk-cert', 'name' => 'Risk Adjustment (CRC) Certification Exam', 'description' => 'Exam for Certified Risk Adjustment Coder.', 'price' => 150, 'regularPrice' => 150, 'productSku' => 'exam-risk-cert', 'productSlug' => 'exam-risk-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 240, 'questionSourceUrl' => ''],
+        ['id' => 'exam-icd-cert', 'name' => 'ICD-10-CM Certification Exam', 'description' => 'Proficiency exam for ICD-10-CM coding.', 'price' => 90, 'regularPrice' => 90, 'productSku' => 'exam-icd-cert', 'productSlug' => 'exam-icd-cert', 'numberOfQuestions' => 100, 'passScore' => 75, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 120, 'questionSourceUrl' => ''],
+        ['id' => 'exam-cpb-cert', 'name' => 'CPB Certification Exam', 'description' => 'Full certification exam for Certified Professional Biller.', 'price' => 150, 'regularPrice' => 150, 'productSku' => 'exam-cpb-cert', 'productSlug' => 'exam-cpb-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-2', 'isPractice' => false, 'durationMinutes' => 240, 'questionSourceUrl' => ''],
+        ['id' => 'exam-crc-cert', 'name' => 'CRC Certification Exam', 'description' => 'Full certification exam for Certified Risk Adjustment Coder.', 'price' => 150, 'regularPrice' => 150, 'productSku' => 'exam-crc-cert', 'productSlug' => 'exam-crc-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 240, 'questionSourceUrl' => ''],
+        ['id' => 'exam-cpma-cert', 'name' => 'CPMA Certification Exam', 'description' => 'Full certification exam for Certified Professional Medical Auditor.', 'price' => 150, 'regularPrice' => 150, 'productSku' => 'exam-cpma-cert', 'productSlug' => 'exam-cpma-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 240, 'questionSourceUrl' => ''],
+        ['id' => 'exam-coc-cert', 'name' => 'COC Certification Exam', 'description' => 'Full certification exam for Certified Outpatient Coder.', 'price' => 150, 'regularPrice' => 150, 'productSku' => 'exam-coc-cert', 'productSlug' => 'exam-coc-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 240, 'questionSourceUrl' => ''],
+        ['id' => 'exam-cic-cert', 'name' => 'CIC Certification Exam', 'description' => 'Full certification exam for Certified Inpatient Coder.', 'price' => 150, 'regularPrice' => 150, 'productSku' => 'exam-cic-cert', 'productSlug' => 'exam-cic-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 240, 'questionSourceUrl' => ''],
+        ['id' => 'exam-mta-cert', 'name' => 'Medical Terminology & Anatomy Exam', 'description' => 'Proficiency exam for Medical Terminology and Anatomy.', 'price' => 75, 'regularPrice' => 75, 'productSku' => 'exam-mta-cert', 'productSlug' => 'exam-mta-cert', 'numberOfQuestions' => 100, 'passScore' => 80, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 60, 'questionSourceUrl' => '']
     ];
     
     // Assign recommended books to exams
@@ -181,6 +179,7 @@ function annapoorna_exam_register_rest_api() {
     register_rest_route('exam-app/v1', '/certificate-data/(?P<test_id>[\\w-]+)', ['methods' => 'GET', 'callback' => 'annapoorna_get_certificate_data_callback', 'permission_callback' => 'annapoorna_exam_api_permission_check']);
     register_rest_route('exam-app/v1', '/update-name', ['methods' => 'POST', 'callback' => 'annapoorna_exam_update_user_name_callback', 'permission_callback' => 'annapoorna_exam_api_permission_check']);
     register_rest_route('exam-app/v1', '/submit-result', ['methods' => 'POST', 'callback' => 'annapoorna_exam_submit_result_callback', 'permission_callback' => 'annapoorna_exam_api_permission_check']);
+    register_rest_route('exam-app/v1', '/questions-from-sheet', ['methods' => 'POST', 'callback' => 'annapoorna_get_questions_from_sheet_callback', 'permission_callback' => 'annapoorna_exam_api_permission_check']);
 }
 
 function annapoorna_exam_api_permission_check($request) {
@@ -206,6 +205,73 @@ function annapoorna_rest_send_cors_headers($served, $result, $request, $server) 
 }
 
 function annapoorna_get_app_config_callback() { return new WP_REST_Response(annapoorna_get_all_app_data(), 200); }
+
+function annapoorna_get_questions_from_sheet_callback($request) {
+    $params = $request->get_json_params();
+    $sheet_url = isset($params['sheetUrl']) ? esc_url_raw($params['sheetUrl']) : '';
+    $count = isset($params['count']) ? intval($params['count']) : 100;
+
+    if (empty($sheet_url) || !filter_var($sheet_url, FILTER_VALIDATE_URL)) {
+        return new WP_Error('invalid_url', 'Invalid or missing Google Sheet URL.', ['status' => 400]);
+    }
+
+    $csv_url = str_replace('/edit?usp=sharing', '/export?format=csv', $sheet_url);
+    $csv_url = str_replace('/edit#gid=', '/export?format=csv&gid=', $csv_url);
+    
+    $response = wp_remote_get($csv_url, ['timeout' => 20]);
+
+    if (is_wp_error($response)) {
+        annapoorna_debug_log('Failed to fetch sheet: ' . $response->get_error_message());
+        return new WP_Error('fetch_failed', 'Could not retrieve questions from the source.', ['status' => 500]);
+    }
+
+    $body = wp_remote_retrieve_body($response);
+    $lines = explode("\n", trim($body));
+    array_walk($lines, function(&$line) { $line = trim($line); });
+    
+    $header = str_getcsv(array_shift($lines));
+    
+    $questions = [];
+    foreach ($lines as $line) {
+        if (empty(trim($line))) continue;
+        $row = str_getcsv($line);
+        if(count($row) < 3) continue;
+
+        $options = [];
+        for ($i = 1; $i < count($row) - 1; $i++) {
+            if (!empty(trim($row[$i]))) {
+                $options[] = trim($row[$i]);
+            }
+        }
+        
+        $correct_answer_text = trim(end($row));
+        $correct_answer_index = array_search($correct_answer_text, $options);
+        
+        if(count($options) < 2 || $correct_answer_index === false) continue;
+        
+        $questions[] = [
+            'id' => count($questions) + 1,
+            'question' => trim($row[0]),
+            'options' => $options,
+            'correctAnswer' => $correct_answer_index + 1
+        ];
+    }
+    
+    if (empty($questions)) {
+        return new WP_Error('parse_failed', 'No valid questions could be parsed from the source.', ['status' => 500]);
+    }
+
+    shuffle($questions);
+    $selected_questions = array_slice($questions, 0, $count);
+    
+    $final_questions = [];
+    foreach($selected_questions as $index => $q) {
+        $q['id'] = $index + 1;
+        $final_questions[] = $q;
+    }
+
+    return new WP_REST_Response($final_questions, 200);
+}
 
 function annapoorna_get_user_results_callback($request) {
     $user_id = (int)$request->get_param('jwt_user_id');
@@ -377,58 +443,42 @@ function annapoorna_exam_validate_reg_fields($errors, $login, $email) { if (empt
 function annapoorna_exam_save_reg_fields($user_id) { if (!empty($_POST['first_name'])) update_user_meta($user_id, 'first_name', sanitize_text_field($_POST['first_name'])); if (!empty($_POST['last_name'])) update_user_meta($user_id, 'last_name', sanitize_text_field($_POST['last_name'])); }
 function annapoorna_exam_login_url($login_url, $redirect) { $login_page_url = home_url('/' . ANNAPOORNA_LOGIN_SLUG . '/'); return !empty($redirect) ? add_query_arg('redirect_to', urlencode($redirect), $login_page_url) : $login_page_url; }
 
-?>
-`;
-
-    const copyToClipboard = () => {
-        navigator.clipboard.writeText(phpCode.trim())
-            .then(() => toast.success('PHP code copied to clipboard!'))
-            .catch(err => toast.error('Failed to copy code.'));
-    };
+?>`;
 
     return (
         <div className="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-lg">
             <h1 className="text-3xl font-bold text-slate-800 mb-4">WordPress Integration Guide</h1>
             <div className="prose max-w-none text-slate-600">
-                <p>
-                    To integrate this examination application with your WordPress site, you need to use a custom plugin. This plugin will handle Single Sign-On (SSO), sync purchased exams from WooCommerce, and allow results to be saved back to your WordPress user profiles.
-                </p>
-
-                <h2 className="text-2xl font-semibold text-slate-700 mt-6 mb-2">Setup Steps</h2>
-                <ol className="list-decimal list-inside space-y-2">
-                    <li>
-                        <strong>Create a new plugin file:</strong> In your WordPress installation, navigate to the <code>wp-content/plugins/</code> directory. Create a new file named <code>mco-exam-integration.php</code>.
+                <p>This plugin enables Single Sign-On (SSO) from your WordPress site to the React exam app. It creates a custom login page, handles redirects, and securely transfers user data via a JWT token.</p>
+                
+                <h2 className="text-2xl font-semibold text-slate-700 mt-6 mb-2">Setup Instructions</h2>
+                <ol>
+                    <li><strong>Define Secret Key:</strong> Open your <code>wp-config.php</code> file and add the following line. <strong>This is a critical security step.</strong> Replace the placeholder with a key generated from a secure password generator (at least 32 characters).
+                        <pre className="bg-slate-200 p-2 rounded text-sm"><code>define('ANNAPOORNA_JWT_SECRET', 'your-very-strong-secret-key-that-is-long-and-random');</code></pre>
                     </li>
-                    <li>
-                        <strong>Copy the code:</strong> Copy the entire PHP code block below and paste it into the <code>mco-exam-integration.php</code> file you just created.
+                    <li><strong>Plugin Installation:</strong> Copy the full PHP code below into a new file named <code>mco-exam-integration.php</code> inside your <code>/wp-content/plugins/</code> directory.</li>
+                    <li><strong>Activate Plugin:</strong> Go to your WordPress admin dashboard, navigate to "Plugins", find "Medical Coding Online Exam App Integration", and click "Activate".</li>
+                    <li><strong>Create Login Page:</strong> Create a new page in WordPress (e.g., titled "Exam Login"). In the content editor, add the following shortcode:
+                        <pre className="bg-slate-200 p-2 rounded text-sm"><code>[exam_portal_login]</code></pre>
+                        The slug for this page should match the one defined in the plugin (default: <code>exam-login</code>).
                     </li>
-                    <li>
-                        <strong>Configure the JWT Secret:</strong> Open your <code>wp-config.php</code> file (in the root of your WordPress installation) and add the following line. <strong>Important:</strong> Replace <code>'your-very-strong-secret-key...'</code> with a long, random string generated from a secure source (e.g., a password generator).
-                        <pre className="bg-slate-100 p-2 rounded mt-2"><code>define('ANNAPOORNA_JWT_SECRET', 'your-very-strong-secret-key-that-is-long-and-random');</code></pre>
-                    </li>
-                    <li>
-                        <strong>Activate the plugin:</strong> Go to your WordPress admin dashboard, navigate to "Plugins", find "Medical Coding Online Exam App Integration", and click "Activate".
-                    </li>
-                    <li>
-                        <strong>Create Login Page:</strong> Create a new page in WordPress, give it a title like "Exam Login", and use the slug <code>exam-login</code>. In the page content, add the shortcode: <code>[exam_portal_login]</code>. This page will now be your login portal.
-                    </li>
+                    <li><strong>Admin Settings:</strong> As an admin, you can switch between the production and test versions of the exam app from 'Settings' &gt; 'Exam App Settings' in your WP dashboard. This redirect only affects logged-in admins.</li>
                 </ol>
 
                 <h2 className="text-2xl font-semibold text-slate-700 mt-6 mb-2">Plugin Code</h2>
-                <div className="relative">
+                <p>Copy the code below into <code>mco-exam-integration.php</code>.</p>
+                <pre className="bg-slate-800 text-white p-4 rounded-lg overflow-x-auto relative">
                     <button 
-                        onClick={copyToClipboard}
-                        className="absolute top-2 right-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold py-1 px-3 rounded-lg text-sm z-10"
-                        aria-label="Copy PHP code to clipboard"
+                        onClick={() => {
+                            navigator.clipboard.writeText(phpCode);
+                            toast.success('Code copied to clipboard!');
+                        }}
+                        className="absolute top-2 right-2 bg-slate-600 hover:bg-slate-500 text-white text-xs font-bold py-1 px-2 rounded"
                     >
                         Copy Code
                     </button>
-                    <pre className="bg-slate-900 text-white p-4 rounded-lg overflow-x-auto text-sm">
-                        <code>
-                            {phpCode.trim()}
-                        </code>
-                    </pre>
-                </div>
+                    <code>{phpCode}</code>
+                </pre>
             </div>
         </div>
     );

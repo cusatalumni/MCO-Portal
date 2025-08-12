@@ -1,5 +1,6 @@
 
-import type { Question, TestResult, CertificateData, Organization, UserAnswer, User } from '../types';
+import { GoogleGenAI, Type } from "@google/genai";
+import type { Question, TestResult, CertificateData, Organization, UserAnswer, User, Exam } from '../types';
 import { logoBase64 } from '../assets/logo';
 import toast from 'react-hot-toast';
 
@@ -44,66 +45,137 @@ export const apiService = {
         return data;
     },
     
-    getQuestions: async (examId: string, examName: string, numberOfQuestions: number, token: string): Promise<Question[]> => {
-        const toastId = toast.loading(`Loading questions for "${examName}"...`);
-        const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/10QGeiupsw6KtW9613v1yj03SYtzf3rDCEu-hbgQUwgs/gviz/tq?tqx=out:csv';
+    getQuestions: async (exam: Exam, token: string): Promise<Question[]> => {
+        // If a sheet URL is provided, fetch from the WordPress proxy
+        if (exam.questionSourceUrl) {
+            const toastId = toast.loading(`Loading questions for "${exam.name}"...`);
+            try {
+                const response = await fetch(`${API_BASE_URL}/questions-from-sheet`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ 
+                        sheetUrl: exam.questionSourceUrl, 
+                        count: exam.numberOfQuestions 
+                    })
+                });
 
-        try {
-            const response = await fetch(GOOGLE_SHEET_URL);
-            if (!response.ok) {
-                throw new Error(`Failed to fetch from Google Sheets: ${response.statusText}`);
-            }
-            const csvText = await response.text();
-            const rows = csvText.split('\n').filter(row => row.trim() !== '');
-            
-            if (rows.length < 2) {
-                throw new Error("Google Sheet is empty or in an invalid format.");
-            }
-
-            const allQuestions: Question[] = rows.slice(1).map((row, index) => {
-                let cleanRow = row.trim();
-                if (cleanRow.startsWith('"')) cleanRow = cleanRow.substring(1);
-                if (cleanRow.endsWith('"')) cleanRow = cleanRow.slice(0, -1);
-                
-                const columns = cleanRow.split('","').map(col => col.replace(/""/g, '"'));
-
-                if (columns.length < 3) {
-                    console.warn(`Skipping malformed row ${index + 2}:`, row);
-                    return null;
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Failed to fetch questions from source.');
                 }
                 
-                const [questionText, optionsStr, correctAnswerText] = columns;
-
-                const options = optionsStr.split('|').map(o => o.trim());
-                const correctAnswerIndex = options.findIndex(opt => opt.trim() === correctAnswerText.trim());
-
-                if (correctAnswerIndex === -1) {
-                    console.warn(`Could not find correct answer for row ${index + 2}:`, { question: questionText, options, correctAnswer: correctAnswerText });
-                    return null;
+                const questions: Question[] = await response.json();
+                if (questions.length === 0) {
+                     throw new Error('Source file contains no valid questions.');
                 }
+                toast.success('Questions loaded!', { id: toastId });
+                return questions;
 
-                return {
-                    id: index + 1,
-                    question: questionText,
-                    options: options,
-                    correctAnswer: correctAnswerIndex + 1, // 1-based index
+            } catch (error: any) {
+                console.error("Failed to get questions from sheet URL:", error);
+                const errorMessage = error.message || "Could not load exam questions.";
+                toast.error(errorMessage, { id: toastId });
+                return [];
+            }
+        } 
+        // Otherwise, generate questions using the Gemini API
+        else {
+            const toastId = toast.loading(`Generating questions for "${exam.name}"...`);
+            try {
+                if (!process.env.API_KEY) {
+                    throw new Error("Gemini API key is not configured.");
+                }
+                const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+                const schema = {
+                    type: Type.OBJECT,
+                    properties: {
+                        questions: {
+                            type: Type.ARRAY,
+                            description: `A list of ${exam.numberOfQuestions} questions.`,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    question: {
+                                        type: Type.STRING,
+                                        description: "The text of the question."
+                                    },
+                                    options: {
+                                        type: Type.ARRAY,
+                                        description: "An array of 4 possible answer strings.",
+                                        items: { type: Type.STRING }
+                                    },
+                                    correctAnswer: {
+                                        type: Type.STRING,
+                                        description: "The exact string of the correct answer from the 'options' array."
+                                    }
+                                },
+                                required: ["question", "options", "correctAnswer"]
+                            }
+                        }
+                    },
+                    required: ["questions"]
                 };
-            }).filter((q): q is Question => q !== null);
-            
-            if (allQuestions.length === 0) {
-                throw new Error("No valid questions could be parsed from the Google Sheet.");
+
+                const prompt = `Generate ${exam.numberOfQuestions} multiple-choice questions for a "${exam.name}" exam.
+                This exam is described as: "${exam.description}".
+                For each question, provide exactly 4 unique answer options and specify which one is correct.
+                The topic is medical coding and billing. The questions should be suitable for a certification exam.
+                Format the output as JSON that adheres to the provided schema.`;
+
+                const response = await ai.models.generateContent({
+                    model: 'gemini-2.5-flash',
+                    contents: prompt,
+                    config: {
+                        responseMimeType: "application/json",
+                        responseSchema: schema,
+                        temperature: 0.7
+                    },
+                });
+
+                const jsonResponse = JSON.parse(response.text);
+
+                if (!jsonResponse.questions || jsonResponse.questions.length === 0) {
+                    throw new Error("AI failed to generate valid questions.");
+                }
+
+                const generatedQuestions: { question: string; options: string[]; correctAnswer: string }[] = jsonResponse.questions;
+
+                const allQuestions: Question[] = generatedQuestions.map((q, index) => {
+                    const safeOptions = Array.isArray(q.options) ? q.options : [];
+                    while (safeOptions.length < 4) safeOptions.push("N/A");
+
+                    let correctAnswerIndex = safeOptions.findIndex(opt => opt === q.correctAnswer);
+                    
+                    if (correctAnswerIndex === -1) {
+                        console.warn('Could not find correct answer in options for generated question. Defaulting to first option.', q);
+                        correctAnswerIndex = 0;
+                    }
+
+                    return {
+                        id: index + 1,
+                        question: q.question,
+                        options: safeOptions.slice(0, 4),
+                        correctAnswer: correctAnswerIndex + 1, // 1-based index
+                    };
+                });
+
+                if (allQuestions.length === 0) {
+                    throw new Error("No valid questions could be processed from the AI response.");
+                }
+
+                toast.success('Questions generated!', { id: toastId });
+                return allQuestions.slice(0, exam.numberOfQuestions);
+
+            } catch (error: any) {
+                console.error("Failed to generate questions using Gemini API:", error);
+                const errorMessage = error.message || "Could not generate exam questions.";
+                toast.error(errorMessage, { id: toastId });
+                return [];
             }
-
-            const shuffled = allQuestions.sort(() => 0.5 - Math.random());
-            const selectedQuestions = shuffled.slice(0, numberOfQuestions);
-
-            toast.success('Questions loaded!', { id: toastId });
-            return selectedQuestions;
-
-        } catch (error: any) {
-            console.error("Failed to load or parse questions from Google Sheet:", error);
-            toast.error(error.message || "Could not load exam questions.", { id: toastId });
-            return [];
         }
     },
 

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
@@ -19,6 +18,7 @@ import Integration from './components/Integration';
 import Admin from './components/Admin';
 import BookStore from './components/BookStore';
 import Profile from './components/Profile';
+import Checkout from './components/Checkout';
 
 
 interface ProtectedRouteProps {
@@ -29,10 +29,10 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, adminOnly = false }) => {
   const { user } = useAuth();
   if (!user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/" />;
   }
   if (adminOnly && !user.isAdmin) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/dashboard" />;
   }
   return <>{children}</>;
 };
@@ -49,6 +49,7 @@ const AppContent: React.FC = () => {
                         <Route path="/instructions" element={<Instructions />} />
                         <Route path="/integration" element={<Integration />} />
                         <Route path="/bookstore" element={<BookStore />} />
+                        <Route path="/checkout/:productSlug" element={<Checkout />} />
                         
                         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
@@ -58,7 +59,7 @@ const AppContent: React.FC = () => {
                         <Route path="/certificate/:testId" element={<ProtectedRoute><Certificate /></ProtectedRoute>} />
                         <Route path="/admin" element={<ProtectedRoute adminOnly={true}><Admin /></ProtectedRoute>} />
                     
-                        <Route path="*" element={<Navigate to="/" replace />} />
+                        <Route path="*" element={<Navigate to="/" />} />
                     </Routes>
                 </main>
             </div>
