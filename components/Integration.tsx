@@ -10,7 +10,7 @@ const Integration: React.FC = () => {
 /**
  * Plugin Name: Medical Coding Online Exam App Integration
  * Description: Integrates the React-based examination app with WordPress, handling user authentication (SSO), WooCommerce purchases, and results synchronization.
- * Version: 3.2
+ * Version: 3.4
  * Author: Annapoorna Infotech
  */
 
@@ -125,18 +125,6 @@ function annapoorna_get_all_app_data() {
     ];
 }
 
-function annapoorna_get_question_bank() {
-    return [
-        'exam-cpc-practice' => [
-            ['id' => 1001, 'question' => 'From the CPT manual, select the statement that is TRUE. (Bank)', 'options' => ['The + sign is for add-on codes.', 'The bullet represents a new code.', 'The triangle represents a revised code.', 'All of the above.'], 'correctAnswer' => 4],
-            ['id' => 1002, 'question' => 'What does HCPCS stand for? (Bank)', 'options' => ['Healthcare Common Procedure Coding System', 'Health Compliance Procedural Coding System', 'Healthcare Procedural Coding Service', 'Health Common Procedural Code System'], 'correctAnswer' => 1],
-        ],
-        'exam-cca-practice' => [
-            ['id' => 2001, 'question' => 'Which organization maintains the ICD-10-CM code set? (Bank)', 'options' => ['AMA', 'CMS', 'WHO', 'NCHS'], 'correctAnswer' => 4],
-        ]
-    ];
-}
-
 function annapoorna_exam_get_payload($user_id) {
     if (!$user = get_userdata($user_id)) return null;
     $user_full_name = trim($user->first_name . ' ' . $user->last_name) ?: $user->display_name;
@@ -193,43 +181,6 @@ function annapoorna_exam_register_rest_api() {
     register_rest_route('exam-app/v1', '/certificate-data/(?P<test_id>[\\w-]+)', ['methods' => 'GET', 'callback' => 'annapoorna_get_certificate_data_callback', 'permission_callback' => 'annapoorna_exam_api_permission_check']);
     register_rest_route('exam-app/v1', '/update-name', ['methods' => 'POST', 'callback' => 'annapoorna_exam_update_user_name_callback', 'permission_callback' => 'annapoorna_exam_api_permission_check']);
     register_rest_route('exam-app/v1', '/submit-result', ['methods' => 'POST', 'callback' => 'annapoorna_exam_submit_result_callback', 'permission_callback' => 'annapoorna_exam_api_permission_check']);
-    register_rest_route('exam-app/v1', '/questions/(?P<exam_id>[\\w-]+)', ['methods' => 'GET', 'callback' => 'annapoorna_get_exam_questions_callback', 'permission_callback' => '__return_true']);
-    register_rest_route('exam-app/v1', '/save-questions', ['methods' => 'POST', 'callback' => 'annapoorna_save_ai_questions_callback', 'permission_callback' => 'annapoorna_exam_api_permission_check']);
-}
-
-function annapoorna_get_exam_questions_callback($request) {
-    $exam_id = sanitize_key($request['exam_id']);
-    $question_bank = annapoorna_get_question_bank();
-    
-    if (isset($question_bank[$exam_id])) {
-        $exam_questions = $question_bank[$exam_id];
-        $all_data = annapoorna_get_all_app_data();
-        $exam_config = null;
-        foreach ($all_data[0]['exams'] as $exam) { if ($exam['id'] === $exam_id) { $exam_config = $exam; break; } }
-        
-        if ($exam_config && isset($exam_config['numberOfQuestions'])) {
-            $num_to_return = (int)$exam_config['numberOfQuestions'];
-            shuffle($exam_questions);
-            return new WP_REST_Response(array_slice($exam_questions, 0, $num_to_return), 200);
-        }
-        return new WP_REST_Response($exam_questions, 200);
-    }
-    return new WP_REST_Response([], 200);
-}
-
-function annapoorna_save_ai_questions_callback($request) {
-    $user_id = (int)$request->get_param('jwt_user_id');
-    if (!user_can($user_id, 'administrator')) {
-        return new WP_Error('forbidden', 'You do not have permission to save questions.', ['status' => 403]);
-    }
-    $data = $request->get_json_params();
-    $exam_id = isset($data['examId']) ? sanitize_key($data['examId']) : null;
-    $questions = isset($data['questions']) ? $data['questions'] : null;
-    if (!$exam_id || !is_array($questions) || empty($questions)) {
-        return new WP_Error('invalid_data', 'Invalid data provided.', ['status' => 400]);
-    }
-    annapoorna_debug_log("Received " . count($questions) . " AI-generated questions for exam '{$exam_id}'. In a real application, these would be saved to the database.");
-    return new WP_REST_Response(['success' => true, 'message' => 'Questions received for data bank update.'], 200);
 }
 
 function annapoorna_exam_api_permission_check($request) {

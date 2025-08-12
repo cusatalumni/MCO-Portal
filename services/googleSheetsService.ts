@@ -1,5 +1,4 @@
 
-
 import { GoogleGenAI, Type } from "@google/genai";
 import type { Question, TestResult, CertificateData, Organization, UserAnswer, User } from '../types';
 import { logoBase64 } from '../assets/logo';
@@ -7,20 +6,8 @@ import toast from 'react-hot-toast';
 
 const API_BASE_URL = 'https://www.coding-online.net/wp-json/exam-app/v1';
 
-// Initialize the Google AI client lazily to prevent app crash on load
-let ai: GoogleGenAI | null = null;
-const getAiClient = (): GoogleGenAI => {
-    if (!ai) {
-        const apiKey = process.env.API_KEY;
-        if (!apiKey) {
-            console.error("Gemini API key is not configured.");
-            // This error will be caught by the calling function's try/catch block
-            throw new Error("API key for AI question generation is missing.");
-        }
-        ai = new GoogleGenAI({ apiKey });
-    }
-    return ai;
-};
+// Initialize the Google AI client
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 
 export const apiService = {
@@ -63,91 +50,66 @@ export const apiService = {
     },
     
     getQuestions: async (examId: string, examName: string, numberOfQuestions: number, token: string): Promise<Question[]> => {
-        // 1. Try fetching from the question bank first
+        const toastId = toast.loading(`Loading questions for "${examName}"...`);
+        const GOOGLE_SHEET_URL = 'https://docs.google.com/spreadsheets/d/10QGeiupsw6KtW9613v1yj03SYtzf3rDCEu-hbgQUwgs/gviz/tq?tqx=out:csv';
+
         try {
-            const response = await fetch(`${API_BASE_URL}/questions/${examId}`);
-            if (response.ok) {
-                const bankQuestions = await response.json();
-                if (Array.isArray(bankQuestions) && bankQuestions.length > 0) {
-                    toast.success('Loaded questions from our data bank!');
-                    return bankQuestions.slice(0, numberOfQuestions);
+            const response = await fetch(GOOGLE_SHEET_URL);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch from Google Sheets: ${response.statusText}`);
+            }
+            const csvText = await response.text();
+            const rows = csvText.split('\n').filter(row => row.trim() !== '');
+            
+            if (rows.length < 2) {
+                throw new Error("Google Sheet is empty or in an invalid format.");
+            }
+
+            const allQuestions: Question[] = rows.slice(1).map((row, index) => {
+                let cleanRow = row.trim();
+                if (cleanRow.startsWith('"')) cleanRow = cleanRow.substring(1);
+                if (cleanRow.endsWith('"')) cleanRow = cleanRow.slice(0, -1);
+                
+                const columns = cleanRow.split('","').map(col => col.replace(/""/g, '"'));
+
+                if (columns.length < 3) {
+                    console.warn(`Skipping malformed row ${index + 2}:`, row);
+                    return null;
                 }
+                
+                const [questionText, optionsStr, correctAnswerText] = columns;
+
+                const options = optionsStr.split('|').map(o => o.trim());
+                const correctAnswerIndex = options.findIndex(opt => opt.trim() === correctAnswerText.trim());
+
+                if (correctAnswerIndex === -1) {
+                    console.warn(`Could not find correct answer for row ${index + 2}:`, { question: questionText, options, correctAnswer: correctAnswerText });
+                    return null;
+                }
+
+                return {
+                    id: index + 1,
+                    question: questionText,
+                    options: options,
+                    correctAnswer: correctAnswerIndex + 1, // 1-based index
+                };
+            }).filter((q): q is Question => q !== null);
+            
+            if (allQuestions.length === 0) {
+                throw new Error("No valid questions could be parsed from the Google Sheet.");
             }
-        } catch (error) {
-            console.warn("Could not fetch from question bank, falling back to AI.", error);
+
+            const shuffled = allQuestions.sort(() => 0.5 - Math.random());
+            const selectedQuestions = shuffled.slice(0, numberOfQuestions);
+
+            toast.success('Questions loaded!', { id: toastId });
+            return selectedQuestions;
+
+        } catch (error: any) {
+            console.error("Failed to load or parse questions from Google Sheet:", error);
+            toast.error(error.message || "Could not load exam questions.", { id: toastId });
+            return [];
         }
-        
-        // 2. Fallback to Gemini API if bank is empty or fails
-        const toastId = toast.loading(`Generating ${numberOfQuestions} unique questions for your exam...`);
-        try {
-            const client = getAiClient();
-            const prompt = `Generate ${numberOfQuestions} multiple-choice questions for a "${examName}". Each question should have 4 options. Return the data as a JSON array where each object has "id" (a unique number for this set of questions starting from 1), "question" (string), "options" (array of 4 strings), and "correctAnswer" (number, the 1-based index of the correct option).`;
-
-            const responseSchema = {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  id: { type: Type.NUMBER },
-                  question: { type: Type.STRING },
-                  options: {
-                    type: Type.ARRAY,
-                    items: { type: Type.STRING }
-                  },
-                  correctAnswer: { type: Type.NUMBER }
-                },
-                required: ["id", "question", "options", "correctAnswer"]
-              }
-            };
-
-            const response = await client.models.generateContent({
-              model: 'gemini-2.5-flash',
-              contents: prompt,
-              config: {
-                responseMimeType: "application/json",
-                responseSchema: responseSchema,
-              },
-            });
-
-            const questionsJson = response.text.trim();
-            const questions = JSON.parse(questionsJson) as Question[];
-            
-            if (!Array.isArray(questions) || questions.length === 0) {
-                 throw new Error("AI failed to generate questions in the expected format.");
-            }
-            
-            // Fire-and-forget call to save the questions back to the data bank.
-            apiService.saveAiQuestions(examId, questions, token).catch(err => {
-                console.error("Could not update data bank with AI questions:", err);
-                // We don't toast this error as it's a background task.
-            });
-            
-            toast.success('Questions generated!', { id: toastId });
-            return questions;
-
-        } catch (error) {
-            console.error("Failed to generate questions with Gemini API:", error);
-            toast.error("Could not generate AI questions. Please try again later.", { id: toastId });
-            return []; // Return empty array on failure
-        }
-    },
-
-    saveAiQuestions: async (examId: string, questions: Question[], token: string): Promise<void> => {
-        // New function to post questions to the backend.
-        const response = await fetch(`${API_BASE_URL}/save-questions`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ examId, questions })
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to save AI questions to the data bank.');
-        }
-        console.log('AI questions sent to the data bank for storage.');
     },
 
     submitTest: async (user: User, examId: string, answers: UserAnswer[], questions: Question[], token: string): Promise<TestResult> => {
