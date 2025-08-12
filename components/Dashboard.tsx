@@ -58,10 +58,11 @@ const Dashboard: React.FC = () => {
                 const practiceAttemptsTaken = userResults.filter(r => practiceExamIds.has(r.examId)).length;
                 setPracticeStats({ attemptsTaken: practiceAttemptsTaken, attemptsAllowed: 10 });
 
-            } catch (error) {
+            } catch (error: any) {
                 console.error("Failed to fetch dashboard results:", error);
-                toast.error("Could not load your exam history.");
-                setHistoryError("Could not load your exam history. Please try syncing again.");
+                const errorMessage = error.message || "Could not load your exam history. Please try syncing again.";
+                toast.error(errorMessage);
+                setHistoryError(errorMessage);
                 setResults([]);
             } finally {
                 setIsLoading(false);

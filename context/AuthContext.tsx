@@ -2,9 +2,8 @@
 
 
 
-import React, { createContext, useState, useContext, ReactNode } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useCallback } from 'react';
 import type { User, TokenPayload } from '../types';
-import toast from 'react-hot-toast';
 
 interface AuthContextType {
   user: User | null;
@@ -12,9 +11,7 @@ interface AuthContextType {
   paidExamIds: string[];
   examPrices: { [id: string]: { price: number; regularPrice?: number; } } | null;
   isSubscribed: boolean;
-  isSyncing: boolean;
   loginWithToken: (token: string) => void;
-  syncUserData: () => Promise<boolean>;
   logout: () => void;
   useFreeAttempt: () => void;
   updateUserName: (name: string) => void;
@@ -54,89 +51,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   });
   const [isSubscribed, setIsSubscribed] = useState<boolean>(false);
-  const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
-  const _updateStateAndStorage = (payload: TokenPayload, jwtToken?: string) => {
-    if (payload.user && payload.paidExamIds) {
-        setUser(payload.user);
-        setPaidExamIds(payload.paidExamIds);
-        localStorage.setItem('examUser', JSON.stringify(payload.user));
-        localStorage.setItem('paidExamIds', JSON.stringify(payload.paidExamIds));
-
-        if (jwtToken) {
-            setToken(jwtToken);
-            localStorage.setItem('authToken', jwtToken);
-        }
-
-        if (payload.examPrices) {
-            setExamPrices(payload.examPrices);
-            localStorage.setItem('examPrices', JSON.stringify(payload.examPrices));
-        }
-    } else {
-        throw new Error("Invalid payload structure.");
-    }
-  };
-
-  const syncUserData = async (): Promise<boolean> => {
-    const currentToken = localStorage.getItem('authToken');
-    if (!currentToken) {
-        return false;
-    }
-
-    setIsSyncing(true);
-    try {
-        const response = await fetch('https://www.coding-online.net/wp-json/exam-app/v1/get-user-data', {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${currentToken}`
-            }
-        });
-
-        if (response.status === 403) {
-            toast.error("Your session has expired. Please log in again.");
-            logout();
-            return false;
-        }
-
-        if (!response.ok) {
-            throw new Error('Failed to sync user data.');
-        }
-
-        const payload: TokenPayload = await response.json();
-        _updateStateAndStorage(payload);
-        return true;
-
-    } catch (error) {
-        console.error('Sync Error:', error);
-        toast.error("Could not sync your data. Please check your connection.");
-        return false;
-    } finally {
-        setIsSyncing(false);
-    }
-  };
-
-  const loginWithToken = (jwtToken: string) => {
-    try {
-        const parts = jwtToken.split('.');
-        if (parts.length !== 3) throw new Error("Invalid JWT format.");
-        
-        const payloadBase64Url = parts[1];
-        const payloadBase64 = payloadBase64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const decodedPayload = decodeURIComponent(atob(payloadBase64).split('').map(function(c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
-        
-        const payload: TokenPayload = JSON.parse(decodedPayload);
-        _updateStateAndStorage(payload, jwtToken);
-
-    } catch(e) {
-        console.error("Failed to decode or parse token:", e);
-        logout();
-        throw new Error("Invalid authentication token.");
-    }
-  };
-
-  const logout = () => {
+  const logout = useCallback(() => {
     setUser(null);
     setPaidExamIds([]);
     setToken(null);
@@ -146,23 +62,60 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.removeItem('paidExamIds');
     localStorage.removeItem('authToken');
     localStorage.removeItem('examPrices');
-  };
+  }, []);
 
-  const useFreeAttempt = () => {
+  const loginWithToken = useCallback((jwtToken: string) => {
+    try {
+        // A proper JWT has three parts separated by dots.
+        const parts = jwtToken.split('.');
+        if (parts.length !== 3) {
+            throw new Error("Invalid JWT format.");
+        }
+        const payloadBase64Url = parts[1];
+        const payloadBase64 = payloadBase64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const decodedPayload = decodeURIComponent(atob(payloadBase64).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        
+        const payload: TokenPayload = JSON.parse(decodedPayload);
+        
+        if (payload.user && payload.paidExamIds) {
+            setUser(payload.user);
+            setPaidExamIds(payload.paidExamIds);
+            setToken(jwtToken);
+            localStorage.setItem('examUser', JSON.stringify(payload.user));
+            localStorage.setItem('paidExamIds', JSON.stringify(payload.paidExamIds));
+            localStorage.setItem('authToken', jwtToken);
+
+            if (payload.examPrices) {
+                setExamPrices(payload.examPrices);
+                localStorage.setItem('examPrices', JSON.stringify(payload.examPrices));
+            }
+        } else {
+            throw new Error("Invalid token payload structure.");
+        }
+    } catch(e) {
+        console.error("Failed to decode or parse token:", e);
+        logout(); // Clear all auth state on error
+        throw new Error("Invalid authentication token.");
+    }
+  }, [logout]);
+
+  const useFreeAttempt = useCallback(() => {
     console.log('User has started a free practice attempt.');
-  };
+  }, []);
 
-  const updateUserName = (name: string) => {
+  const updateUserName = useCallback((name: string) => {
     if (user) {
       const updatedUser = { ...user, name };
       setUser(updatedUser);
       localStorage.setItem('examUser', JSON.stringify(updatedUser));
     }
-  };
+  }, [user]);
 
 
   return (
-    <AuthContext.Provider value={{ user, token, paidExamIds, examPrices, isSubscribed, isSyncing, loginWithToken, syncUserData, logout, useFreeAttempt, updateUserName }}>
+    <AuthContext.Provider value={{ user, token, paidExamIds, examPrices, isSubscribed, loginWithToken, logout, useFreeAttempt, updateUserName }}>
       {children}
     </AuthContext.Provider>
   );
