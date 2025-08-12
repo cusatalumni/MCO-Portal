@@ -136,7 +136,15 @@ export const apiService = {
                     },
                 });
 
-                const jsonResponse = JSON.parse(response.text);
+                let jsonText = response.text.trim();
+                if (jsonText.startsWith('```json')) {
+                    jsonText = jsonText.substring(7);
+                }
+                if (jsonText.endsWith('```')) {
+                    jsonText = jsonText.substring(0, jsonText.length - 3);
+                }
+                
+                const jsonResponse = JSON.parse(jsonText);
 
                 if (!jsonResponse.questions || jsonResponse.questions.length === 0) {
                     throw new Error("AI failed to generate valid questions.");

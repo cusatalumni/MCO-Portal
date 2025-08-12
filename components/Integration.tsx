@@ -225,6 +225,12 @@ function annapoorna_get_questions_from_sheet_callback($request) {
         annapoorna_debug_log('Failed to fetch sheet: ' . $response->get_error_message());
         return new WP_Error('fetch_failed', 'Could not retrieve questions from the source.', ['status' => 500]);
     }
+    
+    $response_code = wp_remote_retrieve_response_code($response);
+    if ($response_code !== 200) {
+        annapoorna_debug_log('Google Sheet returned non-200 status: ' . $response_code);
+        return new WP_Error('fetch_failed', 'Could not access the question source. Please check the URL and permissions.', ['status' => 502]);
+    }
 
     $body = wp_remote_retrieve_body($response);
     $lines = explode("\n", trim($body));
