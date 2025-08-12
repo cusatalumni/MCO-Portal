@@ -77,14 +77,6 @@ function annapoorna_get_exam_app_url($is_admin = false) { if ($is_admin) return 
 
 // --- DATA SOURCE ---
 function annapoorna_get_all_app_data() {
-    $MOCK_BOOKS = [
-        ['id' => 'book-cpc-guide', 'title' => 'Official CPC® Certification Study Guide (AAPC)', 'description' => 'AAPC\'s official CPC exam study guide — anatomy, medical terminology, ICD-10-CM, CPT, HCPCS, practice questions and exam tips.', 'imageUrl' => 'https://www.coding-online.net/wp-content/uploads/2024/04/cpc-study-guide.jpg', 'affiliateLinks' => ['com' => 'https://www.amazon.com/dp/1635278910?tag=mykada-20', 'in' => 'https://www.amazon.in/dp/1635278910?tag=httpcodingonl-21', 'ae' => 'https://www.amazon.ae/dp/1285427998?tag=medical0f1-21']],
-        ['id' => 'book-icd10-cm', 'title' => "Buck's ICD-10-CM for Physicians 2026", 'description' => 'Physician-focused ICD-10-CM code manual (full-color, guidelines and examples).', 'imageUrl' => 'https://www.coding-online.net/wp-content/uploads/2024/04/icd-10-cm-physicians.jpg', 'affiliateLinks' => ['com' => 'https://www.amazon.com/dp/0443380783?tag=mykada-20', 'in' => 'https://www.amazon.in/dp/0443380783?tag=httpcodingonl-21', 'ae' => 'https://www.amazon.ae/dp/0443380783?tag=medical0f1-21']],
-        ['id' => 'book-cpt-pro', 'title' => 'AMA CPT® Professional 2026', 'description' => 'Official Current Procedural Terminology (CPT) codebook from the American Medical Association.', 'imageUrl' => 'https://www.coding-online.net/wp-content/uploads/2024/04/cpt-professional.jpg', 'affiliateLinks' => ['com' => 'https://www.amazon.com/dp/1640163354?tag=mykada-20', 'in' => 'https://www.amazon.in/dp/1640163354?tag=httpcodingonl-21', 'ae' => 'https://www.amazon.ae/dp/1640163354?tag=medical0f1-21']],
-        ['id' => 'book-hcpcs-level2', 'title' => 'HCPCS Level II Professional 2026', 'description' => 'Comprehensive guide for HCPCS Level II codes used for supplies, equipment, and drugs.', 'imageUrl' => 'https://www.coding-online.net/wp-content/uploads/2024/04/hcpcs-level-2.jpg', 'affiliateLinks' => ['com' => 'https://www.amazon.com/dp/1622029947?tag=mykada-20', 'in' => 'https://www.amazon.in/dp/1622029947?tag=httpcodingonl-21', 'ae' => 'https://www.amazon.ae/dp/1622029947?tag=medical0f1-21']],
-        ['id' => 'book-medical-billing', 'title' => 'Medical Billing & Coding For Dummies', 'description' => 'An easy-to-understand guide covering the basics of medical billing and coding.', 'imageUrl' => 'https://www.coding-online.net/wp-content/uploads/2024/04/coding-for-dummies.jpg', 'affiliateLinks' => ['com' => 'https://www.amazon.com/dp/1119750393?tag=mykada-20', 'in' => 'https://www.amazon.in/dp/1119750393?tag=httpcodingonl-21', 'ae' => 'https://www.amazon.ae/dp/1119750393?tag=medical0f1-21']]
-    ];
-    
     $CERTIFICATE_TEMPLATES = [
         ['id' => 'cert-mco-1', 'title' => 'Medical Coding Proficiency', 'body' => 'For successfully demonstrating proficiency in medical coding principles and practices with a final score of <strong>{finalScore}%</strong>. This achievement certifies the holder\'s competence in the standards required for this certification.', 'signature1Name' => 'Dr. Amelia Reed', 'signature1Title' => 'Program Director', 'signature2Name' => 'B. Manoj', 'signature2Title' => 'Chief Instructor'],
         ['id' => 'cert-mco-2', 'title' => 'Advanced Specialty Coding', 'body' => 'Awarded for exceptional performance and mastery in advanced specialty coding topics, achieving a score of <strong>{finalScore}%</strong>. This signifies a high level of expertise and dedication to the field.', 'signature1Name' => 'Dr. Amelia Reed', 'signature1Title' => 'Program Director', 'signature2Name' => 'B. Manoj', 'signature2Title' => 'Chief Instructor']
@@ -126,25 +118,27 @@ function annapoorna_get_all_app_data() {
         ['id' => 'exam-mta-cert', 'name' => 'Medical Terminology & Anatomy Exam', 'description' => 'Proficiency exam for Medical Terminology and Anatomy.', 'price' => 75, 'regularPrice' => 75, 'productSku' => 'exam-mta-cert', 'productSlug' => 'exam-mta-cert', 'numberOfQuestions' => 100, 'passScore' => 80, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 60, 'questionSourceUrl' => '']
     ];
     
-    // Assign recommended books to exams
-    $exams_with_books = array_map(function($exam) use ($MOCK_BOOKS) {
-        if ($exam['isPractice']) {
-            $exam['recommendedBook'] = null;
-        } else {
-            if (strpos($exam['name'], 'CPC') !== false) $exam['recommendedBook'] = $MOCK_BOOKS[0];
-            elseif (strpos($exam['name'], 'ICD-10-CM') !== false) $exam['recommendedBook'] = $MOCK_BOOKS[1];
-            elseif (strpos($exam['name'], 'CPT') !== false) $exam['recommendedBook'] = $MOCK_BOOKS[2];
-            elseif (strpos($exam['name'], 'Billing') !== false) $exam['recommendedBook'] = $MOCK_BOOKS[4];
-            else $exam['recommendedBook'] = $MOCK_BOOKS[array_rand($MOCK_BOOKS)];
+    // Assign recommended book IDs to exams
+    $exams_with_book_ids = array_map(function($exam) {
+        if (!$exam['isPractice']) {
+            if (strpos($exam['name'], 'CPC') !== false) $exam['recommendedBookId'] = 'book-cpc-guide';
+            elseif (strpos($exam['name'], 'ICD-10-CM') !== false) $exam['recommendedBookId'] = 'book-icd10-cm';
+            elseif (strpos($exam['name'], 'CPT') !== false) $exam['recommendedBookId'] = 'book-cpt-pro';
+            elseif (strpos($exam['name'], 'Billing') !== false) $exam['recommendedBookId'] = 'book-medical-billing';
+            else {
+                $default_book_ids = ['book-cpc-guide', 'book-icd10-cm', 'book-cpt-pro', 'book-hcpcs-level2', 'book-medical-billing'];
+                $exam['recommendedBookId'] = $default_book_ids[array_rand($default_book_ids)];
+            }
         }
         return $exam;
     }, $ALL_EXAMS);
+
 
     return [
         [
             'id' => 'org-mco', 'name' => 'Medical Coding Online', 'website' => 'www.coding-online.net',
             'logo' => '',
-            'exams' => $exams_with_books,
+            'exams' => $exams_with_book_ids,
             'examProductCategories' => $EXAM_PRODUCT_CATEGORIES,
             'certificateTemplates' => $CERTIFICATE_TEMPLATES
         ]
