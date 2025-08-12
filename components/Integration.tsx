@@ -9,7 +9,7 @@ const Integration: React.FC = () => {
 /**
  * Plugin Name: Medical Coding Online Exam App Integration
  * Description: Integrates the React-based examination app with WordPress, handling user authentication (SSO), WooCommerce purchases, and results synchronization.
- * Version: 3.5
+ * Version: 3.8
  * Author: Annapoorna Infotech
  */
 
@@ -23,6 +23,32 @@ define('ANNAPOORNA_EXAM_APP_TEST_URL', 'https://mco-exam-jkfzdt3bj-manoj-balakri
 // define('ANNAPOORNA_DEBUG', true); // Add for debug logging
 // --- END CONFIGURATION ---
 
+add_action('rest_api_init', function () {
+    // This filter is the standard WordPress way to allow custom headers like 'Authorization'.
+    add_filter('rest_allowed_cors_headers', function ($allowed_headers) {
+        $allowed_headers[] = 'Authorization';
+        $allowed_headers[] = 'Content-Type';
+        return $allowed_headers;
+    });
+
+    // We still need to handle pre-flight 'OPTIONS' requests and set the origin header.
+    // This hook runs before WordPress serves the REST request.
+    add_filter('rest_pre_serve_request', function ($value) {
+        // Set the origin header. '*' is permissive; for production, a specific domain is better.
+        header('Access-Control-Allow-Origin: *');
+
+        if ('OPTIONS' === $_SERVER['REQUEST_METHOD']) {
+            // For pre-flight, we confirm the allowed methods and headers and then exit.
+            header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+            header('Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce');
+            exit(0);
+        }
+
+        return $value;
+    });
+}, 15);
+
+
 add_action('init', 'annapoorna_exam_app_init');
 function annapoorna_exam_app_init() {
     add_action('admin_notices', 'annapoorna_check_dependencies');
@@ -35,7 +61,6 @@ function annapoorna_exam_app_init() {
     
     add_filter('registration_errors', 'annapoorna_exam_validate_reg_fields', 10, 3);
     add_filter('login_url', 'annapoorna_exam_login_url', 10, 2);
-    add_filter('rest_pre_serve_request', 'annapoorna_rest_send_cors_headers', 10, 4);
     
     add_shortcode('exam_portal_login', 'annapoorna_exam_login_shortcode');
 }
@@ -190,19 +215,6 @@ function annapoorna_exam_api_permission_check($request) {
     if (!$payload || !isset($payload['user']['id'])) return new WP_Error('jwt_invalid', 'Invalid or expired token.', ['status' => 403]);
     $request->set_param('jwt_user_id', $payload['user']['id']);
     return true;
-}
-
-function annapoorna_rest_send_cors_headers($served, $result, $request, $server) {
-    header('Access-Control-Allow-Origin: *');
-    header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-    header('Access-Control-Allow-Headers: Authorization, Content-Type');
-    
-    if ('OPTIONS' === $request->get_method()) {
-        status_header(200);
-        exit();
-    }
-    
-    return $served;
 }
 
 function annapoorna_get_app_config_callback() { return new WP_REST_Response(annapoorna_get_all_app_data(), 200); }
@@ -410,7 +422,7 @@ function annapoorna_exam_login_shortcode() {
             echo "<div class='exam-portal-container' style='text-align:center;'><p>Login successful. Redirecting...</p><script>window.location.href='" . esc_url_raw($final_url) . "';</script><noscript><meta http-equiv='refresh' content='0;url=" . esc_url_raw($final_url) . "'></noscript></div>";
             return;
         } else {
-            $login_error_message = 'Could not generate a secure login token.';
+            $login_error_message = 'Could not create a secure session. Please contact support and mention the JWT configuration issue.';
         }
     }
     
@@ -449,7 +461,7 @@ function annapoorna_exam_add_custom_registration_fields() { ?><p><label for="fir
 function annapoorna_exam_validate_reg_fields($errors, $login, $email) { if (empty($_POST['first_name']) || empty($_POST['last_name'])) $errors->add('field_error', 'First and Last Name are required.'); return $errors; }
 function annapoorna_exam_save_reg_fields($user_id) { if (!empty($_POST['first_name'])) update_user_meta($user_id, 'first_name', sanitize_text_field($_POST['first_name'])); if (!empty($_POST['last_name'])) update_user_meta($user_id, 'last_name', sanitize_text_field($_POST['last_name'])); }
 function annapoorna_exam_login_url($login_url, $redirect) {
-    if (is_admin()) {
+    if (strpos($_SERVER['REQUEST_URI'], 'wp-admin') !== false) {
         return $login_url;
     }
     $login_page_url = home_url('/' . ANNAPOORNA_LOGIN_SLUG . '/');
