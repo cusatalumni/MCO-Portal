@@ -85,11 +85,7 @@ const Test: React.FC = () => {
       try {
         setIsLoading(true);
         const fetchedQuestions = await apiService.getQuestions(config, token);
-        if (fetchedQuestions.length === 0) {
-            // The service layer now shows a specific toast, so we just navigate away.
-            navigate('/dashboard');
-            return;
-        }
+        
         setQuestions(fetchedQuestions);
 
         // Timer setup
@@ -114,8 +110,8 @@ const Test: React.FC = () => {
             }
         }, 1000);
 
-      } catch (error) {
-        toast.error('Failed to load the test.');
+      } catch (error: any) {
+        toast.error(error.message || 'Failed to load the test.');
         navigate('/dashboard');
       } finally {
         setIsLoading(false);

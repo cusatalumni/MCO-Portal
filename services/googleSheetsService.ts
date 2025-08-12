@@ -21,7 +21,15 @@ export const apiService = {
         const response = await fetch(`${API_BASE_URL}/user-results`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
-        if (!response.ok) throw new Error('Failed to fetch user results.');
+        if (!response.ok) {
+            let errorMsg = 'Could not load your exam history.';
+            if (response.status === 403) {
+                errorMsg = 'Your session may have expired. Please use the "Sync My Exams" button.';
+            } else if (response.status >= 500) {
+                errorMsg = 'A server error occurred while fetching your history. Please try again later.';
+            }
+            throw new Error(errorMsg);
+        }
         return response.json();
     },
 
@@ -78,7 +86,7 @@ export const apiService = {
                 console.error("Failed to get questions from sheet URL:", error);
                 const errorMessage = error.message || "Could not load exam questions.";
                 toast.error(errorMessage, { id: toastId });
-                return [];
+                throw error;
             }
         } 
         // Otherwise, generate questions using the Gemini API
@@ -182,7 +190,7 @@ export const apiService = {
                 console.error("Failed to generate questions using Gemini API:", error);
                 const errorMessage = error.message || "Could not generate exam questions.";
                 toast.error(errorMessage, { id: toastId });
-                return [];
+                throw error;
             }
         }
     },
