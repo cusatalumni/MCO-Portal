@@ -86,7 +86,7 @@ const Test: React.FC = () => {
         setIsLoading(true);
         const fetchedQuestions = await apiService.getQuestions(config, token);
         if (fetchedQuestions.length === 0) {
-            toast.error("Could not load questions for this exam.");
+            // The service layer now shows a specific toast, so we just navigate away.
             navigate('/dashboard');
             return;
         }

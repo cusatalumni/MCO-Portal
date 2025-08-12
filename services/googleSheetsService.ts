@@ -86,7 +86,7 @@ export const apiService = {
             const toastId = toast.loading(`Generating questions for "${exam.name}"...`);
             try {
                 if (!process.env.API_KEY) {
-                    throw new Error("Gemini API key is not configured.");
+                    throw new Error("Configuration Error: GEMINI_API_KEY not found. Please set it in your .env file.");
                 }
                 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
