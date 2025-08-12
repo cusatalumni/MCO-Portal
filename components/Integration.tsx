@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import toast from 'react-hot-toast';
 
@@ -23,12 +24,8 @@ define('ANNAPOORNA_EXAM_APP_TEST_URL', 'https://mco-exam-jkfzdt3bj-manoj-balakri
 // define('ANNAPOORNA_DEBUG', true); // Add for debug logging
 // --- END CONFIGURATION ---
 
-$annapoorna_login_error = '';
-
 add_action('init', 'annapoorna_exam_app_init');
 function annapoorna_exam_app_init() {
-    annapoorna_handle_login_form_post();
-    
     add_action('admin_notices', 'annapoorna_check_dependencies');
     add_action('admin_menu', 'annapoorna_exam_add_admin_menu');
     add_action('admin_init', 'annapoorna_exam_register_settings');
@@ -40,28 +37,8 @@ function annapoorna_exam_app_init() {
     add_filter('registration_errors', 'annapoorna_exam_validate_reg_fields', 10, 3);
     add_filter('login_url', 'annapoorna_exam_login_url', 10, 2);
     add_filter('rest_pre_serve_request', 'annapoorna_rest_send_cors_headers', 10, 4);
-
     
     add_shortcode('exam_portal_login', 'annapoorna_exam_login_shortcode');
-}
-
-function annapoorna_handle_login_form_post() {
-    global $annapoorna_login_error;
-    if ('POST' !== $_SERVER['REQUEST_METHOD'] || strpos($_SERVER['REQUEST_URI'], '/' . ANNAPOORNA_LOGIN_SLUG . '/') === false) return;
-    $user_id = 0;
-    if (!empty($_POST['exam_login_nonce']) && wp_verify_nonce($_POST['exam_login_nonce'], 'exam_login_action')) {
-        $user = wp_signon(['user_login' => sanitize_text_field($_POST['log']), 'user_password' => $_POST['pwd'], 'remember' => true], false);
-        if (is_wp_error($user)) $annapoorna_login_error = 'Invalid username or password.'; else $user_id = $user->ID;
-    } elseif (!empty($_POST['annapoorna_admin_sync_nonce']) && wp_verify_nonce($_POST['annapoorna_admin_sync_nonce'], 'annapoorna_admin_sync_action')) {
-        if (!$user_id = get_current_user_id()) $annapoorna_login_error = 'Error: User not authenticated for admin sync.';
-    }
-    if ($user_id > 0) {
-        if ($token = annapoorna_generate_exam_jwt($user_id)) {
-            $redirect_to = isset($_REQUEST['redirect_to']) ? esc_url_raw(urldecode($_REQUEST['redirect_to'])) : '/dashboard';
-            $url = annapoorna_get_exam_app_url(user_can($user_id, 'administrator')) . '#/auth?token=' . $token . '&redirect_to=' . urlencode($redirect_to);
-            wp_redirect($url); exit;
-        } else { $annapoorna_login_error = 'Could not generate login token.'; }
-    }
 }
 
 function annapoorna_debug_log($message) { if (defined('ANNAPOORNA_DEBUG') && ANNAPOORNA_DEBUG) error_log('Exam App Debug: ' . print_r($message, true)); }
@@ -75,16 +52,16 @@ function annapoorna_get_exam_app_url($is_admin = false) { if ($is_admin) return 
 // --- DATA SOURCE ---
 function annapoorna_get_all_app_data() {
     $MOCK_BOOKS = [
-        ['id' => 'book-cpc-guide', 'title' => 'Official CPC® Certification Study Guide (AAPC)', "description" => "AAPC's official CPC exam study guide — anatomy, medical terminology, ICD-10-CM, CPT, HCPCS, practice questions and exam tips.", 'imageUrl' => 'https://www.coding-online.net/wp-content/uploads/2024/04/cpc-study-guide.jpg', 'affiliateLinks' => ['com' => 'https://www.amazon.com/dp/1635278910?tag=mykada-20', 'in' => 'https://www.amazon.in/dp/1635278910?tag=httpcodingonl-21', 'ae' => 'https://www.amazon.ae/dp/1285427998?tag=medical0f1-21']],
-        ['id' => 'book-icd10-cm', "title" => "Buck's ICD-10-CM for Physicians 2026", 'description' => 'Physician-focused ICD-10-CM code manual (full-color, guidelines and examples).', 'imageUrl' => 'https://www.coding-online.net/wp-content/uploads/2024/04/icd-10-cm-physicians.jpg', 'affiliateLinks' => ['com' => 'https://www.amazon.com/dp/0443380783?tag=mykada-20', 'in' => 'https://www.amazon.in/dp/0443380783?tag=httpcodingonl-21', 'ae' => 'https://www.amazon.ae/dp/0443380783?tag=medical0f1-21']],
+        ['id' => 'book-cpc-guide', 'title' => 'Official CPC® Certification Study Guide (AAPC)', 'description' => 'AAPC\'s official CPC exam study guide — anatomy, medical terminology, ICD-10-CM, CPT, HCPCS, practice questions and exam tips.', 'imageUrl' => 'https://www.coding-online.net/wp-content/uploads/2024/04/cpc-study-guide.jpg', 'affiliateLinks' => ['com' => 'https://www.amazon.com/dp/1635278910?tag=mykada-20', 'in' => 'https://www.amazon.in/dp/1635278910?tag=httpcodingonl-21', 'ae' => 'https://www.amazon.ae/dp/1285427998?tag=medical0f1-21']],
+        ['id' => 'book-icd10-cm', 'title' => "Buck's ICD-10-CM for Physicians 2026", 'description' => 'Physician-focused ICD-10-CM code manual (full-color, guidelines and examples).', 'imageUrl' => 'https://www.coding-online.net/wp-content/uploads/2024/04/icd-10-cm-physicians.jpg', 'affiliateLinks' => ['com' => 'https://www.amazon.com/dp/0443380783?tag=mykada-20', 'in' => 'https://www.amazon.in/dp/0443380783?tag=httpcodingonl-21', 'ae' => 'https://www.amazon.ae/dp/0443380783?tag=medical0f1-21']],
         ['id' => 'book-cpt-pro', 'title' => 'AMA CPT® Professional 2026', 'description' => 'Official Current Procedural Terminology (CPT) codebook from the American Medical Association.', 'imageUrl' => 'https://www.coding-online.net/wp-content/uploads/2024/04/cpt-professional.jpg', 'affiliateLinks' => ['com' => 'https://www.amazon.com/dp/1640163354?tag=mykada-20', 'in' => 'https://www.amazon.in/dp/1640163354?tag=httpcodingonl-21', 'ae' => 'https://www.amazon.ae/dp/1640163354?tag=medical0f1-21']],
         ['id' => 'book-hcpcs-level2', 'title' => 'HCPCS Level II Professional 2026', 'description' => 'Comprehensive guide for HCPCS Level II codes used for supplies, equipment, and drugs.', 'imageUrl' => 'https://www.coding-online.net/wp-content/uploads/2024/04/hcpcs-level-2.jpg', 'affiliateLinks' => ['com' => 'https://www.amazon.com/dp/1622029947?tag=mykada-20', 'in' => 'https://www.amazon.in/dp/1622029947?tag=httpcodingonl-21', 'ae' => 'https://www.amazon.ae/dp/1622029947?tag=medical0f1-21']],
         ['id' => 'book-medical-billing', 'title' => 'Medical Billing & Coding For Dummies', 'description' => 'An easy-to-understand guide covering the basics of medical billing and coding.', 'imageUrl' => 'https://www.coding-online.net/wp-content/uploads/2024/04/coding-for-dummies.jpg', 'affiliateLinks' => ['com' => 'https://www.amazon.com/dp/1119750393?tag=mykada-20', 'in' => 'https://www.amazon.in/dp/1119750393?tag=httpcodingonl-21', 'ae' => 'https://www.amazon.ae/dp/1119750393?tag=medical0f1-21']]
     ];
     
     $CERTIFICATE_TEMPLATES = [
-        ['id' => 'cert-mco-1', 'title' => 'Medical Coding Proficiency', "body" => "For successfully demonstrating proficiency in medical coding principles and practices with a final score of <strong>{finalScore}%</strong>. This achievement certifies the holder's competence in the standards required for this certification.", 'signature1Name' => 'Dr. Amelia Reed', 'signature1Title' => 'Program Director', 'signature2Name' => 'B. Manoj', 'signature2Title' => 'Chief Instructor'],
-        ['id' => 'cert-mco-2', 'title' => 'Advanced Specialty Coding', 'body' => "Awarded for exceptional performance and mastery in advanced specialty coding topics, achieving a score of <strong>{finalScore}%</strong>. This signifies a high level of expertise and dedication to the field.", 'signature1Name' => 'Dr. Amelia Reed', 'signature1Title' => 'Program Director', 'signature2Name' => 'B. Manoj', 'signature2Title' => 'Chief Instructor']
+        ['id' => 'cert-mco-1', 'title' => 'Medical Coding Proficiency', 'body' => 'For successfully demonstrating proficiency in medical coding principles and practices with a final score of <strong>{finalScore}%</strong>. This achievement certifies the holder\'s competence in the standards required for this certification.', 'signature1Name' => 'Dr. Amelia Reed', 'signature1Title' => 'Program Director', 'signature2Name' => 'B. Manoj', 'signature2Title' => 'Chief Instructor'],
+        ['id' => 'cert-mco-2', 'title' => 'Advanced Specialty Coding', 'body' => 'Awarded for exceptional performance and mastery in advanced specialty coding topics, achieving a score of <strong>{finalScore}%</strong>. This signifies a high level of expertise and dedication to the field.', 'signature1Name' => 'Dr. Amelia Reed', 'signature1Title' => 'Program Director', 'signature2Name' => 'B. Manoj', 'signature2Title' => 'Chief Instructor']
     ];
     
     $EXAM_PRODUCT_CATEGORIES = [
@@ -95,32 +72,32 @@ function annapoorna_get_all_app_data() {
 
     $ALL_EXAMS = [
         // Practice Exams
-        ['id' => 'exam-cpc-practice', 'name' => 'CPC Practice Test', 'description' => 'A short practice test to prepare for the CPC certification.', 'price' => 0, 'productSku' => 'exam-cpc-practice', 'numberOfQuestions' => 2, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 25],
-        ['id' => 'exam-cca-practice', 'name' => 'CCA Practice Test', 'description' => 'A short practice test for the Certified Coding Associate exam.', 'price' => 0, 'productSku' => 'exam-cca-practice', 'numberOfQuestions' => 1, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 25],
-        ['id' => 'exam-billing-practice', 'name' => 'Medical Billing Practice Test', 'description' => 'A short practice test for medical billing concepts.', 'price' => 0, 'productSku' => 'exam-billing-practice', 'numberOfQuestions' => 15, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-2', 'isPractice' => true, 'durationMinutes' => 20],
-        ['id' => 'exam-ccs-practice', 'name' => 'CCS Practice Test', 'description' => 'Practice for the Certified Coding Specialist exam.', 'price' => 0, 'productSku' => 'exam-ccs-practice', 'numberOfQuestions' => 20, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 25],
-        ['id' => 'exam-risk-practice', 'name' => 'Risk Adjustment Practice Test', 'description' => 'Practice for the Risk Adjustment (CRC) exam.', 'price' => 0, 'productSku' => 'exam-risk-practice', 'numberOfQuestions' => 20, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 25],
-        ['id' => 'exam-icd-practice', 'name' => 'ICD-10-CM Practice Test', 'description' => 'Practice for the ICD-10-CM proficiency exam.', 'price' => 0, 'productSku' => 'exam-icd-practice', 'numberOfQuestions' => 20, 'passScore' => 75, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 20],
-        ['id' => 'exam-cpb-practice', 'name' => 'CPB Practice Test', 'description' => 'Practice for the Certified Professional Biller exam.', 'price' => 0, 'productSku' => 'exam-cpb-practice', 'numberOfQuestions' => 20, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-2', 'isPractice' => true, 'durationMinutes' => 25],
-        ['id' => 'exam-crc-practice', 'name' => 'CRC Practice Test', 'description' => 'Practice for the Certified Risk Adjustment Coder exam.', 'price' => 0, 'productSku' => 'exam-crc-practice', 'numberOfQuestions' => 20, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 25],
-        ['id' => 'exam-cpma-practice', 'name' => 'CPMA Practice Test', 'description' => 'Practice for the Certified Professional Medical Auditor exam.', 'price' => 0, 'productSku' => 'exam-cpma-practice', 'numberOfQuestions' => 20, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 25],
-        ['id' => 'exam-coc-practice', 'name' => 'COC Practice Test', 'description' => 'Practice for the Certified Outpatient Coder exam.', 'price' => 0, 'productSku' => 'exam-coc-practice', 'numberOfQuestions' => 20, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 25],
-        ['id' => 'exam-cic-practice', 'name' => 'CIC Practice Test', 'description' => 'Practice for the Certified Inpatient Coder exam.', 'price' => 0, 'productSku' => 'exam-cic-practice', 'numberOfQuestions' => 20, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 25],
-        ['id' => 'exam-mta-practice', 'name' => 'Medical Terminology & Anatomy Practice', 'description' => 'Practice for the Medical Terminology and Anatomy exam.', 'price' => 0, 'productSku' => 'exam-mta-practice', 'numberOfQuestions' => 20, 'passScore' => 80, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 20],
+        ['id' => 'exam-cpc-practice', 'name' => 'CPC Practice Test', 'description' => 'A short practice test to prepare for the CPC certification.', 'price' => 0, 'productSku' => 'exam-cpc-practice', 'numberOfQuestions' => 10, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 25],
+        ['id' => 'exam-cca-practice', 'name' => 'CCA Practice Test', 'description' => 'A short practice test for the Certified Coding Associate exam.', 'price' => 0, 'productSku' => 'exam-cca-practice', 'numberOfQuestions' => 10, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 25],
+        ['id' => 'exam-billing-practice', 'name' => 'Medical Billing Practice Test', 'description' => 'A short practice test for medical billing concepts.', 'price' => 0, 'productSku' => 'exam-billing-practice', 'numberOfQuestions' => 10, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-2', 'isPractice' => true, 'durationMinutes' => 20],
+        ['id' => 'exam-ccs-practice', 'name' => 'CCS Practice Test', 'description' => 'Practice for the Certified Coding Specialist exam.', 'price' => 0, 'productSku' => 'exam-ccs-practice', 'numberOfQuestions' => 10, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 25],
+        ['id' => 'exam-risk-practice', 'name' => 'Risk Adjustment Practice Test', 'description' => 'Practice for the Risk Adjustment (CRC) exam.', 'price' => 0, 'productSku' => 'exam-risk-practice', 'numberOfQuestions' => 10, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 25],
+        ['id' => 'exam-icd-practice', 'name' => 'ICD-10-CM Practice Test', 'description' => 'Practice for the ICD-10-CM proficiency exam.', 'price' => 0, 'productSku' => 'exam-icd-practice', 'numberOfQuestions' => 10, 'passScore' => 75, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 20],
+        ['id' => 'exam-cpb-practice', 'name' => 'CPB Practice Test', 'description' => 'Practice for the Certified Professional Biller exam.', 'price' => 0, 'productSku' => 'exam-cpb-practice', 'numberOfQuestions' => 10, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-2', 'isPractice' => true, 'durationMinutes' => 25],
+        ['id' => 'exam-crc-practice', 'name' => 'CRC Practice Test', 'description' => 'Practice for the Certified Risk Adjustment Coder exam.', 'price' => 0, 'productSku' => 'exam-crc-practice', 'numberOfQuestions' => 10, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 25],
+        ['id' => 'exam-cpma-practice', 'name' => 'CPMA Practice Test', 'description' => 'Practice for the Certified Professional Medical Auditor exam.', 'price' => 0, 'productSku' => 'exam-cpma-practice', 'numberOfQuestions' => 10, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 25],
+        ['id' => 'exam-coc-practice', 'name' => 'COC Practice Test', 'description' => 'Practice for the Certified Outpatient Coder exam.', 'price' => 0, 'productSku' => 'exam-coc-practice', 'numberOfQuestions' => 10, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 25],
+        ['id' => 'exam-cic-practice', 'name' => 'CIC Practice Test', 'description' => 'Practice for the Certified Inpatient Coder exam.', 'price' => 0, 'productSku' => 'exam-cic-practice', 'numberOfQuestions' => 10, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 25],
+        ['id' => 'exam-mta-practice', 'name' => 'Medical Terminology & Anatomy Practice', 'description' => 'Practice for the Medical Terminology and Anatomy exam.', 'price' => 0, 'productSku' => 'exam-mta-practice', 'numberOfQuestions' => 10, 'passScore' => 80, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 20],
 
         // Certification Exams
         ['id' => 'exam-cpc-cert', 'name' => 'CPC Certification Exam', 'description' => 'Full certification exam for Certified Professional Coder.', 'price' => 150, 'regularPrice' => 150, 'productSku' => 'exam-cpc-cert', 'productSlug' => 'exam-cpc-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 240],
         ['id' => 'exam-cca-cert', 'name' => 'CCA Certification Exam', 'description' => 'Full certification exam for Certified Coding Associate.', 'price' => 120, 'regularPrice' => 120, 'productSku' => 'exam-cca-cert', 'productSlug' => 'exam-cca-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 180],
-        ['id' => 'exam-ccs-cert', 'name' => 'CCS Certification Exam', 'description' => 'Full certification exam for Certified Coding Specialist.', 'price' => 160, 'regularPrice' => 160, 'productSku' => 'exam-ccs-cert', 'productSlug' => 'exam-ccs-cert', 'numberOfQuestions' => 120, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 240],
-        ['id' => 'exam-billing-cert', 'name' => 'Medical Billing Certification Exam', 'description' => 'Comprehensive exam covering medical billing and reimbursement.', 'price' => 100, 'regularPrice' => 100, 'productSku' => 'exam-billing-cert', 'productSlug' => 'exam-billing-cert', 'numberOfQuestions' => 80, 'passScore' => 75, 'certificateTemplateId' => 'cert-mco-2', 'isPractice' => false, 'durationMinutes' => 150],
+        ['id' => 'exam-ccs-cert', 'name' => 'CCS Certification Exam', 'description' => 'Full certification exam for Certified Coding Specialist.', 'price' => 160, 'regularPrice' => 160, 'productSku' => 'exam-ccs-cert', 'productSlug' => 'exam-ccs-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 240],
+        ['id' => 'exam-billing-cert', 'name' => 'Medical Billing Certification Exam', 'description' => 'Comprehensive exam covering medical billing and reimbursement.', 'price' => 100, 'regularPrice' => 100, 'productSku' => 'exam-billing-cert', 'productSlug' => 'exam-billing-cert', 'numberOfQuestions' => 100, 'passScore' => 75, 'certificateTemplateId' => 'cert-mco-2', 'isPractice' => false, 'durationMinutes' => 150],
         ['id' => 'exam-risk-cert', 'name' => 'Risk Adjustment (CRC) Certification Exam', 'description' => 'Exam for Certified Risk Adjustment Coder.', 'price' => 150, 'regularPrice' => 150, 'productSku' => 'exam-risk-cert', 'productSlug' => 'exam-risk-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 240],
-        ['id' => 'exam-icd-cert', 'name' => 'ICD-10-CM Certification Exam', 'description' => 'Proficiency exam for ICD-10-CM coding.', 'price' => 90, 'regularPrice' => 90, 'productSku' => 'exam-icd-cert', 'productSlug' => 'exam-icd-cert', 'numberOfQuestions' => 75, 'passScore' => 75, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 120],
-        ['id' => 'exam-cpb-cert', 'name' => 'CPB Certification Exam', 'description' => 'Full certification exam for Certified Professional Biller.', 'price' => 150, 'regularPrice' => 150, 'productSku' => 'exam-cpb-cert', 'productSlug' => 'exam-cpb-cert', 'numberOfQuestions' => 135, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-2', 'isPractice' => false, 'durationMinutes' => 240],
+        ['id' => 'exam-icd-cert', 'name' => 'ICD-10-CM Certification Exam', 'description' => 'Proficiency exam for ICD-10-CM coding.', 'price' => 90, 'regularPrice' => 90, 'productSku' => 'exam-icd-cert', 'productSlug' => 'exam-icd-cert', 'numberOfQuestions' => 100, 'passScore' => 75, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 120],
+        ['id' => 'exam-cpb-cert', 'name' => 'CPB Certification Exam', 'description' => 'Full certification exam for Certified Professional Biller.', 'price' => 150, 'regularPrice' => 150, 'productSku' => 'exam-cpb-cert', 'productSlug' => 'exam-cpb-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-2', 'isPractice' => false, 'durationMinutes' => 240],
         ['id' => 'exam-crc-cert', 'name' => 'CRC Certification Exam', 'description' => 'Full certification exam for Certified Risk Adjustment Coder.', 'price' => 150, 'regularPrice' => 150, 'productSku' => 'exam-crc-cert', 'productSlug' => 'exam-crc-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 240],
         ['id' => 'exam-cpma-cert', 'name' => 'CPMA Certification Exam', 'description' => 'Full certification exam for Certified Professional Medical Auditor.', 'price' => 150, 'regularPrice' => 150, 'productSku' => 'exam-cpma-cert', 'productSlug' => 'exam-cpma-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 240],
         ['id' => 'exam-coc-cert', 'name' => 'COC Certification Exam', 'description' => 'Full certification exam for Certified Outpatient Coder.', 'price' => 150, 'regularPrice' => 150, 'productSku' => 'exam-coc-cert', 'productSlug' => 'exam-coc-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 240],
-        ['id' => 'exam-cic-cert', 'name' => 'CIC Certification Exam', 'description' => 'Full certification exam for Certified Inpatient Coder.', 'price' => 150, 'regularPrice' => 150, 'productSku' => 'exam-cic-cert', 'productSlug' => 'exam-cic-cert', 'numberOfQuestions' => 40, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 240],
-        ['id' => 'exam-mta-cert', 'name' => 'Medical Terminology & Anatomy Exam', 'description' => 'Proficiency exam for Medical Terminology and Anatomy.', 'price' => 75, 'regularPrice' => 75, 'productSku' => 'exam-mta-cert', 'productSlug' => 'exam-mta-cert', 'numberOfQuestions' => 50, 'passScore' => 80, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 60]
+        ['id' => 'exam-cic-cert', 'name' => 'CIC Certification Exam', 'description' => 'Full certification exam for Certified Inpatient Coder.', 'price' => 150, 'regularPrice' => 150, 'productSku' => 'exam-cic-cert', 'productSlug' => 'exam-cic-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 240],
+        ['id' => 'exam-mta-cert', 'name' => 'Medical Terminology & Anatomy Exam', 'description' => 'Proficiency exam for Medical Terminology and Anatomy.', 'price' => 75, 'regularPrice' => 75, 'productSku' => 'exam-mta-cert', 'productSlug' => 'exam-mta-cert', 'numberOfQuestions' => 100, 'passScore' => 80, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 60]
     ];
     
     // Assign recommended books to exams
@@ -148,10 +125,7 @@ function annapoorna_get_all_app_data() {
     ];
 }
 
-// --- QUESTION BANK ---
 function annapoorna_get_question_bank() {
-    // This is a mock representation of a larger question bank.
-    // In a real application, this would come from a custom post type or database table.
     return [
         'exam-cpc-practice' => [
             ['id' => 1001, 'question' => 'From the CPT manual, select the statement that is TRUE. (Bank)', 'options' => ['The + sign is for add-on codes.', 'The bullet represents a new code.', 'The triangle represents a revised code.', 'All of the above.'], 'correctAnswer' => 4],
@@ -169,7 +143,8 @@ function annapoorna_exam_get_payload($user_id) {
     $paid_exam_ids = []; $exam_prices = new stdClass();
     
     if (class_exists('WooCommerce')) {
-        $all_exam_skus = array_column(array_filter(annapoorna_get_all_app_data()[0]['exams'], function($e) { return !$e['isPractice'] && isset($e['productSku']); }), 'productSku');
+        $all_exam_skus_raw = annapoorna_get_all_app_data()[0]['exams'];
+        $all_exam_skus = array_column(array_filter($all_exam_skus_raw, function($e) { return !$e['isPractice'] && isset($e['productSku']); }), 'productSku');
         
         $exam_prices = get_transient('annapoorna_exam_prices');
         if (false === $exam_prices) {
@@ -179,11 +154,9 @@ function annapoorna_exam_get_payload($user_id) {
                 if (($product_id = wc_get_product_id_by_sku($sku)) && ($product = wc_get_product($product_id))) {
                     $price = (float) $product->get_price();
                     $regular_price = (float) $product->get_regular_price();
-                    // A promotion exists if the regular_price is set and is greater than the current price.
                     if ($regular_price > $price) {
                         $exam_prices->{$sku} = ['price' => $price, 'regularPrice' => $regular_price];
                     } else {
-                        // Otherwise, there's no sale. Price and regular price are the same.
                         $exam_prices->{$sku} = ['price' => $price, 'regularPrice' => $price];
                     }
                 }
@@ -207,15 +180,12 @@ function annapoorna_exam_get_payload($user_id) {
     return ['iss' => get_site_url(), 'iat' => time(), 'exp' => time() + (60 * 60 * 2), 'user' => ['id' => (string)$user->ID, 'name' => $user_full_name, 'email' => $user->user_email, 'isAdmin' => user_can($user, 'administrator')], 'paidExamIds' => array_unique($paid_exam_ids), 'examPrices' => $exam_prices];
 }
 
-// JWT Generation and Verification
 function annapoorna_base64url_encode($data) { return rtrim(strtr(base64_encode($data), '+/', '-_'), '='); }
 function annapoorna_base64url_decode($data) { return base64_decode(strtr($data, '-_', '+/')); }
 function annapoorna_generate_exam_jwt($user_id) { $secret_key = defined('ANNAPOORNA_JWT_SECRET') ? ANNAPOORNA_JWT_SECRET : ''; if (empty($secret_key) || strlen($secret_key) < 32 || strpos($secret_key, 'your-very-strong-secret-key') !== false) { annapoorna_debug_log('JWT Secret is not configured or is too weak.'); return null; } if (!$payload = annapoorna_exam_get_payload($user_id)) return null; $header_b64 = annapoorna_base64url_encode(json_encode(['typ' => 'JWT', 'alg' => 'HS256'])); $payload_b64 = annapoorna_base64url_encode(json_encode($payload)); $signature = hash_hmac('sha256', "$header_b64.$payload_b64", $secret_key, true); $signature_b64 = annapoorna_base64url_encode($signature); return "$header_b64.$payload_b64.$signature_b64"; }
 function annapoorna_verify_exam_jwt($token) { $secret_key = defined('ANNAPOORNA_JWT_SECRET') ? ANNAPOORNA_JWT_SECRET : ''; if (empty($secret_key) || strlen($secret_key) < 32) return null; $parts = explode('.', $token); if (count($parts) !== 3) return null; list($header_b64, $payload_b64, $signature_b64) = $parts; $signature = annapoorna_base64url_decode($signature_b64); $expected_signature = hash_hmac('sha256', "$header_b64.$payload_b64", $secret_key, true); if (!hash_equals($expected_signature, $signature)) return null; $payload = json_decode(annapoorna_base64url_decode($payload_b64), true); return (isset($payload['exp']) && $payload['exp'] < time()) ? null : $payload; }
-
 function annapoorna_redirect_after_purchase($order_id) { if (!$order_id || !($order = wc_get_order($order_id)) || !($user_id = $order->get_customer_id())) return; if ($user_id > 0 && $order->has_status(['completed', 'processing', 'on-hold'])) { if (function_exists('WC') && WC()->cart) WC()->cart->empty_cart(); if ($token = annapoorna_generate_exam_jwt($user_id)) { wp_redirect(annapoorna_get_exam_app_url(user_can($user_id, 'administrator')) . '#/auth?token=' . $token . '&redirect_to=/dashboard'); exit; } } }
 
-// REST API
 function annapoorna_exam_register_rest_api() {
     register_rest_route('exam-app/v1', '/app-config', ['methods' => 'GET', 'callback' => 'annapoorna_get_app_config_callback', 'permission_callback' => '__return_true']);
     register_rest_route('exam-app/v1', '/user-results', ['methods' => 'GET', 'callback' => 'annapoorna_get_user_results_callback', 'permission_callback' => 'annapoorna_exam_api_permission_check']);
@@ -360,6 +330,7 @@ function annapoorna_exam_update_user_name_callback($request) {
     update_user_meta($user_id, 'last_name', isset($name_parts[1]) ? $name_parts[1] : '');
     return new WP_REST_Response(['success' => true, 'message' => 'Name updated successfully.'], 200);
 }
+
 function annapoorna_exam_submit_result_callback($request) {
     $user_id = (int)$request->get_param('jwt_user_id');
     $result_data = $request->get_json_params();
@@ -369,9 +340,7 @@ function annapoorna_exam_submit_result_callback($request) {
     $result_data['userId'] = (string)$user_id;
 
     $all_results = get_user_meta($user_id, 'annapoorna_exam_results', true);
-    if (!is_array($all_results)) {
-        $all_results = [];
-    }
+    if (!is_array($all_results)) $all_results = [];
     $all_results[$result_data['testId']] = $result_data;
     
     update_user_meta($user_id, 'annapoorna_exam_results', $all_results);
@@ -379,35 +348,79 @@ function annapoorna_exam_submit_result_callback($request) {
     return new WP_REST_Response($result_data, 200);
 }
 
-// Shortcode and Registration
 function annapoorna_exam_login_shortcode() {
-    global $annapoorna_login_error;
     if (!defined('ANNAPOORNA_JWT_SECRET') || strlen(ANNAPOORNA_JWT_SECRET) < 32 || strpos(ANNAPOORNA_JWT_SECRET, 'your-very-strong-secret-key') !== false) {
-        return "<p class='exam-portal-error' style='color:red; font-weight:bold; text-align:center; border: 1px solid red; padding: 10px;'>Configuration error: A strong, unique ANNAPOORNA_JWT_SECRET must be defined in wp-config.php.</p>";
+        return "<p class='exam-portal-error'>Configuration error: A strong, unique ANNAPOORNA_JWT_SECRET must be defined in wp-config.php.</p>";
     }
 
-    $redirect_to = isset($_REQUEST['redirect_to']) ? esc_url_raw(urldecode($_REQUEST['redirect_to'])) : '/dashboard';
+    $login_error_message = '';
+    $user_id = 0;
+
+    if ('POST' === $_SERVER['REQUEST_METHOD'] && !empty($_POST['exam_login_nonce']) && wp_verify_nonce($_POST['exam_login_nonce'], 'exam_login_action')) {
+        $credentials = [
+            'user_login'    => isset($_POST['log']) ? sanitize_text_field($_POST['log']) : '',
+            'user_password' => isset($_POST['pwd']) ? $_POST['pwd'] : '',
+            'remember'      => true
+        ];
+        $user = wp_signon($credentials, false);
+
+        if (is_wp_error($user)) {
+            $login_error_message = 'Invalid username or password.';
+        } else {
+            $user_id = $user->ID;
+        }
+    }
+    
+    if (is_user_logged_in() && $user_id === 0) {
+        $user_id = get_current_user_id();
+    }
+
+    if ($user_id > 0) {
+        $token = annapoorna_generate_exam_jwt($user_id);
+        if ($token) {
+            $redirect_to = isset($_REQUEST['redirect_to']) ? esc_url_raw(urldecode($_REQUEST['redirect_to'])) : '/dashboard';
+            $is_admin = user_can($user_id, 'administrator');
+            $app_url = annapoorna_get_exam_app_url($is_admin);
+            $final_url = $app_url . '#/auth?token=' . $token . '&redirect_to=' . urlencode($redirect_to);
+            
+            echo "<div class='exam-portal-container' style='text-align:center;'><p>Login successful. Redirecting...</p><script>window.location.href='" . esc_url_raw($final_url) . "';</script><noscript><meta http-equiv='refresh' content='0;url=" . esc_url_raw($final_url) . "'></noscript></div>";
+            return;
+        } else {
+            $login_error_message = 'Could not generate a secure login token.';
+        }
+    }
+    
     ob_start();
     ?>
     <style>.exam-portal-container{font-family:sans-serif;max-width:400px;margin:5% auto;padding:40px;background:#fff;border-radius:12px;box-shadow:0 10px 25px -5px rgba(0,0,0,.1)}.exam-portal-container h2{text-align:center;font-size:24px;margin-bottom:30px}.exam-portal-container .form-row{margin-bottom:20px}.exam-portal-container label{display:block;margin-bottom:8px;font-weight:600}.exam-portal-container input{width:100%;padding:12px;border:1px solid #ccc;border-radius:8px;box-sizing:border-box}.exam-portal-container button{width:100%;padding:14px;background-color:#0891b2;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer}.exam-portal-container button:hover{background-color:#067a8e}.exam-portal-links{margin-top:20px;text-align:center}.exam-portal-error{color:red;text-align:center;margin-bottom:20px}</style>
+    <div class="exam-portal-container">
+        <h2>Exam Portal Login</h2>
+        <?php if ($login_error_message) echo "<p class='exam-portal-error'>" . esc_html($login_error_message) . "</p>"; ?>
+        <form name="loginform" action="<?php echo esc_url(get_permalink()); ?>" method="post">
+            <div class="form-row">
+                <label for="log">Username or Email</label>
+                <input type="text" name="log" id="log" required>
+            </div>
+            <div class="form-row">
+                <label for="pwd">Password</label>
+                <input type="password" name="pwd" id="pwd" required>
+            </div>
+            <div class="form-row">
+                <button type="submit">Log In</button>
+            </div>
+            <?php wp_nonce_field('exam_login_action', 'exam_login_nonce'); ?>
+            <?php if (isset($_REQUEST['redirect_to'])): ?>
+                <input type="hidden" name="redirect_to" value="<?php echo esc_attr(urlencode($_REQUEST['redirect_to'])); ?>" />
+            <?php endif; ?>
+        </form>
+        <div class="exam-portal-links">
+            <a href="<?php echo esc_url(wp_registration_url()); ?>">Register</a> | <a href="<?php echo esc_url(wp_lostpassword_url()); ?>">Lost Password?</a>
+        </div>
+    </div>
     <?php
-    if (is_user_logged_in()) {
-        $token = annapoorna_generate_exam_jwt(get_current_user_id());
-        if ($token) {
-            if (current_user_can('administrator')) { ?>
-                <div class="exam-portal-container"><h2>Exam Portal Access</h2><p>You are logged in as an administrator. Click to sync and go.</p><form name="syncform" action="<?php echo esc_url(add_query_arg('redirect_to', urlencode($redirect_to), '')); ?>" method="post"><div class="form-row"><button type="submit" title="This securely syncs your latest purchases and profile info.">Access Exam App</button></div><?php wp_nonce_field('annapoorna_admin_sync_action', 'annapoorna_admin_sync_nonce'); ?></form><div class="exam-portal-links"><a href="<?php echo esc_url(wp_logout_url(home_url(ANNAPOORNA_LOGIN_SLUG))); ?>">Log Out</a></div></div>
-            <?php } else {
-                $url = annapoorna_get_exam_app_url(false) . '#/auth?token=' . $token . '&redirect_to=' . urlencode($redirect_to);
-                echo "<div class='exam-portal-container' style='text-align:center;'><p>Redirecting...</p><script>window.location.href='" . esc_url_raw($url) . "';</script><noscript><meta http-equiv='refresh' content='0;url=" . esc_url_raw($url) . "'></noscript></div>";
-            }
-        } else {
-            echo "<div class='exam-portal-container'><p class='exam-portal-error'>Could not generate a secure login token. This may be a temporary issue. Please try again or contact support if the problem persists.</p></div>";
-        }
-    } else { ?>
-        <div class="exam-portal-container"><h2>Exam Portal Login</h2> <?php if ($annapoorna_login_error) echo "<p class='exam-portal-error'>" . esc_html($annapoorna_login_error) . "</p>"; ?> <form name="loginform" action="<?php echo esc_url(add_query_arg('redirect_to', urlencode($redirect_to), '')); ?>" method="post"><div class="form-row"><label for="log">Username or Email</label><input type="text" name="log" id="log" required></div><div class="form-row"><label for="pwd">Password</label><input type="password" name="pwd" id="pwd" required></div><div class="form-row"><button type="submit">Log In</button></div><?php wp_nonce_field('exam_login_action', 'exam_login_nonce'); ?></form><div class="exam-portal-links"><a href="<?php echo esc_url(wp_registration_url()); ?>">Register</a> | <a href="<?php echo esc_url(wp_lostpassword_url()); ?>">Lost Password?</a></div></div>
-    <?php }
     return ob_get_clean();
 }
+
 function annapoorna_exam_add_custom_registration_fields() { ?><p><label for="first_name">First Name<br/><input type="text" name="first_name" id="first_name" required/></label></p><p><label for="last_name">Last Name<br/><input type="text" name="last_name" id="last_name" required/></label></p><?php }
 function annapoorna_exam_validate_reg_fields($errors, $login, $email) { if (empty($_POST['first_name']) || empty($_POST['last_name'])) $errors->add('field_error', 'First and Last Name are required.'); return $errors; }
 function annapoorna_exam_save_reg_fields($user_id) { if (!empty($_POST['first_name'])) update_user_meta($user_id, 'first_name', sanitize_text_field($_POST['first_name'])); if (!empty($_POST['last_name'])) update_user_meta($user_id, 'last_name', sanitize_text_field($_POST['last_name'])); }

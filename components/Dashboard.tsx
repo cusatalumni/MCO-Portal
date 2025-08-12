@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { apiService } from '../services/googleSheetsService';
 import type { TestResult } from '../types';
 import Spinner from './Spinner';
-import { BookCopy, History, FlaskConical, Eye, FileText, BarChart, BadgePercent, Trophy, ArrowRight, Home, RefreshCw, Star, Zap, CheckCircle, Lock, Edit, Save, X, ShoppingCart } from 'lucide-react';
+import { BookCopy, History, FlaskConical, Eye, FileText, BarChart, BadgePercent, Trophy, ArrowRight, Home, RefreshCw, Star, Zap, CheckCircle, Lock, Edit, Save, X, ShoppingCart, AlertTriangle } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import toast from 'react-hot-toast';
 import SuggestedBooksSidebar from './SuggestedBooksSidebar';
@@ -15,8 +15,9 @@ const Dashboard: React.FC = () => {
     const navigate = useNavigate();
     const { user, paidExamIds, isSubscribed, updateUserName, token } = useAuth();
     const { activeOrg } = useAppContext();
-    const [results, setResults] = useState<TestResult[]>([]);
+    const [results, setResults] = useState<TestResult[] | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [historyError, setHistoryError] = useState<string | null>(null);
     const [stats, setStats] = useState({ avgScore: 0, bestScore: 0, examsTaken: 0 });
     const [practiceStats, setPracticeStats] = useState({ attemptsTaken: 0, attemptsAllowed: 0 });
     const [isEditingName, setIsEditingName] = useState(false);
@@ -31,9 +32,13 @@ const Dashboard: React.FC = () => {
 
 
     useEffect(() => {
-        if (!user || !activeOrg || !token) return;
+        if (!user || !activeOrg || !token) {
+            if (activeOrg) setIsLoading(false);
+            return;
+        };
         const fetchResults = async () => {
             setIsLoading(true);
+            setHistoryError(null);
             try {
                 const userResults = await apiService.getTestResultsForUser(token);
                 setResults(userResults);
@@ -58,6 +63,8 @@ const Dashboard: React.FC = () => {
             } catch (error) {
                 console.error("Failed to fetch dashboard results:", error);
                 toast.error("Could not load your exam history.");
+                setHistoryError("Could not load your exam history. Please try syncing again.");
+                setResults([]);
             } finally {
                 setIsLoading(false);
             }
@@ -107,7 +114,7 @@ const Dashboard: React.FC = () => {
 
 
     const processedPurchasedExams = useMemo(() => {
-        if (!activeOrg) return [];
+        if (!activeOrg || !results) return [];
         
         return activeOrg.exams
             .filter(e => e.productSku && paidExamIds.includes(e.productSku) && !e.isPractice)
@@ -345,44 +352,53 @@ const Dashboard: React.FC = () => {
                      <div className="bg-white p-6 rounded-xl shadow-md">
                         <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center"><History className="mr-3 text-cyan-500" /> Exam History</h2>
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left text-sm">
-                                <thead>
-                                    <tr className="border-b bg-slate-50 text-slate-600">
-                                        <th className="p-3">Exam Name</th>
-                                        <th className="p-3">Date</th>
-                                        <th className="p-3">Score</th>
-                                        <th className="p-3">Status</th>
-                                        <th className="p-3">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {results.length > 0 ? results.map(result => {
-                                        const exam = activeOrg.exams.find(e => e.id === result.examId);
-                                        const isPass = exam ? result.score >= exam.passScore : false;
-                                        return (
-                                            <tr key={result.testId} className="border-b border-slate-100 hover:bg-slate-50">
-                                                <td className="p-3 font-semibold">{getExamName(result.examId)}</td>
-                                                <td className="p-3 text-slate-500">{new Date(result.timestamp).toLocaleDateString()}</td>
-                                                <td className={`p-3 font-bold ${isPass ? 'text-green-600' : 'text-red-600'}`}>{result.score}%</td>
-                                                <td className="p-3">
-                                                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${isPass ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                                        {isPass ? 'Passed' : 'Failed'}
-                                                    </span>
-                                                </td>
-                                                <td className="p-3">
-                                                    <button onClick={() => navigate(`/results/${result.testId}`)} className="text-cyan-600 hover:text-cyan-800 flex items-center text-xs">
-                                                        <Eye size={14} className="mr-1" /> Review
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        )
-                                    }) : (
-                                        <tr>
-                                            <td colSpan={5} className="text-center py-10 text-slate-500">You haven't taken any exams yet.</td>
+                            {historyError ? (
+                                <div className="text-center py-10 text-red-500 bg-red-50 rounded-lg">
+                                    <AlertTriangle className="mx-auto h-8 w-8" />
+                                    <p className="mt-2 font-semibold">{historyError}</p>
+                                </div>
+                            ) : results === null ? (
+                                <div className="flex justify-center py-10"><Spinner /></div>
+                            ) : (
+                                <table className="w-full text-left text-sm">
+                                    <thead>
+                                        <tr className="border-b bg-slate-50 text-slate-600">
+                                            <th className="p-3">Exam Name</th>
+                                            <th className="p-3">Date</th>
+                                            <th className="p-3">Score</th>
+                                            <th className="p-3">Status</th>
+                                            <th className="p-3">Actions</th>
                                         </tr>
-                                    )}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        {results.length > 0 ? results.map(result => {
+                                            const exam = activeOrg.exams.find(e => e.id === result.examId);
+                                            const isPass = exam ? result.score >= exam.passScore : false;
+                                            return (
+                                                <tr key={result.testId} className="border-b border-slate-100 hover:bg-slate-50">
+                                                    <td className="p-3 font-semibold">{getExamName(result.examId)}</td>
+                                                    <td className="p-3 text-slate-500">{new Date(result.timestamp).toLocaleDateString()}</td>
+                                                    <td className={`p-3 font-bold ${isPass ? 'text-green-600' : 'text-red-600'}`}>{result.score}%</td>
+                                                    <td className="p-3">
+                                                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${isPass ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                                            {isPass ? 'Passed' : 'Failed'}
+                                                        </span>
+                                                    </td>
+                                                    <td className="p-3">
+                                                        <button onClick={() => navigate(`/results/${result.testId}`)} className="text-cyan-600 hover:text-cyan-800 flex items-center text-xs">
+                                                            <Eye size={14} className="mr-1" /> Review
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            )
+                                        }) : (
+                                            <tr>
+                                                <td colSpan={5} className="text-center py-10 text-slate-500">You haven't taken any exams yet.</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            )}
                         </div>
                      </div>
                 </div>
