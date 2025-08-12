@@ -1,3 +1,4 @@
+
 import React from 'react';
 import toast from 'react-hot-toast';
 
@@ -441,7 +442,13 @@ function annapoorna_exam_login_shortcode() {
 function annapoorna_exam_add_custom_registration_fields() { ?><p><label for="first_name">First Name<br/><input type="text" name="first_name" id="first_name" required/></label></p><p><label for="last_name">Last Name<br/><input type="text" name="last_name" id="last_name" required/></label></p><?php }
 function annapoorna_exam_validate_reg_fields($errors, $login, $email) { if (empty($_POST['first_name']) || empty($_POST['last_name'])) $errors->add('field_error', 'First and Last Name are required.'); return $errors; }
 function annapoorna_exam_save_reg_fields($user_id) { if (!empty($_POST['first_name'])) update_user_meta($user_id, 'first_name', sanitize_text_field($_POST['first_name'])); if (!empty($_POST['last_name'])) update_user_meta($user_id, 'last_name', sanitize_text_field($_POST['last_name'])); }
-function annapoorna_exam_login_url($login_url, $redirect) { $login_page_url = home_url('/' . ANNAPOORNA_LOGIN_SLUG . '/'); return !empty($redirect) ? add_query_arg('redirect_to', urlencode($redirect), $login_page_url) : $login_page_url; }
+function annapoorna_exam_login_url($login_url, $redirect) {
+    if (is_admin()) {
+        return $login_url;
+    }
+    $login_page_url = home_url('/' . ANNAPOORNA_LOGIN_SLUG . '/');
+    return !empty($redirect) ? add_query_arg('redirect_to', urlencode($redirect), $login_page_url) : $login_page_url;
+}
 
 ?>`;
 
