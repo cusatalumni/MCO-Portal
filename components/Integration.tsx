@@ -9,7 +9,7 @@ const Integration: React.FC = () => {
 /**
  * Plugin Name: Medical Coding Online Exam App Integration
  * Description: Integrates the React-based examination app with WordPress, handling user authentication (SSO), WooCommerce purchases, and results synchronization.
- * Version: 3.8
+ * Version: 3.9
  * Author: Annapoorna Infotech
  */
 
@@ -23,30 +23,32 @@ define('ANNAPOORNA_EXAM_APP_TEST_URL', 'https://mco-exam-jkfzdt3bj-manoj-balakri
 // define('ANNAPOORNA_DEBUG', true); // Add for debug logging
 // --- END CONFIGURATION ---
 
-add_action('rest_api_init', function () {
-    // This filter is the standard WordPress way to allow custom headers like 'Authorization'.
-    add_filter('rest_allowed_cors_headers', function ($allowed_headers) {
-        $allowed_headers[] = 'Authorization';
-        $allowed_headers[] = 'Content-Type';
-        return $allowed_headers;
-    });
-
-    // We still need to handle pre-flight 'OPTIONS' requests and set the origin header.
-    // This hook runs before WordPress serves the REST request.
-    add_filter('rest_pre_serve_request', function ($value) {
-        // Set the origin header. '*' is permissive; for production, a specific domain is better.
-        header('Access-Control-Allow-Origin: *');
-
-        if ('OPTIONS' === $_SERVER['REQUEST_METHOD']) {
-            // For pre-flight, we confirm the allowed methods and headers and then exit.
-            header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-            header('Access-Control-Allow-Headers: Authorization, Content-Type, X-WP-Nonce');
-            exit(0);
+// --- CORS HANDLING ---
+add_action( 'rest_api_init', function() {
+    // Remove the default CORS handling provided by WordPress to avoid conflicts.
+    remove_filter( 'rest_pre_serve_request', 'rest_send_cors_headers' );
+    
+    // Add our own custom CORS handler to be more permissive and reliable.
+    add_filter( 'rest_pre_serve_request', function( $value ) {
+        // Set the allowed origin. '*' is permissive; for production, you might want to restrict this to your app's domain.
+        header( 'Access-Control-Allow-Origin: *' );
+        
+        // Set the allowed HTTP methods.
+        header( 'Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS' );
+        
+        // Set the allowed headers. 'Authorization' is needed for our JWT-based auth.
+        header( 'Access-Control-Allow-Headers: Authorization, X-WP-Nonce, Content-Type' );
+        
+        // If this is a pre-flight OPTIONS request, the browser is checking for permission.
+        // We can exit early with a 200 OK status.
+        if ( 'OPTIONS' === $_SERVER['REQUEST_METHOD'] ) {
+            status_header( 200 );
+            exit();
         }
 
         return $value;
     });
-}, 15);
+}, 15 );
 
 
 add_action('init', 'annapoorna_exam_app_init');
