@@ -1,14 +1,9 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
 import type { Question, TestResult, CertificateData, Organization, UserAnswer, User } from '../types';
 import { logoBase64 } from '../assets/logo';
 import toast from 'react-hot-toast';
 
 const API_BASE_URL = 'https://www.coding-online.net/wp-json/exam-app/v1';
-
-// Initialize the Google AI client
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 
 export const apiService = {
     getAppConfig: async (): Promise<Organization[]> => {
