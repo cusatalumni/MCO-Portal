@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { googleSheetsService } from '../services/googleSheetsService';
+import { apiService } from '../services/googleSheetsService';
 import type { Question, UserAnswer, Exam } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
@@ -18,7 +18,7 @@ const formatTime = (seconds: number) => {
 const Test: React.FC = () => {
   const { examId } = useParams<{ examId: string }>();
   const navigate = useNavigate();
-  const { user, useFreeAttempt, isSubscribed } = useAuth();
+  const { user, useFreeAttempt, isSubscribed, token } = useAuth();
   const { activeOrg, isInitializing } = useAppContext();
 
   const [examConfig, setExamConfig] = useState<Exam | null>(null);
@@ -37,15 +37,9 @@ const Test: React.FC = () => {
   });
 
   useEffect(() => {
-    if (isInitializing) return;
+    if (isInitializing || !examId || !activeOrg) return;
 
-    if (!examId || !activeOrg) {
-        toast.error("Exam configuration missing.");
-        navigate('/dashboard');
-        return;
-    }
-
-    const config = googleSheetsService.getExamConfig(activeOrg.id, examId);
+    const config = activeOrg.exams.find(e => e.id === examId);
     if (!config) {
         toast.error("Could not find the specified exam.");
         navigate('/dashboard');
@@ -54,12 +48,12 @@ const Test: React.FC = () => {
     setExamConfig(config);
 
     const loadTest = async () => {
-      if (!user) {
+      if (!user || !token) {
           navigate('/');
           return;
       }
 
-      const userResults = await googleSheetsService.getTestResultsForUser(user);
+      const userResults = await apiService.getTestResultsForUser(token);
 
       if (config.isPractice) {
         if (!isSubscribed) {
@@ -90,9 +84,9 @@ const Test: React.FC = () => {
 
       try {
         setIsLoading(true);
-        const fetchedQuestions = await googleSheetsService.getQuestions(config);
+        const fetchedQuestions = await apiService.getQuestions(config, token);
         if (fetchedQuestions.length === 0) {
-            toast.error("Could not load questions for this exam.");
+            // The service layer now shows a specific toast, so we just navigate away.
             navigate('/dashboard');
             return;
         }
@@ -132,7 +126,7 @@ const Test: React.FC = () => {
     return () => {
         if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
     }
-  }, [examId, activeOrg, navigate, useFreeAttempt, isInitializing, user, isSubscribed]);
+  }, [examId, activeOrg, navigate, useFreeAttempt, isInitializing, user, isSubscribed, token]);
 
   const handleAnswerSelect = (questionId: number, optionIndex: number) => {
     setAnswers(prev => new Map(prev).set(questionId, optionIndex));
@@ -179,7 +173,7 @@ const Test: React.FC = () => {
         }
     }
     
-    if(!user || !activeOrg || !examId) {
+    if(!user || !examId || !token) {
         toast.error("Cannot submit: user or exam context is missing.");
         navigate('/');
         return;
@@ -195,7 +189,7 @@ const Test: React.FC = () => {
             answer,
         }));
         
-        const result = await googleSheetsService.submitTest(user, activeOrg.id, examId, userAnswers, questions);
+        const result = await apiService.submitTest(user, examId, userAnswers, questions, token);
         toast.success("Test submitted successfully!");
         navigate(`/results/${result.testId}`);
 
