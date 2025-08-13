@@ -1,4 +1,3 @@
-
 import React from 'react';
 import toast from 'react-hot-toast';
 
@@ -70,19 +69,6 @@ function annapoorna_get_all_app_data() {
         return $app_data;
     }
 
-    $RECOMMENDED_BOOKS = [
-        ['id' => 'book-cpc-guide', 'title' => 'Official CPC® Certification Study Guide', 'description' => "AAPC's official CPC exam study guide — anatomy, medical terminology, ICD-10-CM, CPT, HCPCS, practice questions and exam tips.", 'affiliateLinks' => ['com' => 'https://www.amazon.com/dp/1635278910?tag=mykada-20', 'in' => 'https://www.amazon.in/dp/1635278910?tag=httpcodingonl-21', 'ae' => 'https://www.amazon.ae/dp/1285427998?tag=medical0f1-21']],
-        ['id' => 'book-icd10-cm', 'title' => "Buck's ICD-10-CM for Physicians 2026", 'description' => "Physician-focused ICD-10-CM code manual with full-color illustrations, Netter's Anatomy, and detailed guidelines.", 'affiliateLinks' => ['com' => 'https://www.amazon.com/dp/0443380783?tag=mykada-20', 'in' => 'https://www.amazon.in/dp/0443380783?tag=httpcodingonl-21', 'ae' => 'https://www.amazon.ae/dp/0443380783?tag=medical0f1-21']],
-        ['id' => 'book-cpt-pro', 'title' => 'AMA CPT® Professional 2026', 'description' => 'The official Current Procedural Terminology (CPT) codebook from the American Medical Association, essential for every coder.', 'affiliateLinks' => ['com' => 'https://www.amazon.com/dp/1640163354?tag=mykada-20', 'in' => 'https://www.amazon.in/dp/1640163354?tag=httpcodingonl-21', 'ae' => 'https://www.amazon.ae/dp/1640163354?tag=medical0f1-21']],
-        ['id' => 'book-hcpcs-level2', 'title' => 'HCPCS Level II Professional 2026', 'description' => 'Comprehensive guide for HCPCS Level II codes used for supplies, equipment, and drugs administered by physicians.', 'affiliateLinks' => ['com' => 'https://www.amazon.com/dp/1622029947?tag=mykada-20', 'in' => 'https://www.amazon.in/dp/1622029947?tag=httpcodingonl-21', 'ae' => 'https://www.amazon.ae/dp/1622029947?tag=medical0f1-21']],
-        ['id' => 'book-medical-billing', 'title' => 'Medical Billing & Coding For Dummies', 'description' => 'An easy-to-understand guide covering the basics of medical billing and coding, perfect for beginners.', 'affiliateLinks' => ['com' => 'https://www.amazon.com/dp/1119750393?tag=mykada-20', 'in' => 'https://www.amazon.in/dp/1119750393?tag=httpcodingonl-21', 'ae' => 'https://www.amazon.ae/dp/1119750393?tag=medical0f1-21']],
-        ['id' => 'book-step-by-step', 'title' => 'Step-by-Step Medical Coding, 2024 Edition', 'description' => 'This guide provides a solid foundation with a practical approach to mastering medical coding concepts and applications.', 'affiliateLinks' => ['com' => 'https://www.amazon.com/dp/0323930872?tag=mykada-20', 'in' => 'https://www.amazon.in/dp/0323930872?tag=httpcodingonl-21', 'ae' => 'https://www.amazon.ae/dp/0323930872?tag=medical0f1-21']],
-        ['id' => 'book-terminology-health', 'title' => 'Medical Terminology for Health Professions', 'description' => 'A comprehensive resource that simplifies learning complex medical terminology through a clear and logical approach.', 'affiliateLinks' => ['com' => 'https://www.amazon.com/dp/0357770170?tag=mykada-20', 'in' => 'https://www.amazon.in/dp/0357770170?tag=httpcodingonl-21', 'ae' => 'https://www.amazon.ae/dp/0357770170?tag=medical0f1-21']],
-        ['id' => 'book-anatomy-dummies', 'title' => 'Anatomy & Physiology For Dummies', 'description' => 'Makes complex topics of anatomy and physiology accessible and easy to understand for students and aspiring professionals.', 'affiliateLinks' => ['com' => 'https://www.amazon.com/dp/1119543037?tag=mykada-20', 'in' => 'https://www.amazon.in/dp/1119543037?tag=httpcodingonl-21', 'ae' => 'https://www.amazon.ae/dp/1119543037?tag=medical0f1-21']],
-        ['id' => 'book-coder-survival', 'title' => "The Medical Biller/Coder's Survival Guide", 'description' => 'An essential guide packed with tips, tools, and strategies to navigate the challenges of the medical billing and coding world.', 'affiliateLinks' => ['com' => 'https://www.amazon.com/dp/0323694676?tag=mykada-20', 'in' => 'https://www.amazon.in/dp/0323694676?tag=httpcodingonl-21', 'ae' => 'https://www.amazon.ae/dp/0323694676?tag=medical0f1-21']]
-    ];
-    $book_map = []; foreach ($RECOMMENDED_BOOKS as $book) { $book_map[$book['id']] = $book; }
-
     $CERTIFICATE_TEMPLATES = [
         ['id' => 'cert-mco-1', 'title' => 'Medical Coding Proficiency', 'body' => 'For successfully demonstrating proficiency in medical coding principles and practices with a final score of <strong>{finalScore}%</strong>. This achievement certifies the holder\'s competence in the standards required for this certification.', 'signature1Name' => 'Dr. Amelia Reed', 'signature1Title' => 'Program Director', 'signature2Name' => 'B. Manoj', 'signature2Title' => 'Chief Instructor'],
         ['id' => 'cert-mco-2', 'title' => 'Advanced Specialty Coding', 'body' => 'Awarded for exceptional performance and mastery in advanced specialty coding topics, achieving a score of <strong>{finalScore}%</strong>. This signifies a high level of expertise and dedication to the field.', 'signature1Name' => 'Dr. Amelia Reed', 'signature1Title' => 'Program Director', 'signature2Name' => 'B. Manoj', 'signature2Title' => 'Chief Instructor']
@@ -94,7 +80,7 @@ function annapoorna_get_all_app_data() {
         ['id' => 'prod-billing', 'name' => 'Medical Billing', 'description' => 'A test series covering the essentials of medical billing and reimbursement.', 'practiceExamId' => 'exam-billing-practice', 'certificationExamId' => 'exam-billing-cert']
     ];
 
-    $ALL_EXAMS_RAW = [
+    $ALL_EXAMS = [
         // Practice Exams
         ['id' => 'exam-cpc-practice', 'name' => 'CPC Practice Test', 'description' => 'A short practice test to prepare for the CPC certification.', 'price' => 0, 'productSku' => 'exam-cpc-practice', 'numberOfQuestions' => 10, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 25, 'questionSourceUrl' => 'https://docs.google.com/spreadsheets/d/1-2abcdefghijklmnopqrstuvwxyz/edit?usp=sharing'],
         ['id' => 'exam-cca-practice', 'name' => 'CCA Practice Test', 'description' => 'A short practice test for the Certified Coding Associate exam.', 'price' => 0, 'productSku' => 'exam-cca-practice', 'numberOfQuestions' => 10, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 25, 'questionSourceUrl' => ''],
@@ -110,14 +96,6 @@ function annapoorna_get_all_app_data() {
         ['id' => 'exam-risk-cert', 'name' => 'Risk Adjustment (CRC) Certification Exam', 'description' => 'Exam for Certified Risk Adjustment Coder.', 'price' => 150, 'regularPrice' => 150, 'productSku' => 'exam-risk-cert', 'productSlug' => 'exam-risk-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 240, 'questionSourceUrl' => '', 'recommendedBookId' => 'book-cpc-guide'],
         ['id' => 'exam-icd-cert', 'name' => 'ICD-10-CM Certification Exam', 'description' => 'Proficiency exam for ICD-10-CM coding.', 'price' => 90, 'regularPrice' => 90, 'productSku' => 'exam-icd-cert', 'productSlug' => 'exam-icd-cert', 'numberOfQuestions' => 100, 'passScore' => 75, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 120, 'questionSourceUrl' => '', 'recommendedBookId' => 'book-icd10-cm']
     ];
-    
-    $ALL_EXAMS = array_map(function($exam) use ($book_map) {
-        if (isset($exam['recommendedBookId']) && isset($book_map[$exam['recommendedBookId']])) {
-            $exam['recommendedBook'] = $book_map[$exam['recommendedBookId']];
-        }
-        unset($exam['recommendedBookId']);
-        return $exam;
-    }, $ALL_EXAMS_RAW);
 
     $app_data = [
         [
@@ -126,7 +104,6 @@ function annapoorna_get_all_app_data() {
             'exams' => $ALL_EXAMS,
             'examProductCategories' => $EXAM_PRODUCT_CATEGORIES,
             'certificateTemplates' => $CERTIFICATE_TEMPLATES,
-            'suggestedBooks' => $RECOMMENDED_BOOKS
         ]
     ];
     return $app_data;
