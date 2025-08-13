@@ -4,7 +4,6 @@ import type { Organization, RecommendedBook, Exam } from '../types';
 import toast from 'react-hot-toast';
 import { useAuth } from './AuthContext';
 import { localSuggestedBooks } from '../assets/bookData';
-
 interface AppContextType {
   organizations: Organization[];
   activeOrg: Organization | null;
