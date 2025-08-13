@@ -1,253 +1,94 @@
+import React from 'react';
+import { useAppContext } from '../context/AppContext';
+import { BookOpen, ShoppingCart } from 'lucide-react';
+import type { RecommendedBook } from '../types';
+import BookCover from './BookCover';
 
-import { GoogleGenAI, Type } from "@google/genai";
-import type { Question, TestResult, CertificateData, Organization, UserAnswer, User, Exam } from '../types';
-import { logoBase64 } from '../assets/logo';
-import toast from 'react-hot-toast';
+const SuggestedBooksSidebar: React.FC = () => {
+    const { suggestedBooks, isInitializing } = useAppContext();
 
-const API_BASE_URL = 'https://www.coding-online.net/wp-json/exam-app/v1';
+    const getGeoAffiliateLink = (book: RecommendedBook): { url: string; domainName: string } => {
+        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        let domainKey: keyof RecommendedBook['affiliateLinks'] = 'com';
+        let domainName = 'Amazon.com';
 
-export const apiService = {
-    getAppConfig: async (): Promise<Organization[]> => {
-        const response = await fetch(`${API_BASE_URL}/app-config`);
-        if (!response.ok) {
-            throw new Error('Failed to fetch app configuration.');
-        }
-        const data = await response.json();
-        // The logo is a local asset, so we inject it here.
-        return data.map((org: Organization) => ({ ...org, logo: logoBase64 }));
-    },
-
-    getTestResultsForUser: async (token: string): Promise<TestResult[]> => {
-        const response = await fetch(`${API_BASE_URL}/user-results`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (!response.ok) {
-            let errorMsg = 'Could not load your exam history.';
-            if (response.status === 403) {
-                errorMsg = 'Your session may have expired. Please use the "Sync My Exams" button.';
-            } else if (response.status >= 500) {
-                errorMsg = 'A server error occurred while fetching your history. Please try again later.';
-            }
-            throw new Error(errorMsg);
-        }
-        return response.json();
-    },
-
-    getTestResult: async (token: string, testId: string): Promise<TestResult | undefined> => {
-        const response = await fetch(`${API_BASE_URL}/result/${testId}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (!response.ok) throw new Error('Failed to fetch test result.');
-        return response.json();
-    },
-
-    getCertificateData: async (token: string, testId: string): Promise<CertificateData | null> => {
-         const response = await fetch(`${API_BASE_URL}/certificate-data/${testId}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (!response.ok) return null;
-        const data = await response.json();
-        if (data && data.organization) {
-            data.organization.logo = logoBase64;
-        }
-        return data;
-    },
-    
-    getQuestions: async (exam: Exam, token: string): Promise<Question[]> => {
-        // If a sheet URL is provided, fetch from the WordPress proxy
-        if (exam.questionSourceUrl) {
-            const toastId = toast.loading(`Loading questions for "${exam.name}"...`);
-            try {
-                const response = await fetch(`${API_BASE_URL}/questions-from-sheet`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ 
-                        sheetUrl: exam.questionSourceUrl, 
-                        count: exam.numberOfQuestions 
-                    })
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || 'Failed to fetch questions from source.');
-                }
-                
-                const questions: Question[] = await response.json();
-                if (questions.length === 0) {
-                     throw new Error('Source file contains no valid questions.');
-                }
-                toast.success('Questions loaded!', { id: toastId });
-                return questions;
-
-            } catch (error: any) {
-                console.error("Failed to get questions from sheet URL:", error);
-                const errorMessage = error.message || "Could not load exam questions.";
-                toast.error(errorMessage, { id: toastId });
-                throw error;
-            }
+        const gccTimezones = [ 'Asia/Dubai', 'Asia/Riyadh', 'Asia/Qatar', 'Asia/Bahrain', 'Asia/Kuwait', 'Asia/Muscat' ];
+        
+        if (timeZone.includes('Asia/Kolkata') || timeZone.includes('Asia/Calcutta')) {
+            domainKey = 'in';
+            domainName = 'Amazon.in';
         } 
-        // Otherwise, generate questions using the Gemini API
-        else {
-            const toastId = toast.loading(`Generating questions for "${exam.name}"...`);
-            try {
-                if (!process.env.API_KEY) {
-                    throw new Error("Configuration Error: GEMINI_API_KEY not found. Please set it in your .env file.");
-                }
-                const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-                const schema = {
-                    type: Type.OBJECT,
-                    properties: {
-                        questions: {
-                            type: Type.ARRAY,
-                            description: `A list of ${exam.numberOfQuestions} questions.`,
-                            items: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    question: {
-                                        type: Type.STRING,
-                                        description: "The text of the question."
-                                    },
-                                    options: {
-                                        type: Type.ARRAY,
-                                        description: "An array of 4 possible answer strings.",
-                                        items: { type: Type.STRING }
-                                    },
-                                    correctAnswer: {
-                                        type: Type.STRING,
-                                        description: "The exact string of the correct answer from the 'options' array."
-                                    }
-                                },
-                                required: ["question", "options", "correctAnswer"]
-                            }
-                        }
-                    },
-                    required: ["questions"]
-                };
-
-                const prompt = `Generate ${exam.numberOfQuestions} multiple-choice questions for a "${exam.name}" exam.
-                This exam is described as: "${exam.description}".
-                For each question, provide exactly 4 unique answer options and specify which one is correct.
-                The topic is medical coding and billing. The questions should be suitable for a certification exam.
-                Format the output as JSON that adheres to the provided schema.`;
-
-                const response = await ai.models.generateContent({
-                    model: 'gemini-2.5-flash',
-                    contents: prompt,
-                    config: {
-                        responseMimeType: "application/json",
-                        responseSchema: schema,
-                        temperature: 0.7
-                    },
-                });
-
-                let jsonText = response.text.trim();
-                if (jsonText.startsWith('```json')) {
-                    jsonText = jsonText.substring(7);
-                }
-                if (jsonText.endsWith('```')) {
-                    jsonText = jsonText.substring(0, jsonText.length - 3);
-                }
-                
-                const jsonResponse = JSON.parse(jsonText);
-
-                if (!jsonResponse.questions || jsonResponse.questions.length === 0) {
-                    throw new Error("AI failed to generate valid questions.");
-                }
-
-                const generatedQuestions: { question: string; options: string[]; correctAnswer: string }[] = jsonResponse.questions;
-
-                const allQuestions: Question[] = generatedQuestions.map((q, index) => {
-                    const safeOptions = Array.isArray(q.options) ? q.options : [];
-                    while (safeOptions.length < 4) safeOptions.push("N/A");
-
-                    let correctAnswerIndex = safeOptions.findIndex(opt => opt === q.correctAnswer);
-                    
-                    if (correctAnswerIndex === -1) {
-                        console.warn('Could not find correct answer in options for generated question. Defaulting to first option.', q);
-                        correctAnswerIndex = 0;
-                    }
-
-                    return {
-                        id: index + 1,
-                        question: q.question,
-                        options: safeOptions.slice(0, 4),
-                        correctAnswer: correctAnswerIndex + 1, // 1-based index
-                    };
-                });
-
-                if (allQuestions.length === 0) {
-                    throw new Error("No valid questions could be processed from the AI response.");
-                }
-
-                toast.success('Questions generated!', { id: toastId });
-                return allQuestions.slice(0, exam.numberOfQuestions);
-
-            } catch (error: any) {
-                console.error("Failed to generate questions using Gemini API:", error);
-                const errorMessage = error.message || "Could not generate exam questions.";
-                toast.error(errorMessage, { id: toastId });
-                throw error;
-            }
-        }
-    },
-
-    submitTest: async (user: User, examId: string, answers: UserAnswer[], questions: Question[], token: string): Promise<TestResult> => {
-        const questionPool = questions;
-        const answerMap = new Map(answers.map(a => [a.questionId, a.answer]));
-
-        let correctCount = 0;
-        const review: TestResult['review'] = [];
-
-        questionPool.forEach(question => {
-            const userAnswerIndex = answerMap.get(question.id);
-            const isAnswered = userAnswerIndex !== undefined;
-            const isCorrect = isAnswered && (userAnswerIndex! + 1) === question.correctAnswer;
-            
-            if (isCorrect) correctCount++;
-            
-            review.push({
-                questionId: question.id,
-                question: question.question,
-                options: question.options,
-                userAnswer: isAnswered ? userAnswerIndex! : -1,
-                correctAnswer: question.correctAnswer - 1,
-            });
-        });
-
-        const totalQuestions = questionPool.length;
-        const score = totalQuestions > 0 ? (correctCount / totalQuestions) * 100 : 0;
-        
-        const newResult: Omit<TestResult, 'userId'> = {
-            testId: `test-${Date.now()}`,
-            examId,
-            answers,
-            score: parseFloat(score.toFixed(2)),
-            correctCount,
-            totalQuestions,
-            timestamp: Date.now(),
-            review,
-        };
-
-        const response = await fetch(`${API_BASE_URL}/submit-result`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(newResult)
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || 'Failed to sync result to WordPress.');
+        else if (gccTimezones.some(tz => timeZone === tz)) {
+            domainKey = 'ae';
+            domainName = 'Amazon.ae';
         }
         
-        const returnedResult = await response.json();
-        console.log('Test result successfully synced to WordPress.');
-        return returnedResult as TestResult;
+        const url = book.affiliateLinks[domainKey];
+        if (!url) {
+            return { url: book.affiliateLinks.com, domainName: 'Amazon.com' };
+        }
+        return { url, domainName };
+    };
+
+    if (isInitializing) {
+        return (
+            <div className="bg-white p-6 rounded-xl shadow-md">
+                 <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center">
+                    <BookOpen className="mr-3 text-cyan-500" /> Study Hall
+                </h3>
+                <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                         <div key={i} className="flex gap-4 animate-pulse">
+                            <div className="w-16 h-20 bg-slate-200 rounded"></div>
+                            <div className="flex-1 space-y-2">
+                                <div className="h-4 bg-slate-200 rounded w-3/4"></div>
+                                <div className="h-3 bg-slate-200 rounded w-full"></div>
+                                 <div className="h-3 bg-slate-200 rounded w-1/2"></div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )
     }
+
+    if (suggestedBooks.length === 0) {
+        return null;
+    }
+
+    return (
+        <div className="bg-white p-6 rounded-xl shadow-md">
+            <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center">
+                <BookOpen className="mr-3 text-cyan-500" /> Study Hall
+            </h3>
+            <p className="text-sm text-slate-500 mb-6">Explore these recommended books to deepen your knowledge and prepare for your exams.</p>
+            <div className="space-y-6">
+                {suggestedBooks.map(book => {
+                     const { url, domainName } = getGeoAffiliateLink(book);
+                     return (
+                        <div key={book.id} className="flex items-start gap-4">
+                            <BookCover title={book.title} className="w-16 h-20 rounded shadow-sm flex-shrink-0" />
+                            <div className="flex-grow min-w-0">
+                                <h4 className="font-bold text-slate-700 leading-tight">{book.title}</h4>
+                                <p className="text-xs text-slate-500 mt-1 mb-2">{book.description.substring(0, 60)}...</p>
+                                <a 
+                                    href={url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs font-semibold text-cyan-600 hover:text-cyan-800 inline-flex items-center gap-1"
+                                >
+                                   <ShoppingCart size={12}/> Buy on {domainName}
+                                </a>
+                            </div>
+                        </div>
+                     )
+                })}
+            </div>
+             <p className="text-xs text-slate-400 mt-4 text-center">
+                As an Amazon Associate, we earn from qualifying purchases.
+            </p>
+        </div>
+    );
 };
+
+export default SuggestedBooksSidebar;
