@@ -79,7 +79,6 @@ export interface RecommendedBook {
     id: string;
     title: string;
     description: string;
-    imageUrl: string;
     affiliateLinks: { // These should be the full, final affiliate URLs
         com: string;
         in: string;
