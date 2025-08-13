@@ -1,6 +1,8 @@
 
 
 
+
+
 export interface User {
   id: string;
   name: string;
@@ -119,4 +121,5 @@ export interface Organization {
     exams: Exam[];
     examProductCategories: ExamProductCategory[];
     certificateTemplates: CertificateTemplate[];
+    suggestedBooks?: RecommendedBook[];
 }

@@ -3,7 +3,6 @@ import { apiService } from '../services/googleSheetsService';
 import type { Organization, RecommendedBook, Exam } from '../types';
 import toast from 'react-hot-toast';
 import { useAuth } from './AuthContext';
-import { bookData } from '../assets/bookData';
 
 interface AppContextType {
   organizations: Organization[];
@@ -21,42 +20,42 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [activeOrg, setActiveOrg] = useState<Organization | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [suggestedBooks, setSuggestedBooks] = useState<RecommendedBook[]>([]);
   const { examPrices } = useAuth();
 
   useEffect(() => {
     const initializeApp = async () => {
         try {
             const initialOrgsFromApi = await apiService.getAppConfig();
-            const bookMap = new Map(bookData.map(b => [b.id, b]));
 
-            const hydrateAndPriceOrgs = (orgs: any[]): Organization[] => {
+            const priceOrgs = (orgs: any[]): Organization[] => {
                 return orgs.map(org => {
-                    const hydratedExams = org.exams.map((exam: any): Exam => {
-                        const recommendedBook = exam.recommendedBookId ? bookMap.get(exam.recommendedBookId) : undefined;
-                        const { recommendedBookId, ...restOfExam } = exam;
-                        const examWithBook = { ...restOfExam, recommendedBook };
-
+                    const pricedExams = org.exams.map((exam: any): Exam => {
                         if (examPrices) {
                             const syncedPriceData = exam.productSku ? examPrices[exam.productSku] : undefined;
                             if (syncedPriceData) {
                                 return {
-                                    ...examWithBook,
+                                    ...exam,
                                     price: syncedPriceData.price,
                                     regularPrice: syncedPriceData.regularPrice
                                 };
                             }
                         }
-                        return examWithBook;
+                        return exam;
                     });
-                    return { ...org, exams: hydratedExams };
+                    return { ...org, exams: pricedExams };
                 });
             };
             
-            const finalOrgs = hydrateAndPriceOrgs(initialOrgsFromApi);
+            const finalOrgs = priceOrgs(initialOrgsFromApi);
             setOrganizations(finalOrgs);
 
             if (finalOrgs.length > 0) {
-                setActiveOrg(finalOrgs[0]);
+                const currentOrg = finalOrgs[0];
+                setActiveOrg(currentOrg);
+                if (currentOrg.suggestedBooks) {
+                    setSuggestedBooks(currentOrg.suggestedBooks);
+                }
             }
         } catch (error) {
             console.error("Failed to initialize app config:", error);
@@ -69,13 +68,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     initializeApp();
   }, [examPrices]);
 
-  const suggestedBooks = useMemo(() => {
-    return bookData;
-  }, []);
 
   const setActiveOrgById = (orgId: string) => {
     const org = organizations.find(o => o.id === orgId);
-    if (org) setActiveOrg(org);
+    if (org) {
+        setActiveOrg(org);
+        if (org.suggestedBooks) {
+            setSuggestedBooks(org.suggestedBooks);
+        }
+    }
   };
 
   const updateActiveOrg = (updatedOrg: Organization) => {
@@ -83,6 +84,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         prevOrgs.map(org => org.id === updatedOrg.id ? updatedOrg : org)
     );
     setActiveOrg(updatedOrg);
+    if (updatedOrg.suggestedBooks) {
+        setSuggestedBooks(updatedOrg.suggestedBooks);
+    }
   };
 
   return (
