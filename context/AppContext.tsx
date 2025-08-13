@@ -1,8 +1,9 @@
-import React, { createContext, useState, useContext, ReactNode, useEffect, useMemo } from 'react';
+import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { apiService } from '../services/googleSheetsService';
 import type { Organization, RecommendedBook, Exam } from '../types';
 import toast from 'react-hot-toast';
 import { useAuth } from './AuthContext';
+import { localSuggestedBooks } from '../assets/bookData';
 
 interface AppContextType {
   organizations: Organization[];
@@ -28,26 +29,34 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         try {
             const initialOrgsFromApi = await apiService.getAppConfig();
 
-            const priceOrgs = (orgs: any[]): Organization[] => {
+            const processOrgs = (orgs: Organization[]): Organization[] => {
+                const bookMap = new Map(localSuggestedBooks.map(book => [book.id, book]));
+
                 return orgs.map(org => {
-                    const pricedExams = org.exams.map((exam: any): Exam => {
-                        if (examPrices) {
-                            const syncedPriceData = exam.productSku ? examPrices[exam.productSku] : undefined;
+                    const finalSuggestedBooks = localSuggestedBooks;
+
+                    const processedExams = org.exams.map((exam: any): Exam => {
+                        let finalExam: Exam = { ...exam };
+
+                        if (examPrices && exam.productSku) {
+                            const syncedPriceData = examPrices[exam.productSku];
                             if (syncedPriceData) {
-                                return {
-                                    ...exam,
-                                    price: syncedPriceData.price,
-                                    regularPrice: syncedPriceData.regularPrice
-                                };
+                                finalExam.price = syncedPriceData.price;
+                                finalExam.regularPrice = syncedPriceData.regularPrice;
                             }
                         }
-                        return exam;
+
+                        if (exam.recommendedBookId && bookMap.has(exam.recommendedBookId)) {
+                            finalExam.recommendedBook = bookMap.get(exam.recommendedBookId);
+                        }
+                        return finalExam;
                     });
-                    return { ...org, exams: pricedExams };
+                    
+                    return { ...org, exams: processedExams, suggestedBooks: finalSuggestedBooks };
                 });
             };
             
-            const finalOrgs = priceOrgs(initialOrgsFromApi);
+            const finalOrgs = processOrgs(initialOrgsFromApi);
             setOrganizations(finalOrgs);
 
             if (finalOrgs.length > 0) {
