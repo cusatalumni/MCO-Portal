@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useHistory } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { apiService } from '../services/googleSheetsService';
 import type { TestResult, Exam, RecommendedBook } from '../types';
@@ -7,10 +7,11 @@ import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
 import Spinner from './Spinner';
 import { Check, X, FileDown, BookUp, ShieldCheck } from 'lucide-react';
+import BookCover from './BookCover';
 
 const Results: React.FC = () => {
     const { testId } = useParams<{ testId: string }>();
-    const navigate = useNavigate();
+    const history = useHistory();
     const { user, token } = useAuth();
     const { activeOrg } = useAppContext();
     
@@ -22,7 +23,7 @@ const Results: React.FC = () => {
         if (!testId || !user || !activeOrg || !token) {
             if(!token) toast.error("Authentication session has expired.");
             else toast.error("Required data is missing.");
-            navigate('/dashboard');
+            history.push('/dashboard');
             return;
         }
 
@@ -37,21 +38,21 @@ const Results: React.FC = () => {
                         setExam(examConfig);
                     } else {
                         toast.error("Could not find the configuration for this exam.");
-                        navigate('/dashboard');
+                        history.push('/dashboard');
                     }
                 } else {
                     toast.error("Could not find your test results.");
-                    navigate('/dashboard');
+                    history.push('/dashboard');
                 }
             } catch (error) {
                 toast.error("Failed to load results.");
-                navigate('/dashboard');
+                history.push('/dashboard');
             } finally {
                 setIsLoading(false);
             }
         };
         fetchResultAndExam();
-    }, [testId, user, activeOrg, navigate, token]);
+    }, [testId, user, activeOrg, history, token]);
     
     const getGeoAffiliateLink = (book: RecommendedBook): { url: string; domainName: string } => {
         const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -99,7 +100,7 @@ const Results: React.FC = () => {
             {(isPaid && isPass) && (
                 <div className="text-center mb-8">
                     <button
-                        onClick={() => navigate(`/certificate/${result.testId}`)}
+                        onClick={() => history.push(`/certificate/${result.testId}`)}
                         className="inline-flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105"
                     >
                         <FileDown size={20} />
@@ -111,7 +112,7 @@ const Results: React.FC = () => {
             {isAdmin && (
                 <div className="text-center mb-8">
                     <button
-                        onClick={() => navigate(`/certificate/${result.testId}`)}
+                        onClick={() => history.push(`/certificate/${result.testId}`)}
                         className="inline-flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105"
                     >
                         <ShieldCheck size={20} />
@@ -127,7 +128,7 @@ const Results: React.FC = () => {
                         <div className="text-center p-6 bg-blue-50 border border-blue-200 rounded-lg">
                             <h2 className="text-xl font-semibold text-blue-800 mb-4">Recommended Study Material</h2>
                             <div className="flex flex-col sm:flex-row items-center justify-center gap-6 text-left">
-                                <img src={exam.recommendedBook!.imageUrl} alt={exam.recommendedBook!.title} className="w-32 h-auto rounded-lg shadow-md object-cover" />
+                                <BookCover title={exam.recommendedBook!.title} className="w-32 h-40 rounded-lg shadow-md flex-shrink-0" />
                                 <div>
                                     <h3 className="text-lg font-bold text-slate-800">{exam.recommendedBook!.title}</h3>
                                     <p className="text-slate-600 mt-1 mb-4 max-w-md">{exam.recommendedBook!.description}</p>
@@ -186,7 +187,7 @@ const Results: React.FC = () => {
 
             <div className="text-center mt-8">
                 <button 
-                    onClick={() => navigate('/dashboard')}
+                    onClick={() => history.push('/dashboard')}
                     className="bg-slate-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-slate-700 transition"
                 >
                     Back to Dashboard
