@@ -1,7 +1,7 @@
-import { GoogleGenAI, Type } from "@google/genai";
 import type { Question, TestResult, CertificateData, Organization, UserAnswer, User, Exam, CertificateTemplate, ExamProductCategory } from '../types';
 import { logoBase64 } from '../assets/logo';
 import toast from 'react-hot-toast';
+import { sampleQuestions } from '../assets/questionData';
 
 // --- API Client for WordPress Backend ---
 const WP_API_BASE = 'https://www.coding-online.net/wp-json/exam-app/v1';
@@ -35,8 +35,7 @@ const apiFetch = async (endpoint: string, token: string, options: RequestInit = 
 };
 
 
-// --- LOCAL DATA STORE ---
-// Static configuration is defined here for stability and speed.
+// --- LOCAL DATA STORE & CONFIG ---
 const CERTIFICATE_TEMPLATES: CertificateTemplate[] = [
     { id: 'cert-mco-1', title: 'Medical Coding Proficiency', body: 'For successfully demonstrating proficiency in medical coding principles and practices with a final score of <strong>{finalScore}%</strong>. This achievement certifies the holder\'s competence in the standards required for this certification.', signature1Name: 'Dr. Amelia Reed', signature1Title: 'Program Director', signature2Name: 'B. Manoj', signature2Title: 'Chief Instructor' },
     { id: 'cert-mco-2', title: 'Advanced Specialty Coding', body: 'Awarded for exceptional performance and mastery in advanced specialty coding topics, achieving a score of <strong>{finalScore}%</strong>. This signifies a high level of expertise and dedication to the field.', signature1Name: 'Dr. Amelia Reed', signature1Title: 'Program Director', signature2Name: 'B. Manoj', signature2Title: 'Chief Instructor' }
@@ -48,7 +47,7 @@ const EXAM_PRODUCT_CATEGORIES: ExamProductCategory[] = [
     { id: 'prod-billing', name: 'Medical Billing', description: 'A test series covering the essentials of medical billing and reimbursement.', practiceExamId: 'exam-billing-practice', certificationExamId: 'exam-billing-cert' }
 ];
 
-const DEFAULT_QUESTION_URL = 'https://docs.google.com/spreadsheets/d/1vQZ7Jz2F_2l8t8_1qA8Pz4N7w_9j_9hL2K5e_8sF9cE/edit?usp=sharing';
+const DEFAULT_QUESTION_URL = 'https://docs.google.com/spreadsheets/d/10QGeiupsw6KtW9613v1yj03SYtzf3rDCEu-hbgQUwgs/edit?usp=sharing';
 
 const ALL_EXAMS: Exam[] = [
     // Practice Exams
@@ -77,193 +76,118 @@ const ORGANIZATIONS: Organization[] = [
     }
 ];
 
-export const googleSheetsService = {
-    // --- CONFIGURATION (STATIC) ---
-    getAppConfig: async (): Promise<Organization[]> => {
-        return Promise.resolve(ORGANIZATIONS);
-    },
+// --- DUAL-MODE SERVICE IMPLEMENTATION ---
+const getLocalResults = (user: User): { [testId: string]: TestResult } => {
+    try {
+        const stored = localStorage.getItem(`exam_results_${user.id}`);
+        return stored ? JSON.parse(stored) : {};
+    } catch (e) { return {}; }
+};
 
-    // --- DATA SYNC & LOCAL STORAGE ---
-    syncResults: async (token: string, user: User): Promise<void> => {
-        try {
-            const remoteResults: TestResult[] = await apiFetch('/user-results', token);
-            const resultsMap = remoteResults.reduce((acc, result) => {
-                acc[result.testId] = result;
-                return acc;
-            }, {} as { [key: string]: TestResult });
+const saveLocalResults = (user: User, results: { [testId: string]: TestResult }) => {
+    localStorage.setItem(`exam_results_${user.id}`, JSON.stringify(results));
+};
 
-            localStorage.setItem(`exam_results_${user.id}`, JSON.stringify(resultsMap));
-        } catch (error: any) {
-            console.error("Failed to sync remote results:", error);
-            const errorMessage = error.message || "Could not connect to the server. Please check your network connection.";
-            toast.error(errorMessage);
-        }
-    },
+const getAppConfig = async (): Promise<Organization[]> => {
+    return Promise.resolve(ORGANIZATIONS);
+};
 
-    getTestResultsForUser: async (user: User): Promise<TestResult[]> => {
-        try {
-            const storedResults = localStorage.getItem(`exam_results_${user.id}`);
-            const results = storedResults ? JSON.parse(storedResults) : {};
-            return Promise.resolve(Object.values(results));
-        } catch (error) {
-            console.error("Failed to parse results from localStorage", error);
-            return Promise.resolve([]);
-        }
-    },
+const syncResults = async (token: string, user: User) => {
+    try {
+        const remoteResultsArray: TestResult[] = await apiFetch('/user-results', token);
+        const remoteResults = remoteResultsArray.reduce((acc, result) => {
+            acc[result.testId] = result;
+            return acc;
+        }, {} as { [testId: string]: TestResult });
+        saveLocalResults(user, remoteResults);
+    } catch (error: any) {
+        toast.error(error.message || "Could not sync your latest results from the server.");
+        console.error("Sync failed:", error);
+    }
+};
 
-    getTestResult: async (user: User, testId: string): Promise<TestResult | undefined> => {
-        const results = await googleSheetsService.getTestResultsForUser(user);
-        return results.find(r => r.testId === testId);
-    },
-
-    // --- DIRECT API CALLS (NOT CACHED LOCALLY) ---
-    getCertificateData: async (token: string, testId: string): Promise<CertificateData | null> => {
-        return apiFetch(`/certificate-data/${testId}`, token);
-    },
-    
-    // --- QUESTION GENERATION ---
-    getQuestions: async (exam: Exam, token: string): Promise<Question[]> => {
-        const toastId = toast.loading(`Loading questions for "${exam.name}"...`);
-        try {
-            // Case 1: Fetch from Google Sheets via WordPress backend
-            if (exam.questionSourceUrl) {
-                const sheetQuestions = await apiFetch('/questions-from-sheet', token, {
+const getQuestions = async (exam: Exam, token: string): Promise<Question[]> => {
+    const toastId = toast.loading('Loading questions for exam...');
+    try {
+        if (exam.questionSourceUrl) {
+            try {
+                const response = await fetch(`${WP_API_BASE}/questions-from-sheet`, {
                     method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify({ sheetUrl: exam.questionSourceUrl, count: exam.numberOfQuestions })
                 });
-                toast.success('Questions loaded!', { id: toastId });
-                return sheetQuestions;
-            }
 
-            // Case 2: Generate with Gemini API (Now a fallback, should not be hit with current config)
-            if (!process.env.API_KEY) throw new Error("Configuration Error: API_KEY not found.");
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
-            const schema = {
-                type: Type.OBJECT,
-                properties: {
-                    questions: {
-                        type: Type.ARRAY,
-                        description: `A list of ${exam.numberOfQuestions} questions.`,
-                        items: {
-                            type: Type.OBJECT,
-                            properties: {
-                                question: { type: Type.STRING, description: "The text of the question." },
-                                options: { type: Type.ARRAY, description: "An array of 4 possible answer strings.", items: { type: Type.STRING } },
-                                correctAnswer: { type: Type.STRING, description: "The exact string of the correct answer from the 'options' array." }
-                            },
-                            required: ["question", "options", "correctAnswer"]
-                        }
-                    }
-                },
-                required: ["questions"]
-            };
-
-            const prompt = `Generate ${exam.numberOfQuestions} multiple-choice questions for a "${exam.name}" exam.
-            This exam is described as: "${exam.description}".
-            For each question, provide exactly 4 unique answer options and specify which one is correct.
-            The topic is medical coding and billing. The questions should be suitable for a certification exam.
-            Format the output as JSON that adheres to the provided schema.`;
-
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: prompt,
-                config: { responseMimeType: "application/json", responseSchema: schema, temperature: 0.7 },
-            });
-            
-            let jsonText = response.text.trim().replace(/^```json\s*|```$/g, '');
-            const jsonResponse = JSON.parse(jsonText);
-
-            if (!jsonResponse.questions || jsonResponse.questions.length === 0) throw new Error("AI failed to generate valid questions.");
-
-            const allQuestions: Question[] = jsonResponse.questions.map((q: any, index: number) => {
-                let correctAnswerIndex = q.options.findIndex((opt: string) => opt === q.correctAnswer);
-                if (correctAnswerIndex === -1) {
-                    console.warn('Could not find correct answer in options for generated question. Defaulting to first option.', q);
-                    correctAnswerIndex = 0;
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || `API Error: Status ${response.status}`);
                 }
-                return {
-                    id: index + 1,
-                    question: q.question,
-                    options: q.options.slice(0, 4),
-                    correctAnswer: correctAnswerIndex + 1, // 1-based index
-                };
-            });
-
-            toast.success('Questions generated!', { id: toastId });
-            return allQuestions.slice(0, exam.numberOfQuestions);
-        } catch (error: any) {
-            console.error("Failed to generate/fetch questions:", error);
-            const errorMessage = error.message || "Could not load exam questions.";
-            toast.error(errorMessage, { id: toastId });
-            throw error;
-        }
-    },
-    
-    // --- DUAL-MODE SUBMISSION ---
-    submitTest: async (user: User, examId: string, answers: UserAnswer[], questions: Question[], token: string): Promise<TestResult> => {
-        const questionPool = questions;
-        const answerMap = new Map(answers.map(a => [a.questionId, a.answer]));
-        let correctCount = 0;
-        const review: TestResult['review'] = [];
-
-        questionPool.forEach(question => {
-            const userAnswerIndex = answerMap.get(question.id);
-            const isAnswered = userAnswerIndex !== undefined;
-            const isCorrect = isAnswered && (userAnswerIndex! + 1) === question.correctAnswer;
-            if (isCorrect) correctCount++;
-            review.push({
-                questionId: question.id,
-                question: question.question,
-                options: question.options,
-                userAnswer: isAnswered ? userAnswerIndex! : -1,
-                correctAnswer: question.correctAnswer - 1,
-            });
-        });
-
-        const totalQuestions = questionPool.length;
-        const score = totalQuestions > 0 ? (correctCount / totalQuestions) * 100 : 0;
-        
-        const newResult: TestResult = {
-            testId: `test-${Date.now()}`,
-            userId: user.id,
-            examId,
-            answers,
-            score: parseFloat(score.toFixed(2)),
-            correctCount,
-            totalQuestions,
-            timestamp: Date.now(),
-            review,
-        };
-
-        // Step 1: Save locally immediately for a fast UI response.
-        try {
-            const key = `exam_results_${user.id}`;
-            const storedResults = localStorage.getItem(key);
-            const results = storedResults ? JSON.parse(storedResults) : {};
-            results[newResult.testId] = newResult;
-            localStorage.setItem(key, JSON.stringify(results));
-        } catch (error) {
-            console.error("Failed to save result to localStorage", error);
-            toast.error("Could not save your test result locally.");
-        }
-        
-        // Step 2: Asynchronously send the result to the WordPress backend.
-        // We don't wait for this to finish to return from the function.
-        (async () => {
-            try {
-                await apiFetch('/submit-result', token, {
-                    method: 'POST',
-                    body: JSON.stringify(newResult)
-                });
-                console.log('Result successfully synced with the server.');
-            } catch (error) {
-                console.error("Failed to sync result with server:", error);
-                toast.error("Syncing result with the server failed. It's saved locally.");
+                const questions = await response.json();
+                if (!Array.isArray(questions) || questions.length === 0) {
+                    throw new Error("API returned no valid questions.");
+                }
+                toast.dismiss(toastId);
+                return questions;
+            } catch (apiError: any) {
+                console.error("API question fetch failed, using fallback:", apiError.message);
+                toast.error("Primary question source failed. Using backup questions.", { id: toastId, duration: 4000 });
+                return [...sampleQuestions].sort(() => 0.5 - Math.random()).slice(0, exam.numberOfQuestions);
             }
-        })();
-
-        // Return the result immediately.
-        return Promise.resolve(newResult);
+        }
+        toast.dismiss(toastId);
+        return [...sampleQuestions].sort(() => 0.5 - Math.random()).slice(0, exam.numberOfQuestions);
+    } catch(e) {
+        toast.dismiss(toastId);
+        throw e;
     }
+};
+
+const getTestResultsForUser = async (user: User): Promise<TestResult[]> => {
+    const resultsObj = getLocalResults(user);
+    return Object.values(resultsObj).sort((a, b) => b.timestamp - a.timestamp);
+};
+
+const getTestResult = async (user: User, testId: string): Promise<TestResult | null> => {
+    const results = getLocalResults(user);
+    return results[testId] || null;
+};
+
+const submitTest = async (user: User, examId: string, answers: UserAnswer[], questions: Question[], token: string): Promise<TestResult> => {
+    const correctAnswers = new Map(questions.map(q => [q.id, q.correctAnswer - 1]));
+    let correctCount = 0;
+    
+    const review = questions.map(q => {
+        const userAnswer = answers.find(a => a.questionId === q.id)?.answer ?? -1;
+        const isCorrect = userAnswer === correctAnswers.get(q.id);
+        if (isCorrect) correctCount++;
+        return { questionId: q.id, question: q.question, options: q.options, userAnswer, correctAnswer: correctAnswers.get(q.id) as number };
+    });
+
+    const score = parseFloat(((correctCount / questions.length) * 100).toFixed(1));
+    const result: TestResult = {
+        testId: `test_${Date.now()}`, userId: user.id, examId, answers, score, correctCount,
+        totalQuestions: questions.length, timestamp: Date.now(), review
+    };
+
+    const localResults = getLocalResults(user);
+    localResults[result.testId] = result;
+    saveLocalResults(user, localResults);
+
+    apiFetch('/submit-result', token, { method: 'POST', body: JSON.stringify(result) })
+      .catch(err => toast.error("Result saved locally but failed to sync to server."));
+
+    return result;
+};
+
+const getCertificateData = async (token: string, testId: string): Promise<CertificateData> => {
+    return apiFetch(`/certificate-data/${testId}`, token);
+};
+
+export const googleSheetsService = {
+    getAppConfig,
+    getQuestions,
+    getTestResultsForUser,
+    getTestResult,
+    submitTest,
+    getCertificateData,
+    syncResults
 };

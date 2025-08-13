@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -144,7 +143,7 @@ const Test: React.FC = () => {
 
   const handlePrev = () => {
     if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(prev => prev + 1);
+      setCurrentQuestionIndex(prev => prev - 1);
     }
   };
 
@@ -201,7 +200,12 @@ const Test: React.FC = () => {
   }
 
   if (questions.length === 0) {
-    return <div className="text-center p-8 bg-white rounded-lg shadow-md"><p>No questions available for this exam.</p></div>
+    return (
+        <div className="flex flex-col items-center justify-center h-64 bg-white rounded-lg shadow-md">
+            <h2 className="text-xl font-bold text-red-600">Error Loading Exam</h2>
+            <p className="mt-4 text-slate-600 max-w-md text-center">Could not load questions for this exam. Please check your connection or try again later. If the problem persists, contact support.</p>
+        </div>
+    );
   }
 
   const currentQuestion = questions[currentQuestionIndex];
