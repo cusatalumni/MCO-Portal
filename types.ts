@@ -3,6 +3,7 @@
 
 
 
+
 export interface User {
   id: string;
   name: string;
@@ -99,6 +100,7 @@ export interface Exam {
     passScore: number;
     certificateTemplateId: string;
     recommendedBook?: RecommendedBook;
+    recommendedBookId?: string;
     isPractice: boolean;
     productSku?: string;
     productSlug?: string;

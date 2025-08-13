@@ -1,9 +1,10 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-import { apiService } from '../services/googleSheetsService';
+import { googleSheetsService } from '../services/googleSheetsService';
 import type { Organization, RecommendedBook, Exam } from '../types';
 import toast from 'react-hot-toast';
 import { useAuth } from './AuthContext';
 import { localSuggestedBooks } from '../assets/bookData';
+
 interface AppContextType {
   organizations: Organization[];
   activeOrg: Organization | null;
@@ -26,7 +27,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     const initializeApp = async () => {
         try {
-            const initialOrgsFromApi = await apiService.getAppConfig();
+            const initialOrgsFromApi = await googleSheetsService.getAppConfig();
 
             const processOrgs = (orgs: Organization[]): Organization[] => {
                 const bookMap = new Map(localSuggestedBooks.map(book => [book.id, book]));

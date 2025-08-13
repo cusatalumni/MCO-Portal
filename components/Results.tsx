@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { apiService } from '../services/googleSheetsService';
+import { googleSheetsService } from '../services/googleSheetsService';
 import type { TestResult, Exam, RecommendedBook } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
@@ -12,7 +12,7 @@ import BookCover from './BookCover';
 const Results: React.FC = () => {
     const { testId } = useParams<{ testId: string }>();
     const navigate = useNavigate();
-    const { user, token } = useAuth();
+    const { user } = useAuth();
     const { activeOrg } = useAppContext();
     
     const [result, setResult] = useState<TestResult | null>(null);
@@ -20,8 +20,8 @@ const Results: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        if (!testId || !user || !activeOrg || !token) {
-            if(!token) toast.error("Authentication session has expired.");
+        if (!testId || !user || !activeOrg) {
+            if(!user) toast.error("Authentication session has expired.");
             else toast.error("Required data is missing.");
             navigate('/dashboard');
             return;
@@ -30,7 +30,7 @@ const Results: React.FC = () => {
         const fetchResultAndExam = async () => {
             setIsLoading(true);
             try {
-                const foundResult = await apiService.getTestResult(token, testId);
+                const foundResult = await googleSheetsService.getTestResult(user, testId);
                 if (foundResult) {
                     setResult(foundResult);
                     const examConfig = activeOrg.exams.find(e => e.id === foundResult.examId);
@@ -52,7 +52,7 @@ const Results: React.FC = () => {
             }
         };
         fetchResultAndExam();
-    }, [testId, user, activeOrg, navigate, token]);
+    }, [testId, user, activeOrg, navigate]);
     
     const getGeoAffiliateLink = (book: RecommendedBook): { url: string; domainName: string } => {
         const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;

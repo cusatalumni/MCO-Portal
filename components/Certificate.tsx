@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
-import { apiService } from '../services/googleSheetsService';
+import { googleSheetsService } from '../services/googleSheetsService';
 import type { CertificateData } from '../types';
 import Spinner from './Spinner';
 import { Download, ArrowLeft } from 'lucide-react';
@@ -41,15 +42,15 @@ const Certificate: React.FC = () => {
             
             setIsLoading(true);
             try {
-                const data = await apiService.getCertificateData(token, testId);
+                const data = await googleSheetsService.getCertificateData(token, testId);
                 if (data) {
                     setCertData(data);
                 } else {
                     toast.error("Certificate not earned for this test.");
                     navigate('/dashboard');
                 }
-            } catch (error) {
-                toast.error("Failed to load certificate data.");
+            } catch (error: any) {
+                toast.error(error.message || "Failed to load certificate data.");
                 navigate('/dashboard');
             } finally {
                 setIsLoading(false);
@@ -62,7 +63,7 @@ const Certificate: React.FC = () => {
     const handleDownload = async () => {
         if (!certificateRef.current) return;
         setIsDownloading(true);
-        toast.loading('Generating PDF...');
+        const toastId = toast.loading('Generating PDF...');
 
         try {
             const canvas = await html2canvas(certificateRef.current, {
@@ -75,10 +76,10 @@ const Certificate: React.FC = () => {
             
             pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
             pdf.save(`Certificate-of-Completion.pdf`);
-            toast.dismiss();
+            toast.dismiss(toastId);
             toast.success("Certificate downloaded!");
         } catch(error) {
-            toast.dismiss();
+            toast.dismiss(toastId);
             toast.error("Could not download PDF. Please try again.");
             console.error(error);
         } finally {

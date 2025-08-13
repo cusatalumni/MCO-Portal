@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { apiService } from '../services/googleSheetsService';
+import { googleSheetsService } from '../services/googleSheetsService';
 import type { Question, UserAnswer, Exam } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { useAppContext } from '../context/AppContext';
@@ -53,7 +53,7 @@ const Test: React.FC = () => {
           return;
       }
 
-      const userResults = await apiService.getTestResultsForUser(token);
+      const userResults = await googleSheetsService.getTestResultsForUser(user);
 
       if (config.isPractice) {
         if (!isSubscribed) {
@@ -84,7 +84,7 @@ const Test: React.FC = () => {
 
       try {
         setIsLoading(true);
-        const fetchedQuestions = await apiService.getQuestions(config, token);
+        const fetchedQuestions = await googleSheetsService.getQuestions(config, token);
         
         setQuestions(fetchedQuestions);
 
@@ -185,12 +185,12 @@ const Test: React.FC = () => {
             answer,
         }));
         
-        const result = await apiService.submitTest(user, examId, userAnswers, questions, token);
+        const result = await googleSheetsService.submitTest(user, examId, userAnswers, questions, token);
         toast.success("Test submitted successfully!");
         navigate(`/results/${result.testId}`);
 
-    } catch(error) {
-        toast.error("Failed to submit the test. Please try again.");
+    } catch(error: any) {
+        toast.error(error.message || "Failed to submit the test. Please try again.");
     } finally {
         setIsSubmitting(false);
     }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { apiService } from '../services/googleSheetsService';
+import { googleSheetsService } from '../services/googleSheetsService';
 import type { TestResult } from '../types';
 import Spinner from './Spinner';
 import { BookCopy, History, FlaskConical, Eye, FileText, BarChart, BadgePercent, Trophy, ArrowRight, Home, RefreshCw, Star, Zap, CheckCircle, Lock, Edit, Save, X, ShoppingCart, AlertTriangle } from 'lucide-react';
@@ -30,7 +30,7 @@ const Dashboard: React.FC = () => {
 
 
     useEffect(() => {
-        if (!user || !activeOrg || !token) {
+        if (!user || !activeOrg) {
             if (activeOrg) setIsLoading(false);
             return;
         };
@@ -38,7 +38,7 @@ const Dashboard: React.FC = () => {
             setIsLoading(true);
             setHistoryError(null);
             try {
-                const userResults = await apiService.getTestResultsForUser(token);
+                const userResults = await googleSheetsService.getTestResultsForUser(user);
                 setResults(userResults);
                 
                 if (userResults.length > 0) {
@@ -60,7 +60,7 @@ const Dashboard: React.FC = () => {
 
             } catch (error: any) {
                 console.error("Failed to fetch dashboard results:", error);
-                const errorMessage = error.message || "Could not load your exam history. Please try syncing again.";
+                const errorMessage = "Could not load your exam history.";
                 toast.error(errorMessage);
                 setHistoryError(errorMessage);
                 setResults([]);
@@ -69,7 +69,7 @@ const Dashboard: React.FC = () => {
             }
         };
         fetchResults();
-    }, [user, activeOrg, token]);
+    }, [user, activeOrg]);
 
     const handleNameSave = async () => {
         if (!name.trim()) {
@@ -287,184 +287,112 @@ const Dashboard: React.FC = () => {
                                                     <span className="text-md text-slate-500 line-through ml-2">${exam.regularPrice.toFixed(2)}</span>
                                                 </>
                                             ) : (
-                                                <span className="text-2xl font-bold text-slate-700">${exam.price.toFixed(2)}</span>
+                                                <span className="text-2xl font-bold text-cyan-600">${exam.price.toFixed(2)}</span>
                                             )}
                                         </div>
                                         <a
-                                            href={exam.productSlug ? `https://www.coding-online.net/product/${exam.productSlug}/` : '#'}
-                                            target="_blank"
+                                            href={exam.productSlug ? `#/checkout/${exam.productSlug}` : browseExamsUrl}
+                                            target={exam.productSlug ? '_self' : '_blank'}
                                             rel="noopener noreferrer"
-                                            onClick={(e) => {
-                                                if (!exam.productSlug) {
-                                                    e.preventDefault();
-                                                    toast.error("Product link is not available for this exam.");
-                                                }
-                                            }}
-                                            className={`bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-cyan-700 transition flex items-center justify-center gap-2 shrink-0 ${!exam.productSlug ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                            className="w-full sm:w-auto flex-grow flex items-center justify-center bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-cyan-700 transition"
                                         >
-                                            Purchase Now
+                                            Buy Now
                                         </a>
                                     </div>
                                 </div>
                             )) : (
                                 <div className="text-center py-6 text-slate-500">
-                                    <p>You have purchased all available certification exams.</p>
-                                    <a href={browseExamsUrl} target="_blank" rel="noopener noreferrer" className="mt-2 text-sm font-semibold text-cyan-600 hover:text-cyan-800 flex items-center justify-center gap-1 mx-auto">
-                                        Browse Our Main Store <ArrowRight size={14} />
-                                    </a>
+                                    <p>No exams available for purchase at this time.</p>
                                 </div>
                             )}
                         </div>
                     </div>
 
-                    {/* Practice Exams */}
+                    {/* Practice Exams Section */}
                     <div className="bg-white p-6 rounded-xl shadow-md">
-                        <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center"><FlaskConical className="mr-3 text-cyan-500" /> Practice Tests</h2>
-                         <div className="space-y-3">
-                            {practiceExams.length > 0 ? practiceExams.map(exam => {
-                                const canTakeTest = isSubscribed || practiceStats.attemptsTaken < 10;
-                                return (
-                                    <div key={exam.id} className="bg-slate-50 p-3 rounded-lg border border-slate-200 flex flex-col sm:flex-row justify-between items-center gap-3">
-                                        <div>
-                                            <h3 className="font-bold text-slate-700">{exam.name}</h3>
-                                            <p className="text-sm text-slate-500">{exam.numberOfQuestions} questions</p>
-                                            {isSubscribed && (
-                                                <p className="text-xs text-green-500 mt-1">Unlimited attempts available.</p>
-                                            )}
-                                        </div>
-                                        <button
-                                            onClick={() => navigate(`/test/${exam.id}`)}
-                                            disabled={!canTakeTest}
-                                            className="w-full sm:w-auto bg-slate-200 text-slate-800 font-bold py-2 px-4 rounded-lg hover:bg-slate-300 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            Start Practice
-                                        </button>
+                        <h2 className="text-xl font-bold text-slate-800 flex items-center mb-4"><FlaskConical className="mr-3 text-cyan-500" /> Free Practice Exams</h2>
+                        <div className="space-y-3">
+                            {practiceExams.map(exam => (
+                                <div key={exam.id} className="bg-slate-50 p-3 rounded-lg border border-slate-200 flex justify-between items-center">
+                                    <div>
+                                        <h3 className="font-bold text-slate-700">{exam.name}</h3>
+                                        <p className="text-sm text-slate-500">{exam.numberOfQuestions} questions</p>
                                     </div>
-                                )
-                            }) : (
-                                <p className="text-center py-6 text-slate-500">No practice exams available.</p>
-                            )}
+                                    <button
+                                        onClick={() => navigate(`/test/${exam.id}`)}
+                                        className="bg-slate-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-700 transition flex items-center"
+                                    >
+                                        <Zap size={16} className="mr-2" />
+                                        Start Practice
+                                    </button>
+                                </div>
+                            ))}
                         </div>
                     </div>
-                    
-                    {/* Exam History */}
-                     <div className="bg-white p-6 rounded-xl shadow-md">
-                        <h2 className="text-xl font-bold text-slate-800 mb-4 flex items-center"><History className="mr-3 text-cyan-500" /> Exam History</h2>
-                        <div className="overflow-x-auto">
-                            {historyError ? (
-                                <div className="text-center py-10 text-red-500 bg-red-50 rounded-lg">
-                                    <AlertTriangle className="mx-auto h-8 w-8" />
-                                    <p className="mt-2 font-semibold">{historyError}</p>
-                                </div>
-                            ) : results === null ? (
-                                <div className="flex justify-center py-10"><Spinner /></div>
-                            ) : (
-                                <table className="w-full text-left text-sm">
-                                    <thead>
-                                        <tr className="border-b bg-slate-50 text-slate-600">
-                                            <th className="p-3">Exam Name</th>
-                                            <th className="p-3">Date</th>
-                                            <th className="p-3">Score</th>
-                                            <th className="p-3">Status</th>
-                                            <th className="p-3">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {results.length > 0 ? results.map(result => {
-                                            const exam = activeOrg.exams.find(e => e.id === result.examId);
-                                            const isPass = exam ? result.score >= exam.passScore : false;
-                                            return (
-                                                <tr key={result.testId} className="border-b border-slate-100 hover:bg-slate-50">
-                                                    <td className="p-3 font-semibold">{getExamName(result.examId)}</td>
-                                                    <td className="p-3 text-slate-500">{new Date(result.timestamp).toLocaleDateString()}</td>
-                                                    <td className={`p-3 font-bold ${isPass ? 'text-green-600' : 'text-red-600'}`}>{result.score}%</td>
-                                                    <td className="p-3">
-                                                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${isPass ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                                            {isPass ? 'Passed' : 'Failed'}
-                                                        </span>
-                                                    </td>
-                                                    <td className="p-3">
-                                                        <button onClick={() => navigate(`/results/${result.testId}`)} className="text-cyan-600 hover:text-cyan-800 flex items-center text-xs">
-                                                            <Eye size={14} className="mr-1" /> Review
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            )
-                                        }) : (
-                                            <tr>
-                                                <td colSpan={5} className="text-center py-10 text-slate-500">You haven't taken any exams yet.</td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            )}
-                        </div>
-                     </div>
-                </div>
 
-                {/* Sidebar */}
-                <div className="lg:col-span-1 space-y-8">
-                    <SuggestedBooksSidebar />
-                     {/* Free Practice Status Card */}
+                    {/* History Section */}
                     <div className="bg-white p-6 rounded-xl shadow-md">
-                        <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center"><Star className="mr-2 text-yellow-500"/> Free Practice Status</h3>
-                        {isSubscribed ? (
-                            <div className="text-center p-4 bg-green-50 border border-green-200 rounded-lg">
-                                <p className="font-bold text-green-700">Pro Plan Active</p>
-                                <p className="text-sm text-green-600">You have unlimited practice attempts!</p>
+                        <h2 className="text-xl font-bold text-slate-800 flex items-center mb-4"><History className="mr-3 text-cyan-500" /> My Exam History</h2>
+                        {historyError && <p className="text-red-500">{historyError}</p>}
+                        {results && results.length > 0 ? (
+                            <div className="space-y-3">
+                                {results.slice(0, 5).map(result => (
+                                    <div key={result.testId} className="bg-slate-50 p-3 rounded-lg border border-slate-200 flex justify-between items-center">
+                                        <div>
+                                            <h3 className="font-bold text-slate-700">{getExamName(result.examId)}</h3>
+                                            <p className="text-sm text-slate-500">{new Date(result.timestamp).toLocaleDateString()}</p>
+                                        </div>
+                                        <div className="flex items-center gap-4">
+                                            <p className={`font-bold text-lg ${result.score >= (activeOrg.exams.find(e => e.id === result.examId)?.passScore || 70) ? 'text-green-600' : 'text-red-600'}`}>{result.score}%</p>
+                                            <button
+                                                onClick={() => navigate(`/results/${result.testId}`)}
+                                                className="bg-white border border-slate-300 text-slate-600 font-semibold py-2 px-4 rounded-lg hover:bg-slate-100 transition flex items-center"
+                                            >
+                                                <Eye size={16} className="mr-2" />
+                                                View
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         ) : (
-                            <div className="space-y-4">
-                                <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
-                                    <span className="font-medium text-slate-600">Attempts Taken</span>
-                                    <span className="font-bold text-slate-800 text-lg">{practiceStats.attemptsTaken}</span>
-                                </div>
-                                <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
-                                    <span className="font-medium text-slate-600">Total Attempts Allowed</span>
-                                    <span className="font-bold text-slate-800 text-lg">{practiceStats.attemptsAllowed}</span>
-                                </div>
-                                <div className="mt-4">
-                                    <button 
-                                        disabled 
-                                        className="w-full bg-slate-200 text-slate-500 font-bold py-2 px-3 rounded-lg transition text-sm flex items-center justify-center gap-2 cursor-not-allowed"
-                                        title="Subscription feature coming soon!">
-                                        <Zap size={16} /> Upgrade for Unlimited
-                                    </button>
-                                    <p className="text-xs text-center text-slate-400 mt-2">Coming Soon</p>
-                                </div>
+                            <div className="text-center py-6 text-slate-500">
+                                <p>You have not taken any exams yet.</p>
                             </div>
                         )}
                     </div>
-                    {/* Stats Card */}
+                </div>
+
+                {/* Sidebar */}
+                <div className="space-y-8">
+                    {/* Stats Section */}
                     <div className="bg-white p-6 rounded-xl shadow-md">
-                        <h3 className="text-lg font-bold text-slate-800 mb-4">At a Glance</h3>
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
-                                <span className="font-medium text-slate-600 flex items-center gap-2"><BarChart size={16}/> Exams Taken</span>
-                                <span className="font-bold text-slate-800 text-lg">{stats.examsTaken}</span>
+                        <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center"><BarChart className="mr-3 text-cyan-500" /> My Stats</h3>
+                        <div className="grid grid-cols-2 gap-4 text-center">
+                            <div>
+                                <Trophy size={24} className="mx-auto text-yellow-500 mb-1" />
+                                <p className="text-2xl font-bold text-slate-700">{stats.bestScore}%</p>
+                                <p className="text-sm text-slate-500">Best Score</p>
                             </div>
-                             <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
-                                <span className="font-medium text-slate-600 flex items-center gap-2"><BadgePercent size={16}/> Average Score</span>
-                                <span className="font-bold text-slate-800 text-lg">{stats.avgScore}%</span>
+                            <div>
+                                <BadgePercent size={24} className="mx-auto text-green-500 mb-1" />
+                                <p className="text-2xl font-bold text-slate-700">{stats.avgScore}%</p>
+                                <p className="text-sm text-slate-500">Average Score</p>
                             </div>
-                             <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
-                                <span className="font-medium text-slate-600 flex items-center gap-2"><Trophy size={16}/> Best Score</span>
-                                <span className="font-bold text-green-600 text-lg">{stats.bestScore}%</span>
+                             <div>
+                                <FileText size={24} className="mx-auto text-blue-500 mb-1" />
+                                <p className="text-2xl font-bold text-slate-700">{stats.examsTaken}</p>
+                                <p className="text-sm text-slate-500">Exams Taken</p>
+                            </div>
+                             <div>
+                                <FlaskConical size={24} className="mx-auto text-purple-500 mb-1" />
+                                <p className="text-2xl font-bold text-slate-700">{practiceStats.attemptsTaken}</p>
+                                <p className="text-sm text-slate-500">Practice Tests</p>
                             </div>
                         </div>
                     </div>
-                    {/* Actions Card */}
-                    <div className="bg-white p-6 rounded-xl shadow-md">
-                        <h3 className="text-lg font-bold text-slate-800 mb-4">Actions</h3>
-                        <div className="space-y-3">
-                             <a href={browseExamsUrl} target="_blank" rel="noopener noreferrer" className="w-full bg-cyan-600 text-white font-bold py-2 px-3 rounded-lg hover:bg-cyan-700 transition text-sm flex items-center justify-center gap-2">
-                                <Home size={16} /> Browse All Exams
-                            </a>
-                            <button onClick={() => navigate('/certificate/sample')} className="w-full bg-slate-100 text-slate-700 font-bold py-2 px-3 rounded-lg hover:bg-slate-200 transition text-sm flex items-center justify-center gap-2">
-                               <FileText size={16} /> Preview Certificate
-                            </button>
-                        </div>
-                    </div>
+                     {/* Suggested Books */}
+                    <SuggestedBooksSidebar />
                 </div>
             </div>
         </div>
