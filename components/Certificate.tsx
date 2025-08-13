@@ -11,10 +11,10 @@ import html2canvas from 'html2canvas';
 import { signatureBase64 } from '../assets/signature';
 
 const Watermark: React.FC<{ text: string }> = ({ text }) => (
-    <div className="absolute inset-0 grid grid-cols-3 grid-rows-6 gap-4 pointer-events-none overflow-hidden">
-        {Array.from({ length: 18 }).map((_, i) => (
+    <div className="absolute inset-0 grid grid-cols-3 grid-rows-4 gap-8 pointer-events-none overflow-hidden p-4">
+        {Array.from({ length: 12 }).map((_, i) => (
             <div key={i} className="flex items-center justify-center -rotate-45">
-                <p className="text-gray-400 font-bold text-3xl md:text-4xl tracking-widest opacity-20 select-none whitespace-nowrap">
+                <p className="text-gray-400 font-bold text-2xl md:text-3xl tracking-wider opacity-10 select-none text-center leading-tight">
                     {text}
                 </p>
             </div>
@@ -118,7 +118,7 @@ const Certificate: React.FC = () => {
             </div>
             
             <div ref={certificateRef} className="w-full aspect-[1.414/1] bg-white p-4 font-serif-display shadow-lg border-8 border-teal-900 relative overflow-hidden">
-                 {testId === 'sample' && <Watermark text="Draft" />}
+                 {testId === 'sample' && <Watermark text="This message is for a preview certificate" />}
                  {testId !== 'sample' && <Watermark text={organization.name} />}
                 <div className="w-full h-full border-2 border-teal-700 flex flex-col p-6">
                     
