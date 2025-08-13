@@ -207,44 +207,56 @@ function annapoorna_get_questions_from_sheet_callback($request) {
     }
 
     $body = wp_remote_retrieve_body($response);
-    $lines = explode("\n", trim($body));
-    array_walk($lines, function(&$line) { $line = trim($line); });
     
-    $header = str_getcsv(array_shift($lines));
+    // Robustly split lines, handling \n and \r\n line endings
+    $lines = preg_split('/\\r\\n|\\r|\\n/', trim($body));
+    
+    // Remove header row
+    array_shift($lines);
     
     $questions = [];
-    foreach ($lines as $line) {
+    foreach ($lines as $line_num => $line) {
         if (empty(trim($line))) continue;
+        
         $row = str_getcsv($line);
-        if(count($row) < 3) continue;
 
+        // Basic validation: must have a question, at least one option, and a correct answer.
+        if (count($row) < 3) continue;
+
+        $question_text = trim(isset($row[0]) ? $row[0] : '');
+        // The last column is the correct answer text
+        $correct_answer_text = trim(isset($row[count($row) - 1]) ? $row[count($row) - 1] : '');
+        
+        if (empty($question_text) || empty($correct_answer_text)) continue;
+
+        // Extract options (all columns between the first and the last)
         $options = [];
         for ($i = 1; $i < count($row) - 1; $i++) {
-            if (!empty(trim($row[$i]))) {
+            if (isset($row[$i]) && !empty(trim($row[$i]))) {
                 $options[] = trim($row[$i]);
             }
         }
         
-        $correct_answer_text = trim(end($row));
         $correct_answer_index = array_search($correct_answer_text, $options);
         
-        if(count($options) < 2 || $correct_answer_index === false) continue;
+        if (count($options) < 2 || $correct_answer_index === false) continue;
         
         $questions[] = [
-            'id' => count($questions) + 1,
-            'question' => trim($row[0]),
+            'id' => $line_num + 1, // Use line number for a unique-ish ID
+            'question' => $question_text,
             'options' => $options,
-            'correctAnswer' => $correct_answer_index + 1
+            'correctAnswer' => $correct_answer_index + 1 // 1-based index
         ];
     }
     
     if (empty($questions)) {
-        return new WP_Error('parse_failed', 'No valid questions could be parsed from the source.', ['status' => 500]);
+        return new WP_Error('parse_failed', 'No valid questions could be parsed from the source. Check formatting.', ['status' => 500]);
     }
 
     shuffle($questions);
     $selected_questions = array_slice($questions, 0, $count);
     
+    // Re-assign sequential IDs for the final selection
     $final_questions = [];
     foreach($selected_questions as $index => $q) {
         $q['id'] = $index + 1;
