@@ -14,13 +14,20 @@ const apiFetch = async (endpoint: string, token: string, options: RequestInit = 
     const response = await fetch(`${WP_API_BASE}${endpoint}`, { ...options, headers });
     
     if (!response.ok) {
-        let errorData;
+        let errorMessage = `API Error: Status ${response.status}`;
         try {
-            errorData = await response.json();
+            const errorData = await response.json();
+            if (errorData && errorData.message) {
+                errorMessage = errorData.message;
+            }
         } catch (e) {
-            errorData = { message: 'An unknown error occurred during the API request.' };
+            errorMessage = `Server returned a non-JSON error (status ${response.status}). Check server logs.`;
         }
-        throw new Error(errorData.message || `API request failed with status ${response.status}`);
+        
+        if (response.status === 403) {
+            errorMessage += " This is often caused by an invalid or expired token, or a misconfigured JWT Secret Key in your WordPress settings.";
+        }
+        throw new Error(errorMessage);
     }
     
     if (response.status === 204) return null; // Handle No Content responses
@@ -88,7 +95,7 @@ export const googleSheetsService = {
             localStorage.setItem(`exam_results_${user.id}`, JSON.stringify(resultsMap));
         } catch (error: any) {
             console.error("Failed to sync remote results:", error);
-            const errorMessage = error.message || "Could not sync your latest results from the server.";
+            const errorMessage = error.message || "Could not connect to the server. Please check your network connection.";
             toast.error(errorMessage);
         }
     },
@@ -128,7 +135,7 @@ export const googleSheetsService = {
                 return sheetQuestions;
             }
 
-            // Case 2: Generate with Gemini API
+            // Case 2: Generate with Gemini API (Now a fallback, should not be hit with current config)
             if (!process.env.API_KEY) throw new Error("Configuration Error: API_KEY not found.");
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
