@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useHistory } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { apiService } from '../services/googleSheetsService';
 import type { TestResult, Exam, RecommendedBook } from '../types';
@@ -11,7 +11,7 @@ import BookCover from './BookCover';
 
 const Results: React.FC = () => {
     const { testId } = useParams<{ testId: string }>();
-    const history = useHistory();
+    const navigate = useNavigate();
     const { user, token } = useAuth();
     const { activeOrg } = useAppContext();
     
@@ -23,7 +23,7 @@ const Results: React.FC = () => {
         if (!testId || !user || !activeOrg || !token) {
             if(!token) toast.error("Authentication session has expired.");
             else toast.error("Required data is missing.");
-            history.push('/dashboard');
+            navigate('/dashboard');
             return;
         }
 
@@ -38,21 +38,21 @@ const Results: React.FC = () => {
                         setExam(examConfig);
                     } else {
                         toast.error("Could not find the configuration for this exam.");
-                        history.push('/dashboard');
+                        navigate('/dashboard');
                     }
                 } else {
                     toast.error("Could not find your test results.");
-                    history.push('/dashboard');
+                    navigate('/dashboard');
                 }
             } catch (error) {
                 toast.error("Failed to load results.");
-                history.push('/dashboard');
+                navigate('/dashboard');
             } finally {
                 setIsLoading(false);
             }
         };
         fetchResultAndExam();
-    }, [testId, user, activeOrg, history, token]);
+    }, [testId, user, activeOrg, navigate, token]);
     
     const getGeoAffiliateLink = (book: RecommendedBook): { url: string; domainName: string } => {
         const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -100,7 +100,7 @@ const Results: React.FC = () => {
             {(isPaid && isPass) && (
                 <div className="text-center mb-8">
                     <button
-                        onClick={() => history.push(`/certificate/${result.testId}`)}
+                        onClick={() => navigate(`/certificate/${result.testId}`)}
                         className="inline-flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105"
                     >
                         <FileDown size={20} />
@@ -112,7 +112,7 @@ const Results: React.FC = () => {
             {isAdmin && (
                 <div className="text-center mb-8">
                     <button
-                        onClick={() => history.push(`/certificate/${result.testId}`)}
+                        onClick={() => navigate(`/certificate/${result.testId}`)}
                         className="inline-flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition-transform transform hover:scale-105"
                     >
                         <ShieldCheck size={20} />
@@ -187,7 +187,7 @@ const Results: React.FC = () => {
 
             <div className="text-center mt-8">
                 <button 
-                    onClick={() => history.push('/dashboard')}
+                    onClick={() => navigate('/dashboard')}
                     className="bg-slate-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-slate-700 transition"
                 >
                     Back to Dashboard

@@ -49,9 +49,6 @@ const LandingPage: React.FC = () => {
                     Login
                 </a>
             </div>
-             <p className="mt-8 text-slate-500">
-                Need help with setup? Check out the <Link to="/integration" className="text-cyan-600 hover:underline">WordPress Integration</Link> instructions.
-            </p>
         </div>
     );
 };
