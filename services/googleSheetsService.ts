@@ -41,21 +41,23 @@ const EXAM_PRODUCT_CATEGORIES: ExamProductCategory[] = [
     { id: 'prod-billing', name: 'Medical Billing', description: 'A test series covering the essentials of medical billing and reimbursement.', practiceExamId: 'exam-billing-practice', certificationExamId: 'exam-billing-cert' }
 ];
 
+const DEFAULT_QUESTION_URL = 'https://docs.google.com/spreadsheets/d/1vQZ7Jz2F_2l8t8_1qA8Pz4N7w_9j_9hL2K5e_8sF9cE/edit?usp=sharing';
+
 const ALL_EXAMS: Exam[] = [
     // Practice Exams
-    { id: 'exam-cpc-practice', name: 'CPC Practice Test', description: 'A short practice test to prepare for the CPC certification.', price: 0, productSku: 'exam-cpc-practice', numberOfQuestions: 10, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: true, durationMinutes: 25, questionSourceUrl: 'https://docs.google.com/spreadsheets/d/1vQZ7Jz2F_2l8t8_1qA8Pz4N7w_9j_9hL2K5e_8sF9cE/edit?usp=sharing' },
-    { id: 'exam-cca-practice', name: 'CCA Practice Test', description: 'A short practice test for the Certified Coding Associate exam.', price: 0, productSku: 'exam-cca-practice', numberOfQuestions: 10, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: true, durationMinutes: 25, questionSourceUrl: '' },
-    { id: 'exam-billing-practice', name: 'Medical Billing Practice Test', description: 'A short practice test for medical billing concepts.', price: 0, productSku: 'exam-billing-practice', numberOfQuestions: 10, passScore: 70, certificateTemplateId: 'cert-mco-2', isPractice: true, durationMinutes: 20, questionSourceUrl: '' },
-    { id: 'exam-ccs-practice', name: 'CCS Practice Test', description: 'Practice for the Certified Coding Specialist exam.', price: 0, productSku: 'exam-ccs-practice', numberOfQuestions: 10, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: true, durationMinutes: 25, questionSourceUrl: '' },
-    { id: 'exam-risk-practice', name: 'Risk Adjustment Practice Test', description: 'Practice for the Risk Adjustment (CRC) exam.', price: 0, productSku: 'exam-risk-practice', numberOfQuestions: 10, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: true, durationMinutes: 25, questionSourceUrl: '' },
-    { id: 'exam-icd-practice', name: 'ICD-10-CM Practice Test', description: 'Practice for the ICD-10-CM proficiency exam.', price: 0, productSku: 'exam-icd-practice', numberOfQuestions: 10, passScore: 75, certificateTemplateId: 'cert-mco-1', isPractice: true, durationMinutes: 20, questionSourceUrl: '' },
+    { id: 'exam-cpc-practice', name: 'CPC Practice Test', description: 'A short practice test to prepare for the CPC certification.', price: 0, productSku: 'exam-cpc-practice', numberOfQuestions: 10, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: true, durationMinutes: 25, questionSourceUrl: DEFAULT_QUESTION_URL },
+    { id: 'exam-cca-practice', name: 'CCA Practice Test', description: 'A short practice test for the Certified Coding Associate exam.', price: 0, productSku: 'exam-cca-practice', numberOfQuestions: 10, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: true, durationMinutes: 25, questionSourceUrl: DEFAULT_QUESTION_URL },
+    { id: 'exam-billing-practice', name: 'Medical Billing Practice Test', description: 'A short practice test for medical billing concepts.', price: 0, productSku: 'exam-billing-practice', numberOfQuestions: 10, passScore: 70, certificateTemplateId: 'cert-mco-2', isPractice: true, durationMinutes: 20, questionSourceUrl: DEFAULT_QUESTION_URL },
+    { id: 'exam-ccs-practice', name: 'CCS Practice Test', description: 'Practice for the Certified Coding Specialist exam.', price: 0, productSku: 'exam-ccs-practice', numberOfQuestions: 10, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: true, durationMinutes: 25, questionSourceUrl: DEFAULT_QUESTION_URL },
+    { id: 'exam-risk-practice', name: 'Risk Adjustment Practice Test', description: 'Practice for the Risk Adjustment (CRC) exam.', price: 0, productSku: 'exam-risk-practice', numberOfQuestions: 10, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: true, durationMinutes: 25, questionSourceUrl: DEFAULT_QUESTION_URL },
+    { id: 'exam-icd-practice', name: 'ICD-10-CM Practice Test', description: 'Practice for the ICD-10-CM proficiency exam.', price: 0, productSku: 'exam-icd-practice', numberOfQuestions: 10, passScore: 75, certificateTemplateId: 'cert-mco-1', isPractice: true, durationMinutes: 20, questionSourceUrl: DEFAULT_QUESTION_URL },
     // Certification Exams
-    { id: 'exam-cpc-cert', name: 'CPC Certification Exam', description: 'Full certification exam for Certified Professional Coder.', price: 150, regularPrice: 150, productSku: 'exam-cpc-cert', productSlug: 'exam-cpc-cert', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: false, durationMinutes: 240, questionSourceUrl: '', recommendedBookId: 'book-cpc-guide' },
-    { id: 'exam-cca-cert', name: 'CCA Certification Exam', description: 'Full certification exam for Certified Coding Associate.', price: 120, regularPrice: 120, productSku: 'exam-cca-cert', productSlug: 'exam-cca-cert', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: false, durationMinutes: 180, questionSourceUrl: '', recommendedBookId: 'book-step-by-step' },
-    { id: 'exam-ccs-cert', name: 'CCS Certification Exam', description: 'Full certification exam for Certified Coding Specialist.', price: 160, regularPrice: 160, productSku: 'exam-ccs-cert', productSlug: 'exam-ccs-cert', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: false, durationMinutes: 240, questionSourceUrl: '', recommendedBookId: 'book-icd10-cm' },
-    { id: 'exam-billing-cert', name: 'Medical Billing Certification Exam', description: 'Comprehensive exam covering medical billing and reimbursement.', price: 100, regularPrice: 100, productSku: 'exam-billing-cert', productSlug: 'exam-billing-cert', numberOfQuestions: 100, passScore: 75, certificateTemplateId: 'cert-mco-2', isPractice: false, durationMinutes: 150, questionSourceUrl: '', recommendedBookId: 'book-medical-billing' },
-    { id: 'exam-risk-cert', name: 'Risk Adjustment (CRC) Certification Exam', description: 'Exam for Certified Risk Adjustment Coder.', price: 150, regularPrice: 150, productSku: 'exam-risk-cert', productSlug: 'exam-risk-cert', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: false, durationMinutes: 240, questionSourceUrl: '', recommendedBookId: 'book-cpc-guide' },
-    { id: 'exam-icd-cert', name: 'ICD-10-CM Certification Exam', description: 'Proficiency exam for ICD-10-CM coding.', price: 90, regularPrice: 90, productSku: 'exam-icd-cert', productSlug: 'exam-icd-cert', numberOfQuestions: 100, passScore: 75, certificateTemplateId: 'cert-mco-1', isPractice: false, durationMinutes: 120, questionSourceUrl: '', recommendedBookId: 'book-icd10-cm' }
+    { id: 'exam-cpc-cert', name: 'CPC Certification Exam', description: 'Full certification exam for Certified Professional Coder.', price: 150, regularPrice: 150, productSku: 'exam-cpc-cert', productSlug: 'exam-cpc-cert', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: false, durationMinutes: 240, questionSourceUrl: DEFAULT_QUESTION_URL, recommendedBookId: 'book-cpc-guide' },
+    { id: 'exam-cca-cert', name: 'CCA Certification Exam', description: 'Full certification exam for Certified Coding Associate.', price: 120, regularPrice: 120, productSku: 'exam-cca-cert', productSlug: 'exam-cca-cert', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: false, durationMinutes: 180, questionSourceUrl: DEFAULT_QUESTION_URL, recommendedBookId: 'book-step-by-step' },
+    { id: 'exam-ccs-cert', name: 'CCS Certification Exam', description: 'Full certification exam for Certified Coding Specialist.', price: 160, regularPrice: 160, productSku: 'exam-ccs-cert', productSlug: 'exam-ccs-cert', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: false, durationMinutes: 240, questionSourceUrl: DEFAULT_QUESTION_URL, recommendedBookId: 'book-icd10-cm' },
+    { id: 'exam-billing-cert', name: 'Medical Billing Certification Exam', description: 'Comprehensive exam covering medical billing and reimbursement.', price: 100, regularPrice: 100, productSku: 'exam-billing-cert', productSlug: 'exam-billing-cert', numberOfQuestions: 100, passScore: 75, certificateTemplateId: 'cert-mco-2', isPractice: false, durationMinutes: 150, questionSourceUrl: DEFAULT_QUESTION_URL, recommendedBookId: 'book-medical-billing' },
+    { id: 'exam-risk-cert', name: 'Risk Adjustment (CRC) Certification Exam', description: 'Exam for Certified Risk Adjustment Coder.', price: 150, regularPrice: 150, productSku: 'exam-risk-cert', productSlug: 'exam-risk-cert', numberOfQuestions: 100, passScore: 70, certificateTemplateId: 'cert-mco-1', isPractice: false, durationMinutes: 240, questionSourceUrl: DEFAULT_QUESTION_URL, recommendedBookId: 'book-cpc-guide' },
+    { id: 'exam-icd-cert', name: 'ICD-10-CM Certification Exam', description: 'Proficiency exam for ICD-10-CM coding.', price: 90, regularPrice: 90, productSku: 'exam-icd-cert', productSlug: 'exam-icd-cert', numberOfQuestions: 100, passScore: 75, certificateTemplateId: 'cert-mco-1', isPractice: false, durationMinutes: 120, questionSourceUrl: DEFAULT_QUESTION_URL, recommendedBookId: 'book-icd10-cm' }
 ];
 
 const ORGANIZATIONS: Organization[] = [
@@ -84,9 +86,10 @@ export const googleSheetsService = {
             }, {} as { [key: string]: TestResult });
 
             localStorage.setItem(`exam_results_${user.id}`, JSON.stringify(resultsMap));
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to sync remote results:", error);
-            toast.error("Could not sync your latest results from the server.");
+            const errorMessage = error.message || "Could not sync your latest results from the server.";
+            toast.error(errorMessage);
         }
     },
 
@@ -113,7 +116,7 @@ export const googleSheetsService = {
     
     // --- QUESTION GENERATION ---
     getQuestions: async (exam: Exam, token: string): Promise<Question[]> => {
-        const toastId = toast.loading(`Generating questions for "${exam.name}"...`);
+        const toastId = toast.loading(`Loading questions for "${exam.name}"...`);
         try {
             // Case 1: Fetch from Google Sheets via WordPress backend
             if (exam.questionSourceUrl) {
