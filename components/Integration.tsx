@@ -1,527 +1,291 @@
+
 import React from 'react';
 import toast from 'react-hot-toast';
 
 const Integration: React.FC = () => {
 
-    const phpCode = `
-<?php
+    const phpCode = `<?php
 /**
- * Plugin Name: Medical Coding Online Exam App Integration
- * Description: Integrates the React-based examination app with WordPress, handling user authentication (SSO), WooCommerce purchases, and results synchronization.
- * Version: 4.1
- * Author: Annapoorna Infotech
+ * Plugin Name:       Question Bank Test Display
+ * Description:       Fetches a single question from a Google Sheet and displays it on a page via a shortcode for testing purposes.
+ * Version:           1.0.1
+ * Author:            Your World-Class Senior Frontend Engineer
  */
 
-// --- CONFIGURATION ---
-define('ANNAPOORNA_LOGIN_SLUG', 'exam-login');
-define('ANNAPOORNA_EXAM_APP_URL', 'https://exams.coding-online.net/');
-define('ANNAPOORNA_EXAM_APP_TEST_URL', 'https://mco-exam-jkfzdt3bj-manoj-balakrishnans-projects-aa177a85.vercel.app/');
-
-// IMPORTANT: Define a secure, random key in wp-config.php. It must be at least 32 characters.
-// define('ANNAPOORNA_JWT_SECRET', 'your-very-strong-secret-key-that-is-long-and-random');
-// define('ANNAPOORNA_DEBUG', true); // Add for debug logging
-// --- END CONFIGURATION ---
-
-// --- CORS HANDLING ---
-add_action( 'rest_api_init', function() {
-    remove_filter( 'rest_pre_serve_request', 'rest_send_cors_headers' );
-    add_filter( 'rest_pre_serve_request', function( $value ) {
-        header( 'Access-Control-Allow-Origin: *' );
-        header( 'Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS' );
-        header( 'Access-Control-Allow-Headers: Authorization, X-WP-Nonce, Content-Type' );
-        if ( 'OPTIONS' === $_SERVER['REQUEST_METHOD'] ) {
-            status_header( 200 );
-            exit();
-        }
-        return $value;
-    });
-}, 15 );
-
-add_action('init', 'annapoorna_exam_app_init');
-function annapoorna_exam_app_init() {
-    add_action('admin_notices', 'annapoorna_check_dependencies');
-    add_action('admin_menu', 'annapoorna_exam_add_admin_menu');
-    add_action('admin_init', 'annapoorna_exam_register_settings');
-    add_action('woocommerce_thankyou', 'annapoorna_redirect_after_purchase', 10, 1);
-    add_action('rest_api_init', 'annapoorna_exam_register_rest_api');
-    add_action('register_form', 'annapoorna_exam_add_custom_registration_fields');
-    add_action('user_register', 'annapoorna_exam_save_reg_fields');
-    
-    add_filter('registration_errors', 'annapoorna_exam_validate_reg_fields', 10, 3);
-    add_filter('login_url', 'annapoorna_exam_login_url', 10, 2);
-    
-    add_shortcode('exam_portal_login', 'annapoorna_exam_login_shortcode');
-    add_shortcode('exam_app_showcase', 'annapoorna_exam_showcase_shortcode');
+if ( ! defined( 'ABSPATH' ) ) {
+    exit; // Exit if accessed directly.
 }
 
-function annapoorna_debug_log($message) { if (defined('ANNAPOORNA_DEBUG') && ANNAPOORNA_DEBUG) error_log('Exam App Debug: ' . print_r($message, true)); }
-function annapoorna_check_dependencies() { if (!class_exists('WooCommerce')) echo '<div class="notice notice-error"><p><strong>Exam App Integration:</strong> WooCommerce is not active. Exam purchasing and pricing features will not work.</p></div>'; }
-function annapoorna_exam_add_admin_menu() { add_options_page('Exam App Settings', 'Exam App Settings', 'manage_options', 'exam-app-settings', 'annapoorna_exam_settings_page_html'); }
-function annapoorna_exam_register_settings() { register_setting('annapoorna_exam_app_settings_group', 'annapoorna_exam_app_mode'); }
-function annapoorna_exam_settings_page_html() { if (!current_user_can('manage_options')) return; ?>
-    <div class="wrap"><h1><?php echo esc_html(get_admin_page_title()); ?></h1><p>This setting controls which version of the exam application is used for admin redirects.</p><form action="options.php" method="post"><?php settings_fields('annapoorna_exam_app_settings_group'); ?><table class="form-table"><tr><th scope="row">Application Mode for Admins</th><td><fieldset><label><input type="radio" name="annapoorna_exam_app_mode" value="production" <?php checked(get_option('annapoorna_exam_app_mode'), 'production'); ?> /> Production</label><br/><label><input type="radio" name="annapoorna_exam_app_mode" value="test" <?php checked(get_option('annapoorna_exam_app_mode', 'test'), 'test'); ?> /> Test</label></fieldset></td></tr></table><?php submit_button('Save Settings'); ?></form></div><?php }
-function annapoorna_get_exam_app_url($is_admin = false) { if ($is_admin) return get_option('annapoorna_exam_app_mode', 'test') === 'production' ? ANNAPOORNA_EXAM_APP_URL : ANNAPOORNA_EXAM_APP_TEST_URL; return ANNAPOORNA_EXAM_APP_URL; }
+// 1. Add Admin Menu for Settings
+add_action('admin_menu', 'mco_question_test_add_admin_menu');
+add_action('admin_init', 'mco_question_test_settings_init');
 
-// --- DATA SOURCE ---
-function annapoorna_get_all_app_data() {
-    static $app_data = null;
-    if ($app_data !== null) {
-        return $app_data;
+function mco_question_test_add_admin_menu() {
+    add_options_page(
+        'Question Bank Settings',
+        'Question Bank Test',
+        'manage_options',
+        'mco_question_bank_test',
+        'mco_question_test_options_page'
+    );
+}
+
+function mco_question_test_settings_init() {
+    register_setting('mcoQuestionTestPage', 'mco_question_test_settings');
+
+    add_settings_section(
+        'mco_question_test_page_section',
+        __('Google Sheet Configuration', 'wordpress'),
+        null,
+        'mcoQuestionTestPage'
+    );
+
+    add_settings_field(
+        'mco_question_sheet_url',
+        __('Question Source URL', 'wordpress'),
+        'mco_question_sheet_url_render',
+        'mcoQuestionTestPage',
+        'mco_question_test_page_section'
+    );
+}
+
+function mco_question_sheet_url_render() {
+    $options = get_option('mco_question_test_settings');
+    $url = isset($options['mco_question_sheet_url']) ? $options['mco_question_sheet_url'] : 'https://docs.google.com/spreadsheets/d/10QGeiupsw6KtW9613v1yj03SYtzf3rDCEu-hbgQUwgs/edit?usp=sharing';
+    ?>
+    <input type='text' name='mco_question_test_settings[mco_question_sheet_url]' value="<?php echo esc_attr($url); ?>" style="width: 100%; max-width: 600px;">
+    <p class="description">Enter the full URL of the public Google Sheet. The sheet must have columns: Question, Option1, Option2, Option3, Option4, CorrectAnswer.</p>
+    <?php
+}
+
+function mco_question_test_options_page() {
+    ?>
+    <div class="wrap">
+        <h1>Question Bank API Test</h1>
+        <form action='options.php' method='post'>
+            <?php
+            settings_fields('mcoQuestionTestPage');
+            do_settings_sections('mcoQuestionTestPage');
+            submit_button();
+            ?>
+        </form>
+        <hr />
+        <?php mco_run_question_source_test(); ?>
+    </div>
+    <?php
+}
+
+// 2. Function to fetch and parse questions (Improved for robustness)
+function mco_fetch_and_parse_questions() {
+    $options = get_option('mco_question_test_settings');
+    $sheet_url = isset($options['mco_question_sheet_url']) ? $options['mco_question_sheet_url'] : '';
+
+    if (empty($sheet_url)) {
+        return new WP_Error('no_url', 'Google Sheet URL is not configured in Settings > Question Bank Test.');
     }
 
-    $CERTIFICATE_TEMPLATES = [
-        ['id' => 'cert-mco-1', 'title' => 'Medical Coding Proficiency', 'body' => 'For successfully demonstrating proficiency in medical coding principles and practices with a final score of <strong>{finalScore}%</strong>. This achievement certifies the holder\\'s competence in the standards required for this certification.', 'signature1Name' => 'Dr. Amelia Reed', 'signature1Title' => 'Program Director', 'signature2Name' => 'B. Manoj', 'signature2Title' => 'Chief Instructor'],
-        ['id' => 'cert-mco-2', 'title' => 'Advanced Specialty Coding', 'body' => 'Awarded for exceptional performance and mastery in advanced specialty coding topics, achieving a score of <strong>{finalScore}%</strong>. This signifies a high level of expertise and dedication to the field.', 'signature1Name' => 'Dr. Amelia Reed', 'signature1Title' => 'Program Director', 'signature2Name' => 'B. Manoj', 'signature2Title' => 'Chief Instructor']
-    ];
-    
-    $EXAM_PRODUCT_CATEGORIES = [
-        ['id' => 'prod-cpc', 'name' => 'CPC', 'description' => 'A test series designed to prepare you for the AAPC CPC (Certified Professional Coder) exam.', 'practiceExamId' => 'exam-cpc-practice', 'certificationExamId' => 'exam-cpc-cert'],
-        ['id' => 'prod-cca', 'name' => 'CCA', 'description' => 'A test series for the AHIMA CCA (Certified Coding Associate) credential.', 'practiceExamId' => 'exam-cca-practice', 'certificationExamId' => 'exam-cca-cert'],
-        ['id' => 'prod-billing', 'name' => 'Medical Billing', 'description' => 'A test series covering the essentials of medical billing and reimbursement.', 'practiceExamId' => 'exam-billing-practice', 'certificationExamId' => 'exam-billing-cert']
-    ];
-
-    $DEFAULT_QUESTION_URL = 'https://docs.google.com/spreadsheets/d/10QGeiupsw6KtW9613v1yj03SYtzf3rDCEu-hbgQUwgs/edit?usp=sharing';
-
-    $ALL_EXAMS = [
-        // Practice Exams
-        ['id' => 'exam-cpc-practice', 'name' => 'CPC Practice Test', 'description' => 'A short practice test to prepare for the CPC certification.', 'price' => 0, 'productSku' => 'exam-cpc-practice', 'numberOfQuestions' => 10, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 25, 'questionSourceUrl' => $DEFAULT_QUESTION_URL],
-        ['id' => 'exam-cca-practice', 'name' => 'CCA Practice Test', 'description' => 'A short practice test for the Certified Coding Associate exam.', 'price' => 0, 'productSku' => 'exam-cca-practice', 'numberOfQuestions' => 10, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 25, 'questionSourceUrl' => $DEFAULT_QUESTION_URL],
-        ['id' => 'exam-billing-practice', 'name' => 'Medical Billing Practice Test', 'description' => 'A short practice test for medical billing concepts.', 'price' => 0, 'productSku' => 'exam-billing-practice', 'numberOfQuestions' => 10, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-2', 'isPractice' => true, 'durationMinutes' => 20, 'questionSourceUrl' => $DEFAULT_QUESTION_URL],
-        ['id' => 'exam-ccs-practice', 'name' => 'CCS Practice Test', 'description' => 'Practice for the Certified Coding Specialist exam.', 'price' => 0, 'productSku' => 'exam-ccs-practice', 'numberOfQuestions' => 10, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 25, 'questionSourceUrl' => $DEFAULT_QUESTION_URL],
-        ['id' => 'exam-risk-practice', 'name' => 'Risk Adjustment Practice Test', 'description' => 'Practice for the Risk Adjustment (CRC) exam.', 'price' => 0, 'productSku' => 'exam-risk-practice', 'numberOfQuestions' => 10, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 25, 'questionSourceUrl' => $DEFAULT_QUESTION_URL],
-        ['id' => 'exam-icd-practice', 'name' => 'ICD-10-CM Practice Test', 'description' => 'Practice for the ICD-10-CM proficiency exam.', 'price' => 0, 'productSku' => 'exam-icd-practice', 'numberOfQuestions' => 10, 'passScore' => 75, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => true, 'durationMinutes' => 20, 'questionSourceUrl' => $DEFAULT_QUESTION_URL],
-        // Certification Exams
-        ['id' => 'exam-cpc-cert', 'name' => 'CPC Certification Exam', 'description' => 'Full certification exam for Certified Professional Coder.', 'price' => 150, 'regularPrice' => 150, 'productSku' => 'exam-cpc-cert', 'productSlug' => 'exam-cpc-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 240, 'questionSourceUrl' => $DEFAULT_QUESTION_URL, 'recommendedBookId' => 'book-cpc-guide'],
-        ['id' => 'exam-cca-cert', 'name' => 'CCA Certification Exam', 'description' => 'Full certification exam for Certified Coding Associate.', 'price' => 120, 'regularPrice' => 120, 'productSku' => 'exam-cca-cert', 'productSlug' => 'exam-cca-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 180, 'questionSourceUrl' => $DEFAULT_QUESTION_URL, 'recommendedBookId' => 'book-step-by-step'],
-        ['id' => 'exam-ccs-cert', 'name' => 'CCS Certification Exam', 'description' => 'Full certification exam for Certified Coding Specialist.', 'price' => 160, 'regularPrice' => 160, 'productSku' => 'exam-ccs-cert', 'productSlug' => 'exam-ccs-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 240, 'questionSourceUrl' => $DEFAULT_QUESTION_URL, 'recommendedBookId' => 'book-icd10-cm'],
-        ['id' => 'exam-billing-cert', 'name' => 'Medical Billing Certification Exam', 'description' => 'Comprehensive exam covering medical billing and reimbursement.', 'price' => 100, 'regularPrice' => 100, 'productSku' => 'exam-billing-cert', 'productSlug' => 'exam-billing-cert', 'numberOfQuestions' => 100, 'passScore' => 75, 'certificateTemplateId' => 'cert-mco-2', 'isPractice' => false, 'durationMinutes' => 150, 'questionSourceUrl' => $DEFAULT_QUESTION_URL, 'recommendedBookId' => 'book-medical-billing'],
-        ['id' => 'exam-risk-cert', 'name' => 'Risk Adjustment (CRC) Certification Exam', 'description' => 'Exam for Certified Risk Adjustment Coder.', 'price' => 150, 'regularPrice' => 150, 'productSku' => 'exam-risk-cert', 'productSlug' => 'exam-risk-cert', 'numberOfQuestions' => 100, 'passScore' => 70, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 240, 'questionSourceUrl' => $DEFAULT_QUESTION_URL, 'recommendedBookId' => 'book-cpc-guide'],
-        ['id' => 'exam-icd-cert', 'name' => 'ICD-10-CM Certification Exam', 'description' => 'Proficiency exam for ICD-10-CM coding.', 'price' => 90, 'regularPrice' => 90, 'productSku' => 'exam-icd-cert', 'productSlug' => 'exam-icd-cert', 'numberOfQuestions' => 100, 'passScore' => 75, 'certificateTemplateId' => 'cert-mco-1', 'isPractice' => false, 'durationMinutes' => 120, 'questionSourceUrl' => $DEFAULT_QUESTION_URL, 'recommendedBookId' => 'book-icd10-cm']
-    ];
-
-    $app_data = [
-        [
-            'id' => 'org-mco', 'name' => 'Medical Coding Online', 'website' => 'www.coding-online.net',
-            'logo' => '',
-            'exams' => $ALL_EXAMS,
-            'examProductCategories' => $EXAM_PRODUCT_CATEGORIES,
-            'certificateTemplates' => $CERTIFICATE_TEMPLATES,
-        ]
-    ];
-    return $app_data;
-}
-
-function annapoorna_exam_get_payload($user_id) {
-    if (!$user = get_userdata($user_id)) return null;
-    $user_full_name = trim($user->first_name . ' ' . $user->last_name) ?: $user->display_name;
-    $paid_exam_ids = []; $exam_prices = new stdClass();
-    
-    if (class_exists('WooCommerce')) {
-        $all_exam_skus_raw = annapoorna_get_all_app_data()[0]['exams'];
-        $all_exam_skus = array_column(array_filter($all_exam_skus_raw, function($e) { return !$e['isPractice'] && isset($e['productSku']); }), 'productSku');
-        
-        $exam_prices = get_transient('annapoorna_exam_prices');
-        if (false === $exam_prices) {
-            annapoorna_debug_log('Exam prices cache miss. Fetching from DB.');
-            $exam_prices = new stdClass();
-            foreach ($all_exam_skus as $sku) {
-                if (($product_id = wc_get_product_id_by_sku($sku)) && ($product = wc_get_product($product_id))) {
-                    $price = (float) $product->get_price();
-                    $regular_price = (float) $product->get_regular_price();
-                    if ($regular_price > $price) {
-                        $exam_prices->{$sku} = ['price' => $price, 'regularPrice' => $regular_price];
-                    } else {
-                        $exam_prices->{$sku} = ['price' => $price, 'regularPrice' => $price];
-                    }
-                }
-            }
-            set_transient('annapoorna_exam_prices', $exam_prices, 12 * HOUR_IN_SECONDS);
-        }
-
-        $customer_orders = wc_get_orders(['customer' => $user_id, 'status' => ['wc-completed', 'wc-processing'], 'limit' => -1]);
-        $purchased_skus = [];
-        if ($customer_orders) {
-            foreach ($customer_orders as $order) {
-                foreach ($order->get_items() as $item) {
-                    $product = $item->get_product();
-                    if ($product && $product->get_sku()) $purchased_skus[] = $product->get_sku();
-                }
-            }
-        }
-        $paid_exam_ids = array_values(array_intersect($all_exam_skus, array_unique($purchased_skus)));
-    }
-    
-    return ['iss' => get_site_url(), 'iat' => time(), 'exp' => time() + (60 * 60 * 2), 'user' => ['id' => (string)$user->ID, 'name' => $user_full_name, 'email' => $user->user_email, 'isAdmin' => user_can($user, 'administrator')], 'paidExamIds' => array_unique($paid_exam_ids), 'examPrices' => $exam_prices];
-}
-
-function annapoorna_base64url_encode($data) { return rtrim(strtr(base64_encode($data), '+/', '-_'), '='); }
-function annapoorna_base64url_decode($data) { return base64_decode(strtr($data, '-_', '+/')); }
-function annapoorna_generate_exam_jwt($user_id) { $secret_key = defined('ANNAPOORNA_JWT_SECRET') ? ANNAPOORNA_JWT_SECRET : ''; if (empty($secret_key) || strlen($secret_key) < 32 || strpos($secret_key, 'your-very-strong-secret-key') !== false) { annapoorna_debug_log('JWT Secret is not configured or is too weak.'); return null; } if (!$payload = annapoorna_exam_get_payload($user_id)) return null; $header_b64 = annapoorna_base64url_encode(json_encode(['typ' => 'JWT', 'alg' => 'HS256'])); $payload_b64 = annapoorna_base64url_encode(json_encode($payload)); $signature = hash_hmac('sha256', "$header_b64.$payload_b64", $secret_key, true); $signature_b64 = annapoorna_base64url_encode($signature); return "$header_b64.$payload_b64.$signature_b64"; }
-function annapoorna_verify_exam_jwt($token) { $secret_key = defined('ANNAPOORNA_JWT_SECRET') ? ANNAPOORNA_JWT_SECRET : ''; if (empty($secret_key) || strlen($secret_key) < 32) return null; $parts = explode('.', $token); if (count($parts) !== 3) return null; list($header_b64, $payload_b64, $signature_b64) = $parts; $signature = annapoorna_base64url_decode($signature_b64); $expected_signature = hash_hmac('sha256', "$header_b64.$payload_b64", $secret_key, true); if (!hash_equals($expected_signature, $signature)) return null; $payload = json_decode(annapoorna_base64url_decode($payload_b64), true); return (isset($payload['exp']) && $payload['exp'] < time()) ? null : $payload; }
-function annapoorna_redirect_after_purchase($order_id) { if (!$order_id || !($order = wc_get_order($order_id)) || !($user_id = $order->get_customer_id())) return; if ($user_id > 0 && $order->has_status(['completed', 'processing', 'on-hold'])) { if (function_exists('WC') && WC()->cart) WC()->cart->empty_cart(); if ($token = annapoorna_generate_exam_jwt($user_id)) { wp_redirect(annapoorna_get_exam_app_url(user_can($user_id, 'administrator')) . '#/auth?token=' . $token . '&redirect_to=/dashboard'); exit; } } }
-
-function annapoorna_exam_register_rest_api() {
-    register_rest_route('exam-app/v1', '/app-config', ['methods' => 'GET', 'callback' => 'annapoorna_get_app_config_callback', 'permission_callback' => '__return_true']);
-    register_rest_route('exam-app/v1', '/user-results', ['methods' => 'GET', 'callback' => 'annapoorna_get_user_results_callback', 'permission_callback' => 'annapoorna_exam_api_permission_check']);
-    register_rest_route('exam-app/v1', '/result/(?P<test_id>[\\w-]+)', ['methods' => 'GET', 'callback' => 'annapoorna_get_single_result_callback', 'permission_callback' => 'annapoorna_exam_api_permission_check']);
-    register_rest_route('exam-app/v1', '/certificate-data/(?P<test_id>[\\w-]+)', ['methods' => 'GET', 'callback' => 'annapoorna_get_certificate_data_callback', 'permission_callback' => 'annapoorna_exam_api_permission_check']);
-    register_rest_route('exam-app/v1', '/update-name', ['methods' => 'POST', 'callback' => 'annapoorna_exam_update_user_name_callback', 'permission_callback' => 'annapoorna_exam_api_permission_check']);
-    register_rest_route('exam-app/v1', '/submit-result', ['methods' => 'POST', 'callback' => 'annapoorna_exam_submit_result_callback', 'permission_callback' => 'annapoorna_exam_api_permission_check']);
-    register_rest_route('exam-app/v1', '/questions-from-sheet', ['methods' => 'POST', 'callback' => 'annapoorna_get_questions_from_sheet_callback', 'permission_callback' => 'annapoorna_exam_api_permission_check']);
-}
-
-function annapoorna_exam_api_permission_check($request) {
-    $token = $request->get_header('Authorization');
-    if (!$token || !preg_match('/Bearer\\s(\\S+)/', $token, $matches)) return new WP_Error('jwt_missing', 'Authorization token not found.', ['status' => 401]);
-    $payload = annapoorna_verify_exam_jwt($matches[1]);
-    if (!$payload || !isset($payload['user']['id'])) return new WP_Error('jwt_invalid', 'Invalid or expired token.', ['status' => 403]);
-    $request->set_param('jwt_user_id', $payload['user']['id']);
-    return true;
-}
-
-function annapoorna_get_app_config_callback() { return new WP_REST_Response(annapoorna_get_all_app_data(), 200); }
-
-function annapoorna_get_questions_from_sheet_callback($request) {
-    $params = $request->get_json_params();
-    $sheet_url = isset($params['sheetUrl']) ? esc_url_raw($params['sheetUrl']) : '';
-    $count = isset($params['count']) ? intval($params['count']) : 100;
-
-    if (empty($sheet_url) || !filter_var($sheet_url, FILTER_VALIDATE_URL)) {
-        return new WP_Error('invalid_url', 'Invalid or missing Google Sheet URL.', ['status' => 400]);
+    // Convert share URL to CSV export URL
+    if (preg_match('/\\/d\\/([a-zA-Z0-9-_]+)/', $sheet_url, $matches)) {
+        $sheet_id = $matches[1];
+        $csv_url = "https://docs.google.com/spreadsheets/d/{$sheet_id}/export?format=csv";
+    } else {
+        return new WP_Error('invalid_url', 'The provided URL does not appear to be a valid Google Sheet URL.');
     }
 
-    $csv_url = str_replace('/edit?usp=sharing', '/export?format=csv', $sheet_url);
-    $csv_url = str_replace('/edit#gid=', '/export?format=csv&gid=', $csv_url);
-    
     $response = wp_remote_get($csv_url, ['timeout' => 20]);
 
     if (is_wp_error($response)) {
-        annapoorna_debug_log('Failed to fetch sheet: ' . $response->get_error_message());
-        return new WP_Error('fetch_failed', 'Could not retrieve questions from the source.', ['status' => 500]);
+        return new WP_Error('fetch_failed', 'Failed to fetch data from Google Sheets. Error: ' . $response->get_error_message());
     }
     
-    $response_code = wp_remote_retrieve_response_code($response);
-    if ($response_code !== 200) {
-        annapoorna_debug_log('Google Sheet returned non-200 status: ' . $response_code);
-        return new WP_Error('fetch_failed', 'Could not access the question source. Please check the URL and permissions.', ['status' => 502]);
+    $http_code = wp_remote_retrieve_response_code($response);
+    if ($http_code != 200) {
+        return new WP_Error('fetch_failed_http', "Failed to fetch data from Google Sheets. Server responded with status code: {$http_code}. Please ensure the sheet is public ('Anyone with the link can view').");
     }
 
-    $body = wp_remote_retrieve_body($response);
-    
-    // Robustly split lines, handling \n and \r\n line endings
-    $lines = preg_split('/\\r\\n|\\r|\\n/', trim($body));
-    
-    // Remove header row
-    array_shift($lines);
-    
+    $csv_data = wp_remote_retrieve_body($response);
+    if (empty($csv_data)) {
+        return new WP_Error('empty_response', 'The Google Sheet returned no data. It might be empty.');
+    }
+
+    $lines = explode("\\n", trim($csv_data));
+    $header_line = array_shift($lines);
+    $header = array_map('trim', str_getcsv($header_line));
+
     $questions = [];
-    foreach ($lines as $line_num => $line) {
-        if (empty(trim($line))) continue;
-        
-        $row = str_getcsv($line);
+    foreach ($lines as $line) {
+        $trimmed_line = trim($line);
+        if (empty($trimmed_line)) continue;
 
-        // Basic validation: must have a question, at least one option, and a correct answer.
-        if (count($row) < 3) continue;
-
-        $question_text = trim(isset($row[0]) ? $row[0] : '');
-        // The last column is the correct answer text
-        $correct_answer_text = trim(isset($row[count($row) - 1]) ? $row[count($row) - 1] : '');
-        
-        if (empty($question_text) || empty($correct_answer_text)) continue;
-
-        // Extract options (all columns between the first and the last)
-        $options = [];
-        for ($i = 1; $i < count($row) - 1; $i++) {
-            if (isset($row[$i]) && !empty(trim($row[$i]))) {
-                $options[] = trim($row[$i]);
-            }
+        $row_data = str_getcsv($trimmed_line);
+        if (count($row_data) < count($header)) {
+            $row_data = array_pad($row_data, count($header), '');
+        }
+        if(count($header) != count($row_data)){
+            continue;
         }
         
-        $correct_answer_index = array_search($correct_answer_text, $options);
-        
-        if (count($options) < 2 || $correct_answer_index === false) continue;
-        
+        $row = array_combine($header, $row_data);
+
+        // Basic validation for a valid question row
+        if (empty($row['Question']) || empty($row['CorrectAnswer'])) {
+            continue;
+        }
+
+        $options = [];
+        if (!empty($row['Option1'])) $options[] = $row['Option1'];
+        if (!empty($row['Option2'])) $options[] = $row['Option2'];
+        if (!empty($row['Option3'])) $options[] = $row['Option3'];
+        if (!empty($row['Option4'])) $options[] = $row['Option4'];
+
+        if (count($options) < 2) continue; // Must have at least two options
+
+        $correct_answer_text = trim($row['CorrectAnswer']);
+        $correct_index = array_search($correct_answer_text, $options);
+
+        // The correct answer must be one of the options
+        if ($correct_index === false) {
+            continue;
+        }
+
         $questions[] = [
-            'id' => $line_num + 1, // Use line number for a unique-ish ID
-            'question' => $question_text,
-            'options' => $options,
-            'correctAnswer' => $correct_answer_index + 1 // 1-based index
+            'question' => trim($row['Question']),
+            'options'  => array_map('trim', $options),
+            'correct'  => $correct_index, // 0-based index
         ];
     }
     
     if (empty($questions)) {
-        return new WP_Error('parse_failed', 'No valid questions could be parsed from the source. Check formatting.', ['status' => 500]);
+        return new WP_Error('parsing_failed', 'No valid questions could be parsed from the source. Check formatting. Ensure headers are correct (Question, Option1, etc.) and CorrectAnswer matches one of the options exactly.');
     }
 
-    shuffle($questions);
-    $selected_questions = array_slice($questions, 0, $count);
-    
-    // Re-assign sequential IDs for the final selection
-    $final_questions = [];
-    foreach($selected_questions as $index => $q) {
-        $q['id'] = $index + 1;
-        $final_questions[] = $q;
-    }
-
-    return new WP_REST_Response($final_questions, 200);
+    return $questions;
 }
 
-function annapoorna_get_user_results_callback($request) {
-    $user_id = (int)$request->get_param('jwt_user_id');
-    if ($user_id <= 0) { return new WP_Error('invalid_user', 'Invalid user ID.', ['status' => 403]); }
-    $results = get_user_meta($user_id, 'annapoorna_exam_results', true);
-    if (empty($results) || !is_array($results)) { $results = []; }
-    return new WP_REST_Response(array_values($results), 200);
-}
-
-function annapoorna_get_single_result_callback($request) {
-    $user_id = (int)$request->get_param('jwt_user_id');
-    $test_id = sanitize_key($request['test_id']);
-    $all_results = get_user_meta($user_id, 'annapoorna_exam_results', true);
-    if (is_array($all_results) && isset($all_results[$test_id])) {
-        return new WP_REST_Response($all_results[$test_id], 200);
-    }
-    return new WP_Error('not_found', 'Result not found.', ['status' => 404]);
-}
-
-function annapoorna_get_certificate_data_callback($request) {
-    $user_id = (int)$request->get_param('jwt_user_id');
-    $test_id = $request['test_id'];
-    $user = get_userdata($user_id);
-    if (!$user) { return new WP_Error('user_not_found', 'User could not be found.', ['status' => 404]); }
-
-    $all_data = annapoorna_get_all_app_data();
-    $org = $all_data[0];
-
-    if ($test_id === 'sample') {
-        $template = $org['certificateTemplates'][0];
-        $candidate_name = trim($user->first_name . ' ' . $user->last_name) ?: $user->display_name;
-        $data = [
-            'certificateNumber' => "SAMPLE-" . time(), 'candidateName' => $candidate_name, 'finalScore' => 95.5,
-            'date' => date('F j, Y'), 'totalQuestions' => 100, 'organization' => $org, 'template' => $template
-        ];
-        return new WP_REST_Response($data, 200);
-    }
-    
-    $all_results = get_user_meta($user_id, 'annapoorna_exam_results', true);
-    if (!is_array($all_results) || !isset($all_results[sanitize_key($test_id)])) {
-        return new WP_Error('not_found', 'Result not found.', ['status' => 404]);
-    }
-    $result = $all_results[sanitize_key($test_id)];
-    
-    $exam = null;
-    foreach ($org['exams'] as $e) { if ($e['id'] === $result['examId']) { $exam = $e; break; } }
-    if (!$exam || ($result['score'] < $exam['passScore'] && !user_can($user, 'administrator'))) {
-        return new WP_Error('not_earned', 'Certificate not earned for this test.', ['status' => 403]);
-    }
-
-    $template = null;
-    foreach ($org['certificateTemplates'] as $t) { if ($t['id'] === $exam['certificateTemplateId']) { $template = $t; break; } }
-    if (!$template) return new WP_Error('not_found', 'Certificate template not found.', ['status' => 404]);
-
-    $candidate_name = trim($user->first_name . ' ' . $user->last_name) ?: $user->display_name;
-    $data = [
-        'certificateNumber' => substr($user_id, 0, 4) . '-' . substr(md5($test_id), 0, 6),
-        'candidateName' => $candidate_name, 'finalScore' => $result['score'],
-        'date' => date('F j, Y', $result['timestamp'] / 1000), 'totalQuestions' => $result['totalQuestions'],
-        'organization' => $org, 'template' => $template
-    ];
-    return new WP_REST_Response($data, 200);
-}
-
-function annapoorna_exam_update_user_name_callback($request) {
-    $user_id = (int)$request->get_param('jwt_user_id');
-    if (!get_userdata($user_id)) { return new WP_Error('user_not_found', 'User could not be found.', ['status' => 404]); }
-
-    $full_name = isset($request->get_json_params()['fullName']) ? sanitize_text_field($request->get_json_params()['fullName']) : '';
-    if (empty($full_name)) return new WP_Error('name_empty', 'Full name cannot be empty.', ['status' => 400]);
-    $name_parts = explode(' ', $full_name, 2);
-    update_user_meta($user_id, 'first_name', $name_parts[0]);
-    update_user_meta($user_id, 'last_name', isset($name_parts[1]) ? $name_parts[1] : '');
-    return new WP_REST_Response(['success' => true, 'message' => 'Name updated successfully.'], 200);
-}
-
-function annapoorna_exam_submit_result_callback($request) {
-    $user_id = (int)$request->get_param('jwt_user_id');
-    $result_data = $request->get_json_params();
-    foreach (['testId', 'examId', 'score', 'correctCount', 'totalQuestions', 'timestamp'] as $key) {
-        if (!isset($result_data[$key])) return new WP_Error('invalid_data', "Missing required key: {$key}", ['status' => 400]);
-    }
-    $result_data['userId'] = (string)$user_id;
-
-    $all_results = get_user_meta($user_id, 'annapoorna_exam_results', true);
-    if (!is_array($all_results)) $all_results = [];
-    $all_results[$result_data['testId']] = $result_data;
-    
-    update_user_meta($user_id, 'annapoorna_exam_results', $all_results);
-    
-    return new WP_REST_Response($result_data, 200);
-}
-
-function annapoorna_exam_login_shortcode() {
-    if (!defined('ANNAPOORNA_JWT_SECRET') || strlen(ANNAPOORNA_JWT_SECRET) < 32 || strpos(ANNAPOORNA_JWT_SECRET, 'your-very-strong-secret-key') !== false) {
-        return "<p class='exam-portal-error'>Configuration error: A strong, unique ANNAPOORNA_JWT_SECRET must be defined in wp-config.php.</p>";
-    }
-
-    $login_error_message = '';
-    $user_id = 0;
-
-    if ('POST' === $_SERVER['REQUEST_METHOD'] && !empty($_POST['exam_login_nonce']) && wp_verify_nonce($_POST['exam_login_nonce'], 'exam_login_action')) {
-        $credentials = [
-            'user_login'    => isset($_POST['log']) ? sanitize_text_field($_POST['log']) : '',
-            'user_password' => isset($_POST['pwd']) ? $_POST['pwd'] : '',
-            'remember'      => true
-        ];
-        $user = wp_signon($credentials, false);
-
-        if (is_wp_error($user)) {
-            $login_error_message = 'Invalid username or password.';
-        } else {
-            $user_id = $user->ID;
+// 3. Test function for admin page
+function mco_run_question_source_test() {
+    echo '<h3>Data Source Test</h3>';
+    $questions = mco_fetch_and_parse_questions();
+    if (is_wp_error($questions)) {
+        echo '<p style="color:red; border: 1px solid red; padding: 10px;"><strong>Failed to load questions.</strong><br>' . esc_html($questions->get_error_message()) . '</p>';
+    } else {
+        echo '<p style="color:green; border: 1px solid green; padding: 10px;"><strong>Success!</strong> ' . count($questions) . ' questions loaded successfully.</p>';
+        echo '<h4>Sample Question:</h4>';
+        $sample_question = $questions[array_rand($questions)];
+        echo '<div style="border: 1px solid #ccc; padding: 15px;">';
+        echo '<p><strong>Q:</strong> ' . esc_html($sample_question['question']) . '</p>';
+        echo '<ul>';
+        foreach ($sample_question['options'] as $index => $option) {
+            $style = ($index === $sample_question['correct']) ? ' style="font-weight:bold; color:green;"' : '';
+            echo '<li' . $style . '>' . esc_html($option) . ($style ? ' (Correct)' : '') . '</li>';
         }
+        echo '</ul>';
+        echo '</div>';
     }
-    
-    if (is_user_logged_in() && $user_id === 0) {
-        $user_id = get_current_user_id();
-    }
-
-    if ($user_id > 0) {
-        $token = annapoorna_generate_exam_jwt($user_id);
-        if ($token) {
-            $redirect_to = isset($_REQUEST['redirect_to']) ? esc_url_raw(urldecode($_REQUEST['redirect_to'])) : '/dashboard';
-            $is_admin = user_can($user_id, 'administrator');
-            $app_url = annapoorna_get_exam_app_url($is_admin);
-            $final_url = $app_url . '#/auth?token=' . $token . '&redirect_to=' . urlencode($redirect_to);
-            
-            echo "<div class='exam-portal-container' style='text-align:center;'><p>Login successful. Redirecting...</p><script>window.location.href='" . esc_url_raw($final_url) . "';</script><noscript><meta http-equiv='refresh' content='0;url=" . esc_url_raw($final_url) . "'></noscript></div>";
-            return;
-        } else {
-            $login_error_message = 'Could not create a secure session. Please contact support and mention the JWT configuration issue.';
-        }
-    }
-    
-    ob_start();
-    ?>
-    <style>.exam-portal-container{font-family:sans-serif;max-width:400px;margin:5% auto;padding:40px;background:#fff;border-radius:12px;box-shadow:0 10px 25px -5px rgba(0,0,0,.1)}.exam-portal-container h2{text-align:center;font-size:24px;margin-bottom:30px}.exam-portal-container .form-row{margin-bottom:20px}.exam-portal-container label{display:block;margin-bottom:8px;font-weight:600}.exam-portal-container input{width:100%;padding:12px;border:1px solid #ccc;border-radius:8px;box-sizing:border-box}.exam-portal-container button{width:100%;padding:14px;background-color:#0891b2;color:#fff;border:none;border-radius:8px;font-size:16px;cursor:pointer}.exam-portal-container button:hover{background-color:#067a8e}.exam-portal-links{margin-top:20px;text-align:center}.exam-portal-error{color:red;text-align:center;margin-bottom:20px}</style>
-    <div class="exam-portal-container">
-        <h2>Exam Portal Login</h2>
-        <?php if ($login_error_message) echo "<p class='exam-portal-error'>" . esc_html($login_error_message) . "</p>"; ?>
-        <form name="loginform" action="<?php echo esc_url(get_permalink()); ?>" method="post">
-            <div class="form-row">
-                <label for="log">Username or Email</label>
-                <input type="text" name="log" id="log" required>
-            </div>
-            <div class="form-row">
-                <label for="pwd">Password</label>
-                <input type="password" name="pwd" id="pwd" required>
-            </div>
-            <div class="form-row">
-                <button type="submit">Log In</button>
-            </div>
-            <?php wp_nonce_field('exam_login_action', 'exam_login_nonce'); ?>
-            <?php if (isset($_REQUEST['redirect_to'])): ?>
-                <input type="hidden" name="redirect_to" value="<?php echo esc_attr(urlencode($_REQUEST['redirect_to'])); ?>" />
-            <?php endif; ?>
-        </form>
-        <div class="exam-portal-links">
-            <a href="<?php echo esc_url(wp_registration_url()); ?>">Register</a> | <a href="<?php echo esc_url(wp_lostpassword_url()); ?>">Lost Password?</a>
-        </div>
-    </div>
-    <?php
-    return ob_get_clean();
 }
 
-function annapoorna_exam_showcase_shortcode() {
-    $all_data = annapoorna_get_all_app_data();
-    $categories = $all_data[0]['examProductCategories'];
-    $exam_map = array_column($all_data[0]['exams'], null, 'id');
-    $app_base_url = annapoorna_get_exam_app_url();
+// 4. Shortcode to display a question
+function mco_question_test_shortcode_handler($atts) {
+    $questions = mco_fetch_and_parse_questions();
+
+    if (is_wp_error($questions)) {
+        return '<p style="color:red;">Error loading question: ' . esc_html($questions->get_error_message()) . '</p>';
+    }
+
+    $question = $questions[array_rand($questions)];
+    $question_id = uniqid('mco_q_');
 
     ob_start();
     ?>
     <style>
-        .exam-showcase-container { font-family: sans-serif; display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 2rem; margin: 2rem 0; }
-        .exam-showcase-card { background-color: #fff; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; overflow: hidden; display: flex; flex-direction: column; }
-        .exam-showcase-card-header { background-color: #f8fafc; padding: 1.5rem; border-bottom: 1px solid #e2e8f0; }
-        .exam-showcase-card-header h3 { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin: 0; }
-        .exam-showcase-card-header p { font-size: 0.9rem; color: #64748b; margin: 0.5rem 0 0; }
-        .exam-showcase-card-body { padding: 1.5rem; display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; flex-grow: 1; }
-        .exam-showcase-section { display: flex; flex-direction: column; justify-content: space-between; }
-        .exam-showcase-section h4 { font-size: 1.1rem; font-weight: 600; color: #334155; margin: 0 0 0.5rem; }
-        .exam-showcase-section .exam-name { font-size: 0.95rem; color: #475569; flex-grow: 1; margin-bottom: 1rem; }
-        .exam-showcase-price { font-size: 1.75rem; font-weight: bold; color: #0d9488; margin-bottom: 1rem; }
-        .exam-showcase-btn { display: block; text-align: center; padding: 0.75rem 1rem; border-radius: 8px; text-decoration: none; font-weight: 600; transition: background-color 0.2s; }
-        .btn-practice { background-color: #e2e8f0; color: #334155; } .btn-practice:hover { background-color: #cbd5e1; }
-        .btn-cert { background-color: #0891b2; color: #fff; } .btn-cert:hover { background-color: #067a8e; }
-        @media (max-width: 768px) { .exam-showcase-card-body { grid-template-columns: 1fr; } }
+        .mco-question-container { border: 1px solid #ddd; padding: 20px; border-radius: 8px; margin-bottom: 20px; background-color: #f9f9f9; font-family: sans-serif; }
+        .mco-question-text { font-size: 1.1em; font-weight: bold; margin-bottom: 15px; }
+        .mco-options-list { list-style: none; padding: 0; margin: 0; }
+        .mco-options-list li { margin-bottom: 10px; }
+        .mco-options-list label { display: flex; align-items: center; cursor: pointer; padding: 10px; border: 1px solid #ccc; border-radius: 5px; transition: background-color 0.2s, border-color 0.2s; }
+        .mco-options-list label:hover { background-color: #f0f0f0; }
+        .mco-options-list input[type="radio"] { margin-right: 10px; }
+        .mco-check-btn { background-color: #0891b2; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; margin-top: 10px; }
+        .mco-check-btn:hover { background-color: #06b6d4; }
+        .mco-feedback { padding: 10px; margin-top: 15px; border-radius: 5px; text-align: center; font-weight: bold; display: none; }
+        .mco-feedback.correct { background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+        .mco-feedback.incorrect { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
     </style>
-    <div class="exam-showcase-container">
-        <?php foreach ($categories as $category): ?>
-            <?php
-                $practice_exam = isset($exam_map[$category['practiceExamId']]) ? $exam_map[$category['practiceExamId']] : null;
-                $cert_exam = isset($exam_map[$category['certificationExamId']]) ? $exam_map[$category['certificationExamId']] : null;
-            ?>
-            <div class="exam-showcase-card">
-                <div class="exam-showcase-card-header">
-                    <h3><?php echo esc_html($category['name']); ?> Program</h3>
-                    <p><?php echo esc_html($category['description']); ?></p>
-                </div>
-                <div class="exam-showcase-card-body">
-                    <?php if ($practice_exam): ?>
-                        <div class="exam-showcase-section">
-                            <div><h4>Free Practice Test</h4><p class="exam-name"><?php echo esc_html($practice_exam['name']); ?></p></div>
-                            <a href="<?php echo esc_url($app_base_url . '#/test/' . $practice_exam['id']); ?>" class="exam-showcase-btn btn-practice">Start Practice</a>
-                        </div>
-                    <?php endif; ?>
-                    <?php if ($cert_exam && isset($cert_exam['productSlug'])): ?>
-                         <div class="exam-showcase-section">
-                            <div><h4>Certification Exam</h4><p class="exam-name"><?php echo esc_html($cert_exam['name']); ?></p><p class="exam-showcase-price">$<?php echo esc_html(number_format($cert_exam['price'], 2)); ?></p></div>
-                            <a href="<?php echo esc_url(home_url('/product/' . $cert_exam['productSlug'] . '/')); ?>" class="exam-showcase-btn btn-cert">Purchase Exam</a>
-                        </div>
-                    <?php endif; ?>
-                </div>
-            </div>
-        <?php endforeach; ?>
+    <div class="mco-question-container" id="<?php echo esc_attr($question_id); ?>">
+        <p class="mco-question-text"><?php echo esc_html($question['question']); ?></p>
+        <ul class="mco-options-list">
+            <?php foreach ($question['options'] as $index => $option): ?>
+                <li>
+                    <label>
+                        <input type="radio" name="<?php echo esc_attr($question_id); ?>" value="<?php echo esc_attr($index); ?>">
+                        <span><?php echo esc_html($option); ?></span>
+                    </label>
+                </li>
+            <?php endforeach; ?>
+        </ul>
+        <button class="mco-check-btn" onclick="mcoCheckAnswer_<?php echo esc_js($question_id); ?>()">Check Answer</button>
+        <div class="mco-feedback"></div>
     </div>
+    <script type="text/javascript">
+        function mcoCheckAnswer_<?php echo esc_js($question_id); ?>() {
+            var container = document.getElementById('<?php echo esc_js($question_id); ?>');
+            var selected = container.querySelector('input[name="<?php echo esc_js($question_id); ?>"]:checked');
+            var feedback = container.querySelector('.mco-feedback');
+            
+            if (!selected) {
+                alert('Please select an answer.');
+                return;
+            }
+
+            var correctAnswerIndex = <?php echo esc_js($question['correct']); ?>;
+            feedback.style.display = 'block';
+
+            if (parseInt(selected.value, 10) === correctAnswerIndex) {
+                feedback.textContent = 'Correct!';
+                feedback.className = 'mco-feedback correct';
+            } else {
+                feedback.textContent = 'Incorrect. The correct answer is highlighted below.';
+                feedback.className = 'mco-feedback incorrect';
+                // Highlight correct answer
+                var labels = container.querySelectorAll('.mco-options-list label');
+                if(labels[correctAnswerIndex]) {
+                    labels[correctAnswerIndex].style.backgroundColor = '#d1fae5';
+                    labels[correctAnswerIndex].style.borderColor = '#a7f3d0';
+                }
+            }
+        }
+    </script>
     <?php
     return ob_get_clean();
 }
-
-
-function annapoorna_exam_add_custom_registration_fields() { ?><p><label for="first_name">First Name<br/><input type="text" name="first_name" id="first_name" required/></label></p><p><label for="last_name">Last Name<br/><input type="text" name="last_name" id="last_name" required/></label></p><?php }
-function annapoorna_exam_validate_reg_fields($errors, $login, $email) { if (empty($_POST['first_name']) || empty($_POST['last_name'])) $errors->add('field_error', 'First and Last Name are required.'); return $errors; }
-function annapoorna_exam_save_reg_fields($user_id) { if (!empty($_POST['first_name'])) update_user_meta($user_id, 'first_name', sanitize_text_field($_POST['first_name'])); if (!empty($_POST['last_name'])) update_user_meta($user_id, 'last_name', sanitize_text_field($_POST['last_name'])); }
-function annapoorna_exam_login_url($login_url, $redirect) {
-    if (strpos($_SERVER['REQUEST_URI'], 'wp-admin') !== false) {
-        return $login_url;
-    }
-    $login_page_url = home_url('/' . ANNAPOORNA_LOGIN_SLUG . '/');
-    return !empty($redirect) ? add_query_arg('redirect_to', urlencode($redirect), $login_page_url) : $login_page_url;
-}
+add_shortcode('mco_question_test', 'mco_question_test_shortcode_handler');
 ?>`;
 
     return (
         <div className="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-lg">
-            <h1 className="text-3xl font-bold text-slate-800 mb-4">WordPress Integration Guide</h1>
+            <h1 className="text-3xl font-bold text-slate-800 mb-4">Question Bank Test Plugin Guide</h1>
             <div className="prose max-w-none text-slate-600">
-                <p>This plugin enables Single Sign-On (SSO) from your WordPress site to the React exam app. It creates a custom login page, handles redirects, and securely transfers user data via a JWT token.</p>
+                <p>This plugin allows you to fetch questions from a public Google Sheet and display a random one on any WordPress page or post for testing purposes.</p>
                 
                 <h2 className="text-2xl font-semibold text-slate-700 mt-6 mb-2">Setup Instructions</h2>
                 <ol>
-                    <li><strong>Define Secret Key:</strong> Open your <code>wp-config.php</code> file and add the following line. <strong>This is a critical security step.</strong> Replace the placeholder with a key generated from a secure password generator (at least 32 characters).
-                        <pre className="bg-slate-200 p-2 rounded text-sm"><code>define('ANNAPOORNA_JWT_SECRET', 'your-very-strong-secret-key-that-is-long-and-random');</code></pre>
+                    <li><strong>Plugin Installation:</strong> Copy the full PHP code below into a new file named <code>mco-question-test-plugin.php</code> inside your <code>/wp-content/plugins/</code> directory.</li>
+                    <li><strong>Activate Plugin:</strong> Go to your WordPress admin dashboard, navigate to "Plugins", find "Question Bank Test Display", and click "Activate".</li>
+                    <li>
+                        <strong>Configure Data Source:</strong> In your WordPress admin, go to <strong>Settings &gt; Question Bank Test</strong>. Paste the URL to your public Google Sheet. The sheet must have these exact column headers: 
+                        <code>Question</code>, <code>Option1</code>, <code>Option2</code>, <code>Option3</code>, <code>Option4</code>, and <code>CorrectAnswer</code>. 
+                        The value in the <code>CorrectAnswer</code> column must exactly match the text of one of the options.
                     </li>
-                    <li><strong>Plugin Installation:</strong> Copy the full PHP code below into a new file named <code>mco-exam-integration.php</code> inside your <code>/wp-content/plugins/</code> directory.</li>
-                    <li><strong>Activate Plugin:</strong> Go to your WordPress admin dashboard, navigate to "Plugins", find "Medical Coding Online Exam App Integration", and click "Activate".</li>
-                    <li><strong>Create Login Page:</strong> Create a new page in WordPress (e.g., titled "Exam Login"). In the content editor, add the following shortcode:
-                        <pre className="bg-slate-200 p-2 rounded text-sm"><code>[exam_portal_login]</code></pre>
-                        The slug for this page should match the one defined in the plugin (default: <code>exam-login</code>).
+                    <li>
+                        <strong>Test the Connection:</strong> The settings page includes a test section that will try to fetch and parse the questions from your sheet, immediately showing you if it's working correctly and displaying a sample question. This will help you resolve any formatting issues.
                     </li>
-                    <li><strong>Admin Settings:</strong> As an admin, you can switch between the production and test versions of the exam app from 'Settings' &gt; 'Exam App Settings' in your WP dashboard. This redirect only affects logged-in admins.</li>
+                    <li><strong>Display a Question:</strong> Create or edit a WordPress page/post and add the following shortcode to the content:
+                        <pre className="bg-slate-200 p-2 rounded text-sm"><code>[mco_question_test]</code></pre>
+                    </li>
                 </ol>
 
                 <h2 className="text-2xl font-semibold text-slate-700 mt-6 mb-2">Plugin Code</h2>
-                <p>Copy the code below into <code>mco-exam-integration.php</code>.</p>
+                <p>Copy the code below into <code>mco-question-test-plugin.php</code>.</p>
                 <pre className="bg-slate-800 text-white p-4 rounded-lg overflow-x-auto relative">
                     <button 
                         onClick={() => {
