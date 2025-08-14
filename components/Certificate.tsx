@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -9,7 +8,7 @@ import Spinner from './Spinner';
 import { Download, ArrowLeft } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import { signatureBase64 } from '../assets/signature';
+import { signatureBase64 } from '@/assets/signature';
 
 const Watermark: React.FC<{ text: string }> = ({ text }) => (
     <div className="absolute inset-0 grid grid-cols-3 grid-rows-4 gap-8 pointer-events-none overflow-hidden p-4">

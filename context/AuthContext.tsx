@@ -1,8 +1,7 @@
-
 import React, { createContext, useState, useContext, ReactNode, useCallback, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import type { User, TokenPayload } from '../types';
-import { googleSheetsService } from '../services/googleSheetsService';
+import type { User, TokenPayload } from '@/types';
+import { googleSheetsService } from '@/services/googleSheetsService';
 
 interface AuthContextType {
   user: User | null;

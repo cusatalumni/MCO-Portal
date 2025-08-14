@@ -3,7 +3,7 @@ import { googleSheetsService } from '../services/googleSheetsService';
 import type { Organization, RecommendedBook, Exam } from '../types';
 import toast from 'react-hot-toast';
 import { useAuth } from './AuthContext';
-import { localSuggestedBooks } from '../assets/bookData';
+import { localSuggestedBooks } from '@/assets/bookData';
 
 interface AppContextType {
   organizations: Organization[];
